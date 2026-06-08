@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
   { group: "Portfolio", tab: "Portfolio Command Center", label: "Command Center", icon: "portfolio" },
   { group: "Strategies", tab: "Strategy Monitor", label: "Strategies", icon: "line" },
   { group: "Allocation", tab: "Allocation & Rebalance", label: "Allocation", icon: "target" },
-  { group: "Risk", tab: "Risk Factors & Exposure", label: "Factors", icon: "risk" },
+  { group: "Risk", tab: "Risk Factors & Exposure", label: "Proxy Loadings", icon: "risk" },
   { group: "Risk", tab: "Correlation & Diversification", label: "Correlation", icon: "layers" },
   { group: "Research", tab: "Backtesting & Research Lab", label: "Research Lab", icon: "shield" },
   { group: "Workflow", tab: "Strategy Library & Workflow", label: "Workflow", icon: "layers" },
@@ -956,18 +956,28 @@ function renderMonitorKpiGrid(artifact) {
 function renderFactorKpiGrid(artifact) {
   const el = document.getElementById("factorKpiGrid");
   if (!el) return;
-  const checks = (artifact.risk_limits?.factors?.checks || []).slice(0, 6);
-  const cards = checks.map((check) => [
-    humanizeMetricLabel(check.metric, artifact),
-    typeof check.current_value === "number" ? num(check.current_value, 2) : humanize(check.current_value),
-    check.utilization != null ? `${pct(check.utilization, 0)} of limit` : humanize(check.status),
-    check.status,
-  ]);
-  if (!cards.length) {
-    el.innerHTML = `<article class="kpi-card"><span>Factor Limits</span><strong>OK</strong><small>No active factor breaches</small></article>`;
+  const exposureMap = artifact.factors?.portfolio_factor_exposure_current || {};
+  const primaryMetrics = ["equity_beta", "credit_spread", "rates_duration", "usd_fx", "commodity_beta", "volatility"];
+  const checksByMetric = Object.fromEntries((artifact.risk_limits?.factors?.checks || []).map((check) => [check.metric, check]));
+  const checks = primaryMetrics.map((metric) => checksByMetric[metric]).filter(Boolean);
+  if (!checks.length) {
+    el.innerHTML = `<article class="kpi-card factor-proxy-card"><span>Proxy Factor Loadings</span><strong>Normal</strong><small>No active proxy factor limit breaches</small></article>`;
     return;
   }
-  el.innerHTML = cards.map(([label, value, sub, status]) => `<article class="kpi-card"><span>${label}</span><strong class="${status === "breach" ? "negative" : status === "watch" ? "warning-text" : ""}">${value}</strong><small>${sub}</small></article>`).join("");
+  el.innerHTML = checks.map((check) => {
+    const card = formatFactorLimitCard(check, exposureMap, artifact);
+    const toneClass = card.statusClass === "breach" ? "negative" : card.statusClass === "warning" || card.statusClass === "watch" ? "warning-text" : "";
+    return `<article class="kpi-card factor-proxy-card">
+      <span class="factor-proxy-label" title="${escapeHtml(card.tooltip)}">${escapeHtml(card.label)}</span>
+      <div class="factor-proxy-value-row">
+        <strong class="${toneClass}" title="Signed proxy loading">${card.exposureText}</strong>
+        <span class="factor-proxy-direction">${escapeHtml(card.direction)}</span>
+      </div>
+      <small class="factor-proxy-limit">|Loading| / Limit ${escapeHtml(card.loadingLimitText)} · ${escapeHtml(card.utilizationText)}</small>
+      ${card.utilization != null ? utilizationBar(card.utilization, card.rawStatus) : ""}
+      <span class="badge ${card.statusClass}">${escapeHtml(card.statusLabel)}</span>
+    </article>`;
+  }).join("");
 }
 
 function renderAllocationBeforeAfterStrip(artifact) {
@@ -2759,7 +2769,11 @@ function renderCardsAndMatrices(artifact) {
 function renderStaticTables(artifact) {
   document.getElementById("scenarioTable").innerHTML = "<tr><th>Scenario</th><th>Estimated Impact</th><th>Status</th><th>Main Drivers</th></tr>" +
     (artifact.factors?.scenario_shock_table || []).map((row) => `<tr><td>${row.scenario}</td><td class="${cls(row.estimated_portfolio_impact || 0)}">${pct(row.estimated_portfolio_impact || 0, 2)}</td><td>${statusBadge(row.risk_status)}</td><td>${(row.drivers || []).slice(0, 3).map((driver) => humanizeFactor(driver.factor, artifact)).join(" / ")}</td></tr>`).join("");
-  document.getElementById("factorLimitAlerts").innerHTML = (artifact.risk_limits?.factors?.checks || []).filter((check) => check.status !== "ok").map((check) => `<p>${statusBadge(check.status)} <strong>${humanizeMetricLabel(check.metric, artifact)}</strong><br>Current ${num(check.current_value, 3)}, limit ${num(check.breach_threshold, 3)}. ${check.action}</p>`).join("");
+  const exposureMap = artifact.factors?.portfolio_factor_exposure_current || {};
+  document.getElementById("factorLimitAlerts").innerHTML = (artifact.risk_limits?.factors?.checks || []).filter((check) => check.status !== "ok" && check.status !== "not_modeled").map((check) => {
+    const card = formatFactorLimitCard(check, exposureMap, artifact);
+    return `<p><span class="badge ${card.statusClass}">${escapeHtml(card.statusLabel)}</span> <strong>${escapeHtml(card.label)}</strong><br>${escapeHtml(card.direction)} · |Loading| / Limit ${escapeHtml(card.loadingLimitText)} · ${escapeHtml(card.utilizationText)}. ${escapeHtml(check.action || "")}</p>`;
+  }).join("");
 
   const marketRows = artifact.market_monitor || [];
   document.getElementById("marketTable").innerHTML = "<tr><th>Market</th><th class='col-num'>Current</th><th class='col-pct'>Daily Move</th><th class='col-status'>Status</th><th class='interpretation-cell'>Risk Interpretation</th></tr>" +

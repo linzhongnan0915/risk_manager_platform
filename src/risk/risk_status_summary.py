@@ -60,11 +60,12 @@ def enrich_check(
 
 
 def _scope_summary(checks: list[dict[str, Any]]) -> dict[str, Any]:
-    summary = summarize_limit_status([check for check in checks if check.get("status") != "not_evaluated"])
+    evaluated = [check for check in checks if check.get("status") not in {"not_evaluated", "not_modeled"}]
+    summary = summarize_limit_status(evaluated)
     return {
         "summary": summary,
         "checks": checks,
-        "worst_status": worst_status([check for check in checks if check.get("status") != "not_evaluated"]),
+        "worst_status": worst_status(evaluated),
     }
 
 

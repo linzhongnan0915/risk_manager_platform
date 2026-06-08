@@ -227,6 +227,15 @@ def simulate_rebalance(
         float(limits["strategy_limits"].get("max_weight_default", 0.15)),
     )
     for check in factor_limit_status["checks"]:
+        if check.get("status") == "not_modeled" or check.get("current_value") is None:
+            governance_checks.append(
+                {
+                    "status": check["status"],
+                    "metric": check["metric"],
+                    "text": check.get("explanation", "Proxy loading not modeled in the current weighted simulation."),
+                }
+            )
+            continue
         governance_checks.append(
             {
                 "status": check["status"],
