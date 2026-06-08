@@ -1,0 +1,620 @@
+
+
+===== PAGE 1 =====
+Regime Change
+Implications of macro shifts on asset class and portfolio performance 
+Based on the analysis presented here, we believe that regime-
+based asset allocation has the potential to deliver significant 
+benefits when compared to traditional investment policies, 
+which are most commonly static and benchmark based. 
+Contingent on good economic foresight, implementation of a 
+regime-based approach can potentially add to cumulative  
+performance over time, translating to an improved distribution 
+of overall portfolio returns.
+The Rationale for Regime–based Investing
+It is a well-recognized empirical observation that different 
+asset classes respond differently to different economic drivers. 
+For example, fixed income assets tend to respond to 
+anticipated movements in interest rates, among other factors: 
+prices fall when interest rates rise. Commodities respond to, 
+and sometimes drive, inflation expectations: commodity prices 
+can rise fast when inflation expectations are rising, and they 
+can fall quickly once inflation appears to have peaked.
+In this paper, we present a framework 
+for using regime-based asset allocation 
+to improve portfolio efficiency and 
+resiliency under a variety of economic 
+scenarios. Our goal is to help long-term 
+institutional investors take advantage 
+of positive economic regimes, as well 
+as withstand adverse economic regimes 
+and reduce potential drawdowns.
+Summary
+
+
+===== PAGE 2 =====
+Regime Change
+2  |  Regime Change: Implications of macro shifts on asset class and portfolio performance
+It is also well recognized that asset class behavior can vary 
+significantly over shifting economic scenarios. For example, 
+business cycles tend to impact cyclical vs. non-cyclical compa -
+nies in markedly different ways, primarily due to sensitivities 
+of consumers and producers to economic growth. Periods of 
+capital markets liberalization (i.e., different regulatory envi-
+ronments) are often accompanied by favorable equity returns 
+(as compared to bond returns)—as evidenced by many current 
+and former emerging market economies.
+Exhibit 1 shows the average performance of different asset 
+classes in four economic regimes.1
+These results indicate that no single asset class dominates 
+under all economic conditions. From an investment perspec-
+tive, even a purely historical analysis based on simple scenar -
+ios (built with only two variables: growth and inflation) sup -
+ports our hypothesis that financial market performance does 
+indeed vary significantly as economic conditions change.
+Yet, while asset class performance certainly varies under dif -
+ferent conditions, traditional asset allocation approaches make 
+no effort to adapt to such shifts. Instead, traditional 
+approaches seek to develop static “all-season” portfolios that 
+optimize efficiency across a range of economic scenarios. 
+In this paper, we consider a compelling alternative. We define 
+economic trends in their totality, as a single complex system 
+that changes over time to produce what we call economic 
+“regimes.” And we investigate whether regime-based asset 
+allocation can effectively respond to economic regimes at the 
+portfolio level in an effort to provide better long-term results 
+when compared to static benchmark-based approaches.
+It is worth noting that regime-based investing is distinct from 
+tactical asset allocation. While the latter is shorter term, 
+higher frequency (i.e., daily or monthly), and driven primarily 
+by valuation considerations, regime-based investing targets a 
+longer time horizon (i.e., a year or more), and is driven by 
+changing economic fundamentals. It straddles a middle 
+ground between strategic and tactical. A regime-based 
+approach is designed to give investors the flexibility to adapt 
+to changing economic conditions within a benchmark-based 
+investment policy.
+Assessing the Potential Benefits of  
+Regime-based Investing
+Based on our analysis, we arrive at three key conclusions 
+about regime-based investing: 
+Economic regimes can be defined in terms of four key 1. 
+factors, which tend to dominate financial market 
+performance. These four factors are economic growth, 
+inflation, monetary policy and labor market slack. 
+Developing insight into near-term changes in these four 
+factors—rather than their absolute levels—can provide an 
+effective framework for executing a regime-based asset 
+allocation policy.
+No single portfolio is resilient to all economic regimes—the 2. 
+concept of a static “all-season” portfolio is a myth. Asset 
+class performance varies significantly across different 
+regimes, be they economic, regulatory, political or 
+otherwise. For example, portfolios resilient to deflationary 
+environments will likely underperform during periods of 
+high inflation, and vice versa. Different economic regimes 
+require different asset allocations.
+1  These four regimes are “simplified” versions of the ones we develop in our 
+full white paper as part of our asset allocation framework, using an expanded 
+list of economic factors (please contact your J.P. Morgan client advisor for the 
+full paper).
+Source: J.P. Morgan Asset Management. For illustration purposes only. Analysis based on quarterly data and rolling annual returns from Q4 1973 to Q4 2010.
+r egime 1
+rising growth +
+rising inflation 
+r egime 2
+rising growth +
+Falling inflation 
+r egime 3
+Falling growth +
+rising inflation 
+r egime 4
+Falling growth +
+Falling inflation
+asset class 32 periods 34 periods 36 periods 47 periods
+U.S. Dollar -4.7 (Worst) 2.6 -2.8 (Worst) 1.7
+Commodities 9.1 (Best) 1.5 (Worst) 11.7 (Best) -6.3 (Worst)
+Treasuries 3.9 8.7 5.5 11.5
+Credit 6.8 12.6 2.1 12.1 (Best)
+U.S. Equities 4.5 14.7 (Best) 1.0 5.5
+Average return 3.9 8.0 3.5 4.9
+Exhibit 1: a vEragE annual rEturn (%) From diFFErEnt aSSEt claSSES ovEr diFFErEnt hiS torical E conomic rE gimES
+
+
+===== PAGE 3 =====
+J.P. Morgan Asset Management  |  3 
+Regime-based asset allocation may have a significant 3. 
+impact on portfolio efficiency.2 Ignoring shifting economic 
+regimes can exact a significant toll on portfolio performance, 
+exposing it to draw-downs during interim periods of height-
+ened turbulence and volatility. A good example of such a 
+period is the Great Recession of 2008–2009. Based on our 
+research, a typical benchmark-based portfolio would have 
+lost approximately 17%, compared to a regime-oriented 
+portfolio that would have lost only 7%.
+On the other hand, addressing changes in economic regimes 
+through regime-based asset allocation may provide significant 
+performance benefits, including mitigating downside risk in 
+extreme scenarios, i.e., so-called “tail” events. For the hypo-
+thetical portfolio used in this paper, a regime-based asset 
+allocation approach improves real returns from -6.4% (for a 
+static approach) to 5.7% in a severe recessionary scenario 
+(coupled with deflation). In a high inflation scenario, a regime-
+oriented portfolio improves real returns from -2.7% (for a 
+static portfolio) to 8.6%. 
+Exhibit 2 illustrates the impact of a regime-oriented asset allo-
+cation framework assuming perfect economic foresight on the 
+probability distribution of portfolio returns.3 A regime-oriented 
+approach reduces the negative skew and kurtosis of the distri-
+bution. Both contribute towards making the overall distribution 
+more attractive for the investor, thus clearly illustrating the 
+power of an effective regime-based asset allocation approach.
+Key Challenges to a Regime-based 
+Investment Approach
+While we can be certain that assets respond to economic 
+regimes, and we can demonstrate that a regime-based 
+framework may add value over time, there still remain two key 
+significant hurdles between theory and practice.
+First, we need to capture the complex nature of the interac -
+tion between economic drivers and assets. Our key finding in 
+this regard is that these relationships are state dependent and 
+non-linear in nature. Second, we need to establish the level of 
+2  Portfolio efficiency in this context is defined as the return per unit of  
+risk undertaken.
+3  We develop the distribution of portfolio returns based on the results of 
+our back test. In other words, we apply a regimes-based asset allocation 
+approach from Q1 1984. The analysis assumes perfect economic foresight.  
+In our full white paper, we consider the impact of imperfect economic 
+foresight on the value added from a regimes-based framework.
+Static portfolio
+r egime-based  
+(perfect foresight)
+Mean (%) 6.7 8.9
+Median (%) 7.7 9.4
+Maximum (%) 26.8 27.6
+Minimum (%) -18.1 -7.7
+Std. Dev. (%) 8.0 7.7
+Skewness -0.61 -0.06
+Kurtosis 3.80 2.66
+Jarque-Bera 9.19 0.57
+Probability 0.01 0.75
+Source: J.P. Morgan Asset Management. For illustration purposes only.
+Exhibit 2: impact oF rE gimE -oriEntEd aSSEt allocation  
+on diS tribution oF rEturnS with pErFE ct E conomic F orESight
+0
+1
+2
+3
+4
+5
+6
+7Density
+Static portfolio 
+Regime-based
+-30 -20 -10 0 10 20 30 40
+Annual return (%)
+economic foresight necessary to be successful; our analysis 
+indicates that successful implementation of a regime-based 
+framework requires only imperfect economic foresight. 
+However, we find that even this level of skill is not necessarily 
+easy to achieve in practice. 
+Below, we provide further detail on each of these  
+key challenges.
+1. Regime-based investing requires understanding the state-
+dependent relationship between financial markets and the 
+broader economy, and devising a method of modeling the 
+non-linear nature of such relationships.
+Successful regime investing is predicated on modeling the 
+relationships between assets and economic performance driv -
+ers. This process starts with the recognition that the direction 
+and strength of financial market movements depends on a 
+range of broad economic factors. For example, equities tend 
+to do well in environments featuring rising growth rates, as 
+well as falling inflation. We can say that equities are “state 
+dependent” in that they respond to the state of the economy 
+
+
+===== PAGE 4 =====
+Regime Change
+4  |  Regime Change: Implications of macro shifts on asset class and portfolio performance
+Of course, asset class performance can be driven by more 
+than just economic fundamentals (as indicated by low 
+R-squared values of some of our equations). In particular, 
+changes to valuation, e.g., Price-Earnings ratios for Equities, 
+are often a significant driver of performance. It is possible for 
+financial markets to reflect extreme optimism or pessimism 
+(from a valuation perspective) for long periods of time, rather 
+than pure economic fundamentals. In such cases, regime-
+based frameworks may prove inadequate for the purposes of 
+developing robust and resilient portfolios.
+2. Successfully developing and executing a regime-based 
+asset allocation strategy does not require perfect economic 
+forecasting skills. However, even imperfect economic 
+foresight is not necessarily easy to achieve.
+Our framework suggests that CIOs with good economic insight 
+can successfully implement and add value using a coherent 
+regime-based asset allocation framework. We define good 
+insight as forecasting the direction of economic changes, rather 
+than their exact magnitude. The former is much more important 
+in determining the success of dynamic regime response.
+Exhibit 3: annual S&p rEturnS v S. rEal gdp growth  
+Source: J.P. Morgan Asset Management. For illustration purposes only.
+Linear R2 = 12.0%, Non-linear R2 = 22.5%. Data from December 1964 to  
+December 2010. 
+Historical Non-linear Linear 
+-50
+-40
+-30
+-20
+-10
+0
+10
+20
+30
+40
+50
+-6 -4 -2 0 2 4 6 8 10
+S&P 500 return (%)
+Real GDP growth (%)
+as defined by such factors. At the same time, we also recog -
+nize that financial markets do not always react to changes in 
+the economy in an orderly or well-defined fashion. For exam -
+ple, in times of extreme market stress, historical correlations 
+among asset classes tend to break down. The term we use to 
+describe relationships that change character beyond certain 
+thresholds is “non-linear.”
+In non-linear relationships, two variables may be positively 
+correlated under one set of conditions, but show a lower or 
+even negative correlation under different conditions. 
+Traditional analysis can often overlook such relationships (due 
+to zero overall correlation) and mistakenly assumes there is 
+no definable relationship at all. Advanced statistical methods, 
+however, can capture and model non-linearity, which is an 
+important pre-requisite to developing a regime-based frame-
+work that adds value over time.
+Regime investing, therefore, requires us to develop a capability to 
+model relationships that are both state-dependent and non-linear.
+Modeling such relationships, however, is quite complex, for both 
+conceptual and practical purposes. For example, when one 
+looks at a simple scatter plot of the relationship between S&P 
+500 returns and GDP growth, at first there may not seem to be 
+much of a relationship at all, at least not a clearly linear one. 
+Applying a non-linear model, however, helps us make progress 
+in defining this relationship: as prospects for economic growth 
+improve, equity prices tend to rally, but beyond a certain 
+threshold, this relationship, too, starts to break down. 
+This relationship is illustrated in Exhibit 3, which plots S&P 
+500 returns and levels of real GDP growth.
+The chart shows that the impact of incrementally higher real 
+GDP on equity prices begins to decline beyond a certain 
+threshold. This could be explained, for example, as a reaction 
+of markets to price potentially tighter monetary policy or a 
+simple cyclical squeeze in profit margins, both of which can 
+lead to reduced corporate profits. In practice, equity markets 
+are impacted by more than just growth rates, but even the 
+simple example above is useful in illustrating the need to 
+model both the state-dependency and non-linearity of 
+financial market responses to shifting economic regimes. 
+
+
+===== PAGE 5 =====
+J.P. Morgan Asset Management  |  5 
+Finally, even with perfect economic foresight (i.e., correctly 
+forecasting the direction and magnitude of economic changes) 
+asset class response can be extremely difficult to capture. This 
+is particularly true when the economy and financial markets 
+experience new paradigms relative to history. In such 
+circumstances, the relationship between economic factors and 
+financial markets can change quickly, leading to under 
+performance of a regime-based investing approach developed 
+on historical data.
+So, it is important not to underestimate the complexity of the 
+challenges of foresight, or overstate its power to capture returns.
+Illustrating the Results of a Regime-based 
+Investment Approach
+Even given the complexity of the challenge, our work indicates 
+that regime-based investing may add value to portfolios over 
+time. And as a preface to our full white paper, we offer the 
+following preview of how regime analysis may be implemented 
+in an effort to improve portfolio results. (For a copy of the full 
+paper, please contact your J.P. Morgan client advisor.)
+Step 1: Develop the relationship between economic factors 
+and financial markets
+As a first step, our regime-based model develops the relation -
+ship between asset class performance relative to economic 
+“regimes,” which by definition include multiple factors that 
+may all be changing simultaneously. In calculating asset return 
+dynamics, we note that asset classes show unique sensitivities 
+to economic factors; every asset class does not respond to 
+every factor. For example, in modeling commodities, the pri-
+mary influence in our framework comes from real GDP growth 
+and inflation.
+The full equation for arriving at the expected commodity 
+returns within the framework as at December 31, 2010 is  
+as follows:
+Commodities return = 0.13 + 8.03 x max(0,∆Inflation - 
+1.87%) - 7.46 x max(0, 1.87% - ∆Inflation) + 1.24 x 
+max(0,∆Real GDP Growth + 2.65%) - 4.32 x max(0,- 2.64-
+∆Real GDP Growth) + 4.50 x max(0,-0.30% - ∆Inflation)
+R-Squared = 51.2%
+Exhibit 4 shows that the worse the accuracy of the economic 
+foresight, the lower the value added by the framework, as 
+measured by the average information coefficient.4
+However, developing imperfect economic foresight is not 
+necessarily straightforward given the confluence of factors 
+impacting the economy. These influences include, but are not 
+limited to, changing patterns in consumption, savings, 
+investments, taxation and fiscal policy on the broader 
+economy. In fact, we can glean some insight into the 
+necessary skill required to add value using a regime-based 
+approach by considering the average information coefficient 
+associated with imperfect foresight. At 0.41, this figure is high. 
+Typically upper quartile (macro) currency managers have an 
+information coefficient of 0.2, while upper quartile equity 
+managers have an information coefficient of 0.1, suggesting 
+that successful regime-based investing does require 
+considerable economic forecasting skills.
+4  The information coefficient calculates the correlation between actual and 
+forecasted returns, using our regime-based asset allocation framework. It 
+is often considered to be a measure of “skill” associated with the manager 
+or investment strategy. In our case, the correlation is calculated cross-asset 
+classes for each period and averaged over time to produce the average 
+information coefficient.
+average information coefficient
+Bad foresight -0.0494
+Imperfect foresight 0.4128
+Perfect foresight 0.4467
+Exaggerated foresight 0.3786
+Bad foresight = -2 × Actual economic conditions 
+Imperfect foresight = 0.5 × Actual economic conditions 
+Perfect foresight = Actual economic conditions 
+Exaggerated foresight = 2 × actual economic conditionsInformation coefficient
+-0.1
+0.0
+0.1
+0.2
+0.3
+0.4
+0.5
+Bad
+foresight
+Imperfect
+foresight
+Perfect
+foresight
+Exaggerated
+foresight
+Exhibit 4: avEragE inF ormation coEFFiciEnt oF rE gimE-baSEd  
+portF olio with varying dE grEES oF E conomic F orESight
+Source: J.P. Morgan Asset Management. For illustration purposes only.
+
+
+===== PAGE 6 =====
+Regime Change
+6  |  Regime Change: Implications of macro shifts on asset class and portfolio performance
+significant. This implies somewhat of a decoupling effect, 
+where demand from emerging markets supports commodity 
+prices, as long as the global economy avoids a deep recession. 
+The complete paper includes equations and explications of  
+the relationships between each of our five key asset classes 
+(U.S. Dollar, Treasuries, U.S. Equities, Commodities, and Credit) 
+and our four economic factors. Based on this work, we 
+develop similar conclusions about the state-dependent and 
+non-linear relationships between these other asset classes and 
+economic factors in our framework.
+Step 2: Model the behavior of different asset classes in 
+different economic regimes
+Once we have developed relationships between our economic 
+factors and asset classes, we can model the regime-dependent 
+returns of various asset classes. Exhibit 6 outlines six possible 
+economic regimes defined in terms of U.S. real GDP growth, 
+headline inflation, Federal Funds rate and unemployment and 
+ranks five dollar-denominated asset classes for their relative per-
+formance potential, from best to worst, within those regimes.
+It is clear from this analysis that shifts in asset class leader -
+ship are so broad and varied that no static portfolio weighting 
+could be optimal across all regimes. Just on an intuitive basis, 
+regime-based asset allocation appears to be the most logical 
+response to shifting economic regimes.
+Step 3: Assess the impact of different economic regimes at 
+the total portfolio level and optimize portfolio allocations 
+depending on economic insight and risk constraints
+The next step is to assess the impact of different economic 
+regimes at the total portfolio level and optimize portfolio 
+allocations depending on economic insight and the investor’s risk 
+Our equations support a positive relationship between  
+commodities and changes in real GDP growth, but the  
+relationship is significantly less positive beyond a threshold of 
+-2.65%. This is illustrated in Exhibit 5.
+This threshold effect can be explained in a number of ways, 
+one of which is the growing influence of emerging markets on 
+commodity markets. For example, many economists argue 
+that emerging markets have experienced a decoupling effect 
+from developed markets (particularly the U.S.). In other words, 
+barring a severe global recession, emerging markets are likely 
+to continue on the path of robust economic growth. In such 
+instances, their influence on commodity markets, amongst 
+others, is likely to grow, not dwindle.
+Our analysis supports this theory. In fact, our equation sug -
+gests that the influence of U.S. real GDP growth on commodi -
+ties is significantly negative below a threshold of -2.65%. In 
+other words, U.S. real GDP growth would have to fall by more 
+than 2.65% year over year, i.e., a severe (possibly global) 
+recession, to significantly detract from commodity returns. 
+When this does not happen, i.e., during normal times or mild 
+recessions, the impact of U.S. growth on commodities is less 
+Exhibit 5: c ommoditiES v S. ∆rEal gdp growth
+Source: J.P. Morgan Asset Management. For illustration purposes only.
+-35
+-30
+-25
+-20
+-15
+-10
+-5
+0
+5
+10
+15
+-8.8 -5.2 -1.6 2.1 5.7
+Commodity return (%)
+∆ Real GDP growth (%)
+Growth of commodity returns slows
+Exhibit 6: impliEd aSSEt claSS rElativE pErF ormancE undEr diFFErEnt E conomic rE gimES to yEar Ending dE cEmbEr 2011
+Source: J.P. Morgan Asset Management. For illustration purposes only.
+From to
+Scenario
+year ended  
+december 2010
+Severe  
+recession r ecession
+Stagnant 
+economy
+moderate  
+recovery Strong recovery
+Strong recovery 
+with inflation
+1. Best performer Commodities U.S. Dollar Treasuries Treasuries U.S. Equities U.S. Equities Commodities
+2. Above median  
+    performer U.S. Equities Treasuries U.S. Dollar Credit Credit Commodities U.S. Dollar
+3. Median Credit Credit Credit U.S. Dollar Treasuries Credit Treasuries
+4. Below median  
+    performer Treasuries U.S. Equities U.S. Equities U.S. Equities Commodities Treasuries U.S. Equities
+5. Worst performer U.S. Dollar Commodities Commodities Commodities U.S. Dollar U.S. Dollar Credit
+  
+
+
+===== PAGE 7 =====
+J.P. Morgan Asset Management  |  7 
+constraints. And our finding is that, for a hypothetical diversified 
+portfolio, regime-based asset allocation has the potential to 
+significantly increase portfolio efficiency. Exhibit 7 compares the 
+results of a static benchmark-based policy to those of a regime-
+based policy under the regimes outlined above.
+The hypothetical portfolio is most vulnerable to “tail” scenar-
+ios of a severe recession or an overheated recovery with infla -
+tionary pressures. In both these instances, the real return 
+from the portfolio is negative. The current portfolio is best 
+structured for a period of mild to normal growth. 
+In each case, our model adjusts asset allocation to target 
+optimal efficiency under each regime. The optimized portfolios 
+(Exhibit 8) for each regime overweight those asset classes 
+most likely to perform well in the given economic environment 
+and underweight those most likely to perform poorly, allowing 
+for the risk constraints specified by the investor.
+Purely measured by portfolio returns, the regime-based 
+portfolio produces superior results, especially at the 
+“tails”—i.e., extreme economic scenarios where traditional, 
+Exhibit 7: impli Ed port Folio p Er Formanc E und Er di FFE r Ent 
+Economic rE gimES
+Source: J.P. Morgan Asset Management. For illustration purposes only.
+-8
+-6
+-4
+-2
+0
+2
+4
+6
+8
+10
+12
+Severe
+recession
+Recession Stagnant
+economy
+Moderate
+recovery
+Strong
+recovery
+Strong recovery
+w/inflation
+Real portfolio return (%)
+Current portfolio returns Regime-based portfolio returns
+static approaches show the least resilience. In recessionary or 
+stagnant growth scenarios, the regime-based portfolios are 
+very conservative in nature, while in moderate to strong 
+recovery scenarios, the portfolios are aggressive. In an 
+inflationary scenario, the regime-based portfolio is slightly 
+more conservative than the current portfolio.
+Caveats and Conclusions
+It is important to note here we do not advocate abandoning 
+benchmark-based investing. Institutional investors set their 
+portfolios’ strategic benchmarks based on a desire to meet 
+liabilities and other important strategic goals. Within these 
+broad objectives, however, we argue that investors may be 
+handicapping their portfolios by being regime agnostic, which 
+is what a strategic benchmark is. 
+Instead, we believe that investors would benefit from being 
+“regime aware” and allowing themselves the freedom to 
+adjust allocations around the strategic benchmark in response 
+to shifts in economic regimes. We believe, based on our 
+analysis, that regime-based investing can offer a compelling 
+alternative to the static “all-season” approach.
+Limitations of reliance
+It should be noted that a quantitative framework is only one 
+input into the asset allocation process and cannot replace the 
+professional skill and judgment necessary to arrive at an 
+appropriate strategy. The importance of allowing for subjective—
+and often qualitative—factors in decision making remains. 
+Further, there is always an explicit need to account for the 
+investor’s specific circumstances, including liabilities, when 
+arriving at an appropriate portfolio allocation.
+(%)
+Strategic  
+allocation 
+Severe 
+recession r ecession
+Stagnant 
+economy
+moderate
+ recovery
+Strong
+ recovery
+Strong recovery 
+with inflation
+Commodities 15.0 0.0 0.0 0.0 0.0 18.0 30.0
+Treasuries 15.0 30.0 30.0 30.0 15.0 15.0 15.0
+Credit 15.0 15.0 15.0 30.0 22.0 15.0 0.0
+U.S. Equities 40.0 25.0 25.0 25.0 47.0 43.0 25.0
+U.S. Dollar 15.0 30.0 30.0 15.0 8.0 8.9 30.0
+Exhibit 8: allocationS to S tratE gic portF olio and Each oF thE rE gimE portF olioS
+Source: J.P. Morgan Asset Management. For illustration purposes only.
+
+
+===== PAGE 8 =====
+Regime Change
+jpmorgan.com/institutional
+IMPORTANT DISCLAIMER
+This material is intended to report solely on the investment strategies and opportunities identified by J.P. Morgan Asset Management. Additional information is available 
+upon request. Information herein is believed to be reliable but J.P. Morgan Asset Management does not warrant its completeness or accuracy. Opinions and estimates 
+constitute our judgment and are subject to change without notice. Past performance is not indicative of future results. The material is not intended as an offer or solicita-
+tion for the purchase or sale of any financial instrument. J.P. Morgan Asset Management and/or its affiliates and employees may hold a position or act as market maker in 
+the financial instruments of any issuer discussed herein or act as underwriter, placement agent, advisor or lender to such issuer. The investments and strategies discussed 
+herein may not be suitable for all investors. The material is not intended to provide, and should not be relied on for, accounting, legal or tax advice, or investment recom-
+mendations. Changes in rates of exchange may have an adverse effect on the value, price or income of investments.
+All case studies are shown for illustrative purposes only and should not be relied upon as advice or interpreted as a recommendation. Results shown are not meant to be 
+representative of actual investment results. Any securities mentioned throughout the presentation are shown for illustrative purposes only and should not be interpreted 
+as recommendations to buy or sell. A full list of firm recommendations for the past year is available upon request. 
+J.P. Morgan Asset Management is the brand for the asset management business of JPMorgan Chase & Co. and its affiliates worldwide. This communication is issued by the 
+following entities: in the United Kingdom by JPMorgan Asset Management (UK) Limited which is regulated by the Financial Services Authority; in other EU jurisdictions by 
+JPMorgan Asset Management (Europe) S.à r.l., Issued in Switzerland by J.P. Morgan (Suisse) SA, which is regulated by the Swiss Financial Market Supervisory Authority 
+FINMA; in Hong Kong by JF Asset Management Limited, or JPMorgan Funds (Asia) Limited, or JPMorgan Asset Management Real Assets (Asia) Limited, all of which are 
+regulated by the Securities and Futures Commission; in Singapore by JPMorgan Asset Management (Singapore) Limited which is regulated by the Monetary Authority of 
+Singapore; in Japan by JPMorgan Securities Japan Limited which is regulated by the Financial Services Agency, in Australia by JPMorgan Asset Management (Australia) 
+Limited which is regulated by the Australian Securities and Investments Commission and in the United States by J.P. Morgan Investment Management Inc. which is regu-
+lated by the Securities and Exchange Commission. Accordingly this document should not be circulated or presented to persons other than to professional, institutional 
+or wholesale investors as defined in the relevant local regulations. The value of investments and the income from them may fall as well as rise and investors may not get 
+back the full amount invested.
+JPMorgan Distribution Services, Inc., member of FINRA/SIPC.
+270 Park Avenue, New York, NY 10017
+© 2011 JPMorgan Chase & Co.  |  WP_Regimes    
+a uthorS
+Jianxiong Sun
+Analyst
+Strategic Investment Advisory 
+Group (SIAG)
+Abdullah Z. Sheikh, FIA, FSA 
+Director of Research
+Strategic Investment Advisory 
+Group (SIAG)

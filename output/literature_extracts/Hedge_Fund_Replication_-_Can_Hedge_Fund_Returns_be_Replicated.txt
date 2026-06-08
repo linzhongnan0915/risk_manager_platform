@@ -1,0 +1,3144 @@
+
+
+===== PAGE 1 =====
+JOIM
+www.joim.com
+JOURNAL OF INVESTMENT MANAGEMENT, V ol. 5, No. 2, (2007), pp. 5–45
+© JOIM 2007
+CAN HEDGE-FUND RETURNS BE REPLICATED?: THE LINEAR CASE ⋆
+Jasmina Hasanhodzica and Andrew W . Lob,∗
+In contrast to traditional investments such as stocks and bonds, hedge-fund returns have
+more complex risk exposures that yield additional and complementary sources of risk premia.
+This raises the possibility of creating passive replicating portfolios or “clones” using liquid
+exchange-traded instruments that provide similar risk exposures at lower cost and with
+greater transparency. By using monthly returns data for 1610 hedge funds in the TASS
+database from 1986 to 2005, we estimate linear factor models for individual hedge funds
+using six common factors, and measure the proportion of the funds’ expected returns and
+volatility that are attributable to such factors. For certain hedge-fund style categories, we
+ﬁnd that a signiﬁcant fraction of both can be captured by common factors corresponding to
+liquid exchange-traded instruments. While the performance of linear clones is often inferior
+to their hedge-fund counterparts, they perform well enough to warrant serious consideration
+as passive, transparent, scalable, and lower-cost alternatives to hedge funds.
+⋆The views and opinions expressed in this paper are those of
+the authors only, and do not necessarily represent the views
+and opinions of AlphaSimplex Group, MIT , or any of their
+afﬁliates and employees. The authors make no representations
+or warranty, either expressed or implied, as to the accuracy or
+completeness of the information contained in this paper, nor
+are they recommending that this paper can serve as the basis
+for any investment decision—this paper is for information
+purposes only.
+a Department of Electrical Engineering and Computer Sci-
+ence; Laboratory for Financial Engineering, MIT , Cambridge,
+MA, USA
+bSloan School of Management; Laboratory for Financial Engi-
+neering, MIT , Cambridge, MA, USA and AlphaSimplex
+Group, LLC
+1 Introduction
+As institutional investors take a more active inter-
+est in alternative investments, a signiﬁcant gap has
+emerged between the culture and expectations of
+those investors and hedge-fund managers. Pension
+plan sponsors typically require transparency from
+their managers and impose a number of restrictions
+in their investment mandates because of regula-
+tory requirements such as ERISA rules; hedge-fund
+managers rarely provide position-level transparency
+∗Corresponding author. MIT Sloan School, 50 Memo-
+rial Derive, E52–454, Cambridge 02142–1347, MA, USA.
+E-mail: alo@mit.edu
+SECOND QUARTER 2007 5
+
+
+===== PAGE 2 =====
+6J ASMINA HASANHODZIC AND ANDREW W. LO
+and bristle at any restrictions on their investment
+process because restrictions often hurt performance.
+Plan sponsors require a certain degree of liquidity
+in their assets to meet their pension obligations,
+and also desire signiﬁcant capacity because of their
+limited resources in managing large pools of assets;
+hedge-fund managers routinely impose lock-ups of
+1–3 years, and the most successful managers have
+the least capacity to offer, in many cases return-
+ing investors’ capital once they make their personal
+fortunes. And as ﬁduciaries, plan sponsors are
+hypersensitive to the outsize fees that hedge funds
+charge, and are concerned about misaligned incen-
+tives induced by performance fees; hedge-fund
+managers argue that their fees are fair compensa-
+tion for their unique investment acumen, and at
+least for now, the market seems to agree.
+This cultural gap raises the natural question of
+whether it is possible to obtain hedge-fund-like
+returns without investing in hedge funds. In short,
+can hedge-fund returns be “cloned”?
+In this paper, we provide one answer to this
+challenge by constructing “linear clones” of indi-
+vidual hedge funds in the TASS Hedge Fund
+Database. These are passive portfolios of com-
+mon risk factors like the S&P 500 and the
+US Dollar Indexes, with portfolio weights esti-
+mated by regressing individual hedge-fund returns
+on the risk factors. If a hedge fund generates part
+of its expected return and risk proﬁle from certain
+common risk factors, then it may be possible to
+design a low-cost passive portfolio—not an active
+dynamic trading strategy—that captures some of
+that fund’s risk/reward characteristics by taking on
+just those risk exposures. For example, if a particular
+long/short equity hedge fund is 40% long growth
+stocks, it may be possible to create a passive port-
+folio that has similar characteristics, for example,
+a long-only position in a passive growth portfolio
+coupled with a 60% short position in stock-index
+futures.
+The magnitude of hedge-fund alpha that can be
+captured by a linear clone depends, of course, on
+how much of a fund’s expected return is driven
+by common risk factors versus manager-speciﬁc
+alpha. This can be measured empirically. While
+portable alpha strategies have become fashionable
+lately among institutions, our research suggests
+that for certain classes of hedge-fund strategies,
+portable beta may be an even more important
+source of untapped expected returns and diversiﬁ-
+cation. In particular, in contrast to previous studies
+employing more complex factor-based models of
+hedge-fund returns, we use six factors that corre-
+spond to basic sources of risk and, consequently,
+expected return: the stock market, the bond mar-
+ket, currencies, commodities, credit, and volatility.
+These factors are also chosen because, with the
+exception of volatility, each of them is tradable via
+liquid exchange-traded securities such as futures or
+forward contracts.
+Using standard regression analysis we decompose
+the expected returns of a sample of 1610 indi-
+vidual hedge funds from the TASS Hedge Fund
+Live Database into factor-based risk premia and
+manager-speciﬁc alpha, and we ﬁnd that for certain
+hedge-fund style categories, a signiﬁcant fraction of
+the funds’ expected returns is due to risk premia.
+For example, in the category of Convertible Arbi-
+trage funds, the average percentage contribution of
+the US Dollar Index risk premium, averaged across
+all funds in this category, is 67%. While estimates
+of manager-speciﬁc alpha are also quite signiﬁcant
+in most cases, these results suggest that at least a
+portion of a hedge fund’s expected return can be
+obtained by bearing factor risks.
+T o explore this possibility, we construct linear clones
+using ﬁve of the six factors (we omit volatility
+because the market for volatility swaps and futures
+is still developing), and compare their performance
+to the original funds. For certain categories such as
+Equity Market Neutral, Global Macro, Long/Short
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 3 =====
+REPLICATING HEDGE-FUND RETURNS 7
+Equity Hedge, Managed Futures, Multi-Strategy,
+and Fund of Funds, linear clones have comparable
+performance to their fund counterparts, but for
+other categories such as Event Driven and Emerg-
+ing Markets, clones do not perform nearly as well.
+However, in all cases, linear clones are more liquid
+(as measured by their serial correlation coefﬁcients),
+more transparent and scalable (by construction),
+and with correlations to a broad array of market
+indexes that are similar to those of the hedge funds
+on which they are based. For these reasons, we
+conclude that hedge-fund replication, at least for
+certain types of funds, is both possible and, in some
+cases, worthy of serious consideration.
+We begin in Section 2 with a brief review of the
+literature on hedge-fund replication, and provide
+two examples that motivate this endeavor. In Sec-
+tion 3, we present a linear regression analysis of
+hedge-fund returns from the TASS Hedge Fund
+Live Database, with which we decompose the funds’
+expected returns into risk premia and manager-
+speciﬁc alpha. These results suggest that for certain
+hedge-fund styles, linear clones may yield reason-
+ably compelling investment performance, and we
+explore this possibility directly in Section 4. We
+conclude in Section 5.
+2 Motivation
+In a series of recent papers, Kat and Palaro
+(2005, 2006a,b) argued that sophisticated dynamic
+trading strategies involving liquid futures con-
+tracts can replicate many of the statistical prop-
+erties of hedge-fund returns. More generally,
+Bertsimas et al. (2001) have shown that securi-
+ties with very general payoff functions (like hedge
+funds, or complex derivatives) can be syntheti-
+cally replicated to an arbitrary degree of accuracy
+by dynamic trading strategies—called “epsilon-
+arbitrage” strategies—involving more liquid instru-
+ments. While these results are encouraging for the
+hedge-fund replication problem, the replicating
+strategies are quite involved and not easily imple-
+mented by the typical institutional investor. Indeed,
+some of the derivatives-based replication strategies
+may be more complex than the hedge-fund strate-
+gies they intend to replicate, defeating the very
+purpose of replication.
+1
+The motivation for our study comes, instead, from
+Sharpe’s (1992) asset-class factor models in which he
+proposes to decompose a mutual fund’s return into
+two distinct components: asset-class factors such as
+large-cap stocks, growth stocks, and intermediate
+government bonds, which he interprets as “style,”
+and an uncorrelated residual that he interprets as
+“selection.” This approach was applied by Fung and
+Hsieh (1997a) to hedge funds, but there the factors
+were derived statistically from a principal compo-
+nents analysis of the covariance matrix of their
+sample of 409 hedge funds and CTAs. While such
+factors may yield high in-sample R
+2s, they suffer
+from signiﬁcant over-ﬁtting bias and also lack eco-
+nomic interpretation, which is one of the primary
+motivations for Sharpe’s (1992) decomposition.
+Several authors have estimated factor models for
+hedge funds using more easily interpretable factors
+such as fund characteristics and indexes (Schneeweis
+and Spurgin, 1998; Liang, 1999; Edwards and
+Caglayan, 2001; Capocci and Hubner, 2004; Hill,
+et al. , 2004), and the returns to certain options-
+based strategies and other basic portfolios (Fung
+and Hsieh, 2001, 2004; Agarwal and Naik 2000a,b,
+2004).
+However, the most direct application of Sharpe’s
+(1992) analysis to hedge funds is found in Ennis and
+Sebastian (2003). They provide a thorough style
+analysis of the HFR Fund of Funds index, and con-
+clude that funds of funds are not market neutral
+and although they do exhibit some market-timing
+abilities, “…, the performance of hedge funds has
+not been good enough to warrant their inclusion
+in balanced portfolios. The high cost of investing
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 4 =====
+8J ASMINA HASANHODZIC AND ANDREW W. LO
+in funds of funds contributes to this result” (Ennis
+and Sebastian, 2003, p. 111). This conclusion is the
+starting point for our study of linear clones.
+Before turning to our empirical analysis of individ-
+ual hedge-fund returns, we provide two concrete
+examples that span the extremes of the hedge-fund
+replication problem. For one hedge-fund strategy,
+we show that replication can be accomplished eas-
+ily, and for another strategy, we ﬁnd replication to
+be almost impossible using linear models.
+2.1 Capital Decimation Partners
+The ﬁrst example is a hypothetical strategy proposed
+by Lo (2001) called “Capital Decimation Partners”
+(CDP), which yields an enviable track record that
+many investors would associate with a successful
+hedge fund: a 43.1% annualized mean return and
+20% annualized volatility, implying a Sharpe ratio
+of 2.15,
+2 and with only 6 negative months over the
+96-month simulation period from January 1992 to
+December 1999 (see T able 1). A closer inspection of
+this strategy’s monthly returns in T able 2 yields few
+T able 1 Performance summary of simulated
+short-put-option strategy consisting of short-
+selling out-of-the-money S&P 500 put options
+with strikes approximately 7% out of the money
+and with maturities less than or equal to 3
+months, from January 1992 to December 1999.
+Statistic S&P500 CDP
+Monthly mean 1.4% 3.6%
+Monthly SD 3.6% 5.8%
+Minimum month − 8.9% − 18.3%
+Maximum month 14.0% 27.0%
+Annual Sharpe ratio 1.39 2.15
+# Negative months 36 6
+Correlation to S&P 500 100% 61%
+Return Since Inception 367% 2560%
+surprises for the seasoned hedge-fund investor—the
+most challenging period for CDP was the summer
+of 1998 during the L TCM crisis, when the strategy
+suffered losses of − 18.3% and − 16.2% in August
+and September, respectively. But those investors
+courageous enough to have maintained their CDP
+investment during this period were rewarded with
+returns of 27.0% in October and 22.8% in Novem-
+ber. Overall, 1998 was the second-best year for
+CDP , with an annual return of 87.3%.
+So what is CDP’s secret? The investment strategy
+summarized in T ables 1 and 2 involves shorting out-
+of-the-money S&P 500 (SPX) put options on each
+monthly expiration date for maturities less than
+or equal to 3 months, and with strikes approx-
+imately 7% out of the money. According to Lo
+(2001), the number of contracts sold each month
+is determined by the combination of: (1) CBOE
+margin requirements
+3; (2) an assumption that we
+are required to post 66% of the margin as collateral4;
+and (3) $10M of initial risk capital. The essence
+of this strategy is the provision of insurance. CDP
+investors receive option premia for each option con-
+tract sold short, and as long as the option contracts
+expire out of the money, no payments are necessary.
+Therefore, the only time CDP experiences losses
+is when its put options are in the money, that is,
+when the S&P 500 declines by more than 7% dur-
+ing the life of a given option. From this perspective,
+the handsome returns to CDP investors seem more
+justiﬁable—in exchange for providing downside
+protection, CDP investors are paid a risk premium
+in the same way that insurance companies receive
+regular payments for providing earthquake or hur-
+ricane insurance. Given the relatively infrequent
+nature of 7% losses, CDP’s risk/reward proﬁle can
+seem very attractive in comparison to more tradi-
+tional investments, but there is nothing unusual
+or unique about CDP . Investors willing to take
+on “tail risk”—the risk of rare but severe events—
+will be paid well for this service (consider how
+much individuals are willing to pay each month for
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 5 =====
+REPLICATING HEDGE-FUND RETURNS 9
+T able 2 Monthly returns of simulated short-put-option strategy consisting of shortselling out-of-the-money S&P 500 put options
+with strikes approximately 7% out of the money and with maturities less than or equal to 3 months, from January 1992 to December
+1999.
+1992 1993 1994 1995 1996 1997 1998 1999
+Month SPX CDP SPX CDP SPX CDP SPX CDP SPX CDP SPX CDP SPX CDP SPX CDP
+Jan 8.2 8.1 − 1.2 1.8 1.8 2.3 1.3 3.7 − 0.7 1.0 3.6 4.4 1.6 15.3 5.5 10.1
+Feb − 1.8 4.8 − 0.4 1.0 − 1.5 0.7 3.9 0.7 5.9 1.2 3.3 6.0 7.6 11.7 − 0.3 16.6
+Mar 0.0 2.3 3.7 3.6 0.7 2.2 2.7 1.9 − 1.0 0.6 − 2.2 3.0 6.3 6.7 4.8 10.0
+Apr 1.2 3.4 − 0.3 1.6 − 5.3 − 0.1 2.6 2.4 0.6 3.0 − 2.3 2.8 2.1 3.5 1.5 7.2
+May − 1.4 1.4 − 0.7 1.3 2.0 5.5 2.1 1.6 3.7 4.0 8.3 5.7 − 1.2 5.8 0.9 7.2
+Jun − 1.6 0.6 − 0.5 1.7 0.8 1.5 5.0 1.8 − 0.3 2.0 8.3 4.9 − 0.7 3.9 0.9 8.6
+Jul 3.0 2.0 0.5 1.9 − 0.9 0.4 1.5 1.6 − 4.2 0.3 1.8 5.5 7.8 7.5 5.7 6.1
+Aug − 0.2 1.8 2.3 1.4 2.1 2.9 1.0 1.2 4.1 3.2 − 1.6 2.6 − 8.9 − 18.3 − 5.8 − 3.1
+Sep 1.9 2.1 0.6 0.8 1.6 0.8 4.3 1.3 3.3 3.4 5.5 11.5 − 5.7 − 16.2 − 0.1 8.3
+Oct − 2.6 − 3.0 2.3 3.0 − 1.3 0.9 0.3 1.1 3.5 2.2 − 0.7 5.6 3.6 27.0 − 6.6 − 10.7
+Nov 3.6 8.5 − 1.5 0.6 − 0.7 2.7 2.6 1.4 3.8 3.0 2.0 4.6 10.1 22.8 14.0 14.5
+Dec 3.4 1.3 0.8 2.9 − 0.6 10.0 2.7 1.5 1.5 2.0 − 1.7 6.7 1.3 4.3 − 0.1 2.4
+Year 14.0 38.2 5.7 23.7 − 1.6 33.6 34.3 22.1 21.5 28.9 26.4 84.8 24.5 87.3 20.6 105.7
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 6 =====
+10 J ASMINA HASANHODZIC AND ANDREW W. LO
+their homeowner’s, auto, health, and life insurance
+policies). CDP involves few proprietary elements,
+and can be implemented by most investors, hence
+this is one example of a hedge-fund-like strategy
+that can easily be cloned.
+2.2 Capital Multiplication Partners
+Consider now the case of “Capital Multiplication
+Partners” (CMP), a hypothetical fund based on a
+dynamic asset-allocation strategy between the S&P
+500 and 1-month US T reasury Bills, where the
+fund manager can correctly forecast which of the
+two assets will do better in each month and invests
+the fund’s assets in the higher-yielding asset at the
+start of the month.
+5 Therefore, the monthly return
+of this perfect market-timing strategy is simply the
+larger of the monthly return of the S&P 500 and
+T -Bills. The source of this strategy’s alpha is clear:
+Merton (1981) observes that perfect market-timing
+is equivalent to a long-only investment in the S&P
+500 plus a put option on the S&P 500 with a strike
+price equal to the T -Bill return. Therefore, the eco-
+nomic value of perfect market-timing is equal to the
+sum of monthly put-option premia over the life of
+the strategy. And there is little doubt that such a
+strategy contains signiﬁcant alpha: a $1 investment
+in CMP in January 1926 grows to $23,143,205,448
+T able 3 Performance summary of simulated monthly perfect market-timing
+strategy between the S&P 500 and 1-month US T reasury bills, and a passive
+linear clone, from January 1926 to December 2004.
+Statistic S&P 500 T -Bills CMP Clone
+Monthly mean 1.0% 0.3% 2.6% 0.7%
+Monthly SD 5.5% 0.3% 3.6% 3.0%
+Minimum month − 29.7% − 0.1% − 0.1% − 16.3%
+Maximum month 42.6% 1.4% 42.6% 23.4%
+Annual Sharpe ratio 0.63 4.12 2.50 0.79
+# Negative months 360 12 10 340
+Correlation to S&P 500 100% − 2% 84% 100%
+Growth of $1 since inception $3,098 $18 $2.3 × 10
+10 $429
+by December 2004! T able 3 provides a more detailed
+performance summary of CMP which conﬁrms
+its remarkable characteristics—CMP’s Sharpe ratio
+of 2.50 exceeds that of Warren Buffett’s Berkshire
+Hathaway, arguably the most successful pooled
+investment vehicle of all time!
+6
+It should be obvious to even the most naive investor
+that CMP is a fantasy because no one can time the
+market perfectly. Therefore, attempting to replicate
+such a strategy with exchange-traded instruments
+seems hopeless. But suppose we try to replicate
+it anyway—how close can we come? In particu-
+lar, suppose we attempt to relate CMP’s monthly
+returns to the monthly returns of the S&P 500
+by ﬁtting a simple linear regression (see Figure 1).
+The option-like nature of CMP’s perfect market-
+timing strategy is apparent in Figure 1’s scatter
+of points, and visually, it is obvious that the lin-
+ear regression does not capture the essence of this
+inherently nonlinear strategy. However, the formal
+measure of how well the linear regression ﬁts the
+data, the “
+R
+2
+,” is 70.3% in this case, which suggests
+a very strong linear relationship indeed. But when
+the estimated linear regression is used to construct
+a ﬁxed portfolio of the S&P 500 and 1-month
+T -Bills, the results are not nearly as attractive as
+CMP’s returns, as T able 3 shows.
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 7 =====
+REPLICATING HEDGE-FUND RETURNS 11
+Regression of CMP Returns on S&P 500 Returns
+January 1926 to December 2004
+y = 0.5476x + 0.0206
+R2 = 0.7027
+-20%
+-10%
+0%
+10%
+20%
+30%
+40%
+50%
+-40% -30% -20% -10% 0% 10% 20% 30% 40% 50%
+S&P 500 Return
+CMP Return
+CMP vs. S&P 500  Returns Linear (CMP vs. S&P 500  Returns)
+Figure 1 Scatter plot of simulated monthly returns of a perfect market-timing strategy between the S&P
+500 and 1-month US T reasury bills, against monthly returns of the S&P 500, from January 1926 to
+December 2004.
+This example underscores the difﬁculty in replicat-
+ing certain strategies with genuine alpha using linear
+clones, and cautions against using the
+R
+2
+as the only
+metric of success. Despite the high R
+2
+achieved by
+the linear regression of CMP’s returns on the mar-
+ket index, the actual performance of the linear clone
+falls far short of the strategy because a linear model
+will never be able to capture the option-like payoff
+structure of the perfect market-timer.
+3 Linear regression analysis
+T o explore the full range of possibilities for repli-
+cating hedge-fund returns illustrated by the two
+extremes of CDP and CMP , we investigated the
+characteristics of a sample of individual hedge funds
+drawn from the TASS Hedge Fund Database. The
+database is divided into two parts: “Live” and
+“Graveyard” funds. Hedge funds that are in the
+“Live” database are considered to be active as of the
+end of our sample period, September 2005.
+7 We
+conﬁne our attention to funds in the Live database
+since we wish to focus on the most current set of
+risk exposures in the hedge-fund industry, and we
+acknowledge that the Live database suffers from
+survivorship bias.
+8
+However, the importance of such a bias for our
+application is tempered by two considerations.
+First, many successful funds leave the sample as well
+as the poor performers, reducing the upward bias
+in expected returns. In particular, Fung and Hsieh
+(2000) estimated the magnitude of survivorship
+bias to be 3.00% per year, and Liang’s (2000)
+estimate is 2.24% per year. Second, the focus of
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 8 =====
+12 J ASMINA HASANHODZIC AND ANDREW W. LO
+our study is on the relative performance of hedge
+funds versus relatively passive portfolios of liquid
+securities, and as long as our cloning process is not
+selectively applied to a peculiar subset of funds in
+the TASS database, any survivorship bias should
+impact both funds and clones identically, leaving
+their relative performance unaffected.
+Of course, other biases plague the TASS database
+such as backﬁll bias (including funds with return
+histories that start before the date of inclusion),
+9
+selection bias (inclusion in the database is volun-
+tary, hence only funds seeking new investors are
+included),
+10 and other potential biases imparted by
+the process by which TASS decides which funds to
+include and which to omit (part of this process is
+qualitative). As with survivorship bias, the hope is
+that the impact of these additional biases will be
+similar for clones and funds, leaving relative com-
+parisons unaffected. Unfortunately, there is little to
+be done about such biases other than to acknowl-
+edge their existence, and to interpret the outcome
+of our empirical analysis with an extra measure of
+caution.
+Although the TASS Hedge Fund Live database starts
+in February 1977, we limit our analysis to the sam-
+ple period from February 1986 to September 2005
+because this is the timespan for which we have
+complete data for all of our risk factors. Of these
+funds, we drop those that: (i) do not report net-
+of-fee returns
+11; (ii) report returns in currencies
+other than the US dollar; (iii) report returns less
+frequently than monthly; (iv) do not provide assets
+under management or only provide estimates; and
+(v) have fewer than 36 monthly returns. These ﬁlters
+yield a ﬁnal sample of 1610 funds.
+3.1 Summary statistics
+TASS classiﬁes funds into one of the 11 different
+investment styles, listed in T able 4 and described
+in Appendix A, of which 10 correspond exactly to
+the CSFB/T remont sub-index deﬁnitions.
+12 T able 4
+also reports the number of funds in each category
+for our sample, as well as summary statistics for
+the individual funds and for the equal-weighted
+portfolio of funds in each of the categories. The
+category counts show that the funds are not evenly
+distributed across investment styles, but are con-
+centrated among ﬁve categories: Long/Short Equity
+Hedge (520), Fund of Funds (355), Event Driven
+(169), Managed Futures (114), and Emerging Mar-
+kets (102). T ogether, these ﬁve categories account
+for 78% of the 1610 funds in our sample. The
+performance summary statistics in T able 4 under-
+score the reason for the growing interest in hedge
+funds in recent years—double-digit cross-sectional
+average returns for most categories with aver-
+age volatility lower than that of the S&P 500,
+implying average annualized Sharpe ratios rang-
+ing from a low of 0.25 for Dedicated Short Bias
+funds to a high of 2.70 for Convertible Arbitrage
+funds.
+Another feature of the data highlighted by T able 4
+is the large positive average return-autocorrelations
+for funds in Convertible Arbitrage (42.2%), Emerg-
+ing Markets (18.0%), Event Driven (22.2%),
+Fixed Income Arbitrage (22.1%), Multi-Strategy
+(21.0%), and Fund of Funds (23.2%) categories.
+Lo (2001) and Getmansky et al. (2004) have
+shown that such high serial correlation in hedge-
+fund returns is likely to be an indication of
+illiquidity exposure. There is, of course, nothing
+inappropriate about hedge funds taking on liq-
+uidity risk—indeed, this is a legitimate and often
+lucrative source of expected return—as long as
+investors are aware of such risks, and not mis-
+led by the siren call of attractive Sharpe ratios.
+13
+But illiquidity exposure is typically accompanied
+by capacity limits, and we shall return to this
+issue when we compare the properties of hedge
+funds to more liquid alternatives such as linear
+clones.
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 9 =====
+REPLICATING HEDGE-FUND RETURNS 13
+T able 4 Summary statistics for TASS Live hedge funds included in our sample from February 1986 to September 2005.
+Annualized performance
+Annualized Annualized SD Annualized Ljung-Box of equal-weighted
+mean (%) (%) Sharpe ratio ρ1 (%) p-value (%) portfolio of funds
+Sample
+Category size Mean SD Mean SD Mean SD Mean SD Mean SD Mean (%) SD (%) Sharpe
+Convertible arbitrage 82 8.41 5.11 6.20 5.28 2.70 5.84 42.2 17.3 11.0 22.2 11.07 5.36 2.07
+Dedicated short bias 10 5.98 4.77 28.27 10.05 0.25 0.24 5.5 12.6 24.2 20.3 6.40 23.23 0.28
+Emerging markets 102 20.41 13.01 22.92 15.16 1.42 2.11 18.0 12.4 36.3 30.2 22.34 17.71 1.26
+Equity market neutral 83 8.09 4.77 7.78 5.84 1.44 1.20 9.1 23.0 32.6 29.7 12.83 6.23 2.06
+Event driven 169 13.03 8.65 8.40 8.09 1.99 1.37 22.2 17.6 27.0 29.3 13.47 4.37 3.08
+Fixed income arbitrage 62 9.50 4.54 6.56 4.41 2.05 1.48 22.1 17.6 35.9 35.2 10.48 3.58 2.93
+Global macro 54 11.38 6.16 11.93 6.10 1.07 0.58 5.8 12.2 43.1 32.5 14.91 8.64 1.73
+Long/Short equity hedge 520 14.59 8.14 15.96 9.06 1.06 0.58 12.8 14.9 36.0 30.5 16.35 11.84 1.38
+Managed futures 114 13.64 9.35 21.46 12.07 0.67 0.39 2.5 10.2 40.1 31.5 15.96 19.24 0.83
+Multi-strategy 59 10.79 5.22 8.72 9.70 1.86 1.03 21.0 20.1 28.2 30.1 14.59 5.78 2.52
+Fund of funds 355 8.25 3.73 6.36 4.47 1.66 0.86 23.2 15.0 27.1 26.3 11.93 7.48 1.59
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 10 =====
+14 J ASMINA HASANHODZIC AND ANDREW W. LO
+3.2 Factor model speciﬁcation
+T o determine the explanatory power of com-
+mon risk factors for hedge funds, we perform
+a time-series regression for each of the 1610
+hedge funds in our sample, regressing the hedge
+fund’s monthly returns on the following six factors:
+(1) USD: the US Dollar Index return; (2) BOND:
+the return on the Lehman Corporate AA Inter-
+mediate Bond Index; (3) CREDIT: the spread
+between the Lehman BAA Corporate Bond Index
+and the Lehman T reasury Index; (4) SP500: the
+S&P 500 total return; (5) CMDTY: the Goldman
+Sachs Commodity Index (GSCI) total return; and
+(6) DVIX: the ﬁrst-difference of the end-of-month
+value of the CBOE V olatility Index (VIX). These six
+factors are selected for two reasons: They provide
+a reasonably broad cross-section of risk exposures
+for the typical hedge fund (stocks, bonds, curren-
+cies, commodities, credit, and volatility), and each
+of the factor returns can be realized through rel-
+atively liquid instruments so that the returns of
+linear clones may be achievable in practice. In par-
+ticular, there are forward contracts for each of the
+component currencies of the US Dollar index, and
+futures contracts for the stock and bond indexes
+and for the components of the commodity index.
+Futures contracts on the VIX index were intro-
+duced by the CBOE in March 2004 and are not
+as liquid as the other index futures, but the OTC
+market for variance and volatility swaps is growing
+rapidly.
+The linear regression model provides a simple but
+useful decomposition of a hedge fund’s return R
+it
+into several components:
+Rit = αi + βi1RiskFactor1t +···
++ βiK RiskFactorKt + ϵit (1)
+From this decomposition, we have the following
+characterization of the fund’s expected return and
+variance:
+E[Rit]= αi + βi1E[RiskFactor1t]+···
++ βiK E[RiskFactorKt] (2)
+Var[Rit]= β2
+i1Var[RiskFactor1t]+···
++ β2
+iK Var[RiskFactorKt]
++ Covariances + Var[ϵit] (3)
+where “Covariances” is the sum of all pairwise
+covariances between RiskFactorpt and RiskFactorqt
+weighted by the product of their respective beta
+coefﬁcients β
+ipβiq .
+This characterization implies that there are two dis-
+tinct sources of a hedge fund’s expected return: beta
+exposures β
+ik multiplied by the risk premia asso-
+ciated with those exposures E [RiskFactorkt], and
+manager-speciﬁc alpha αi . By “manager-speciﬁc,”
+we do not mean to imply that a hedge fund’s
+unique source of alpha is without risk—we are sim-
+ply distinguishing this source of expected return
+from those that have clearly identiﬁable risk fac-
+tors associated with them. In particular, it may well
+be the case that α
+i arises from risk factors other
+than the six we have proposed, and a more reﬁned
+version of Eq. (1)—one that reﬂects the particu-
+lar investment style of the manager—may yield a
+better-performing linear clone.
+From Eq. (3), we see that a hedge fund’s vari-
+ance has three distinct sources: the variances of the
+risk factors multiplied by the squared beta coef-
+ﬁcients, the variance of the residual ϵ
+it (which
+may be related to the speciﬁc economic sources of
+α
+i ), and the weighted covariances among the fac-
+tors. This decomposition highlights the fact that a
+hedge fund can have several sources of risk, each
+of which should yield some risk premium, that is,
+risk-based alpha, otherwise investors would not be
+willing to bear such risk. By taking on exposure
+to multiple risk factors, a hedge fund can generate
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 11 =====
+REPLICATING HEDGE-FUND RETURNS 15
+attractive expected returns from the investor’s per-
+spective (see, e.g. Capital Decimation Partners in
+Section 2.1).
+14
+3.3 Factor exposures
+T able 5 presents summary statistics for the beta coef-
+ﬁcients or factor exposures in Eq. (1) estimated
+for each of the 1610 hedge funds by ordinary
+least squares and grouped by category. In partic-
+ular, for each category we report the minimum,
+median, mean, and maximum beta coefﬁcient for
+each of the six factors and the intercept, across
+all regressions in that category. For example, the
+upper left block of entries with the title “Inter-
+cept” presents summary statistics for the intercepts
+from the individual hedge-fund regressions within
+each category, and the “Mean” column shows that
+the average manager-speciﬁc alpha is positive for
+all categories, ranging from 0.42% per month
+for Managed Futures funds to 1.41% per month
+for Emerging Markets funds. This suggests that
+managers in our sample are, on average, indeed con-
+tributing value above and beyond the risk premia
+associated with the six factors we have chosen in
+Eq. (1). We shall return to this important issue in
+Section 3.4.
+The panel in T able 5 with the heading R
+sp500 pro-
+vides summary statistics for the beta coefﬁcients
+corresponding to the S&P 500 return factor, and the
+entries in the “Mean” column are broadly consistent
+with each of the category deﬁnitions. For example,
+funds in the Dedicated Short Bias category have an
+average S&P 500 beta of− 0.88, which is consistent
+with their shortselling mandate. On the other hand,
+Equity Market Neutral funds have an average S&P
+500 beta of 0.05, conﬁrming their market neutral
+status. And Long/Short Equity Hedge funds, which
+are mandated to provide partially hedged equity-
+market exposure, have an average S&P 500 beta
+of 0.38.
+The remaining panels in T able 5 show that risk
+exposures do vary considerably across categories.
+This is more easily seen in Figure 2 which plots the
+mean beta coefﬁcients for all six factors, category
+by category. From Figure 2, we see that Convertible
+Arbitrage funds have three main exposures (long
+credit, long bonds, and long volatility), whereas
+Emerging Markets funds have four somewhat dif-
+ferent exposures (long stocks, short USD, long
+credit, and long commodities). The category with
+the smallest overall risk exposures is Equity Market
+Neutral, and not surprisingly, this category exhibits
+the second lowest average mean return, 8.09%.
+The lower right panel of T able 5 contains a sum-
+mary of the explanatory power of (1) as measured by
+the
+R
+2
+statistic of the regression (1). The mean R
+2
+s
+range from a low of 10.4% for Equity Market Neu-
+tral (as expected, given this category’s small average
+factor exposures to all six factors) to a high of 40.4%
+for Dedicated Short Bias (which is also expected
+given this category’s large negative exposure to the
+S&P 500).
+T o provide further intuition for the relation between
+R
+2
+and fund characteristics, we regressR
+2
+on several
+fund characteristics, and ﬁnd that lower R
+2
+funds
+are those with higher Sharpe ratios, higher manage-
+ment fees, and higher incentive fees. This accords
+well with the intuition that funds providing greater
+diversiﬁcation beneﬁts, that is, lower
+R
+2
+’s, com-
+mand higher fees in equilibrium. See Hasanhodzic
+and Lo (2006b) for further details.
+3.4 Expected-return decomposition
+Using the parameter estimates of (1) for the indi-
+vidual hedge funds in our sample, we can now
+reformulate the question of whether or not a hedge-
+fund strategy can be cloned as a question about
+how much of a hedge fund’s expected return is due
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 12 =====
+16 J ASMINA HASANHODZIC AND ANDREW W. LO
+T able 5 Summary statistics for multivariate linear regressions of monthly returns of hedge funds in the TASS Live database from
+February 1986 to September 2005 on six factors: the S&P 500 total return, the Lehman Corporate AA Intermediate Bond Index
+return, the US Dollar Index return, the spread between the Lehman US Aggregate Long Credit BAA Bond Index and the Lehman
+T reasury Long Index, the ﬁrst-difference of the CBOE V olatility Index (VIX), and the Goldman Sachs Commodity Index (GSCI)
+total return.
+Intercept Rsp500 Rlb RusdSample
+Category size Statistic Min Med Mean Max SD Min Med Mean Max SD Min Med Mean Max SD Min Med Mean Max SD
+Convertible arbitrage 82 beta − 0.52 0.41 0.43 1.57 0.37 − 0.63 − 0.01 − 0.02 0.45 0.15 − 0.08 0.26 0.30 1.73 0.29 − 0.98 0.01 − 0.02 0.68 0.28
+t-stat − 1.56 2.12 4.55 83.10 11.35 − 2.58 − 0.14 0.06 7.65 1.53 − 0.52 1.60 1.60 4.50 1.12 − 2.23 0.15 0.12 2.91 1.22
+Dedicated short bias 10 beta − 0.04 0.77 0.67 1.13 0.38 − 1.78 − 1.01 − 0.88 − 0.11 0.50 − 0.60 0.18 0.25 0.96 0.48 − 0.08 0.73 0.67 1.25 0.51
+t-stat − 0.12 0.73 0.91 1.83 0.66 − 10.95 − 3.29 − 3.88 − 0.48 2.72 − 1.37 0.24 0.17 1.05 0.70 − 0.19 1.26 1.07 1.99 0.77
+Emerging markets 102 beta − 0.75 1.19 1.41 6.50 1.08 − 0.41 0.31 0.43 3.30 0.52 − 4.53 0.02 0.01 2.33 0.77 − 4.66 − 0.39 − 0.42 2.18 0.79
+t-stat − 1.03 1.83 2.74 44.67 4.57 − 1.77 1.69 1.65 5.46 1.61 − 2.17 0.09 0.22 3.71 1.09 − 3.74 − 1.03 − 0.97 2.53 1.20
+Equity market neutral 83 beta − 0.61 0.59 0.59 2.42 0.41 − 1.22 0.05 0.05 0.90 0.27 − 1.16 0.05 0.02 0.82 0.33 − 2.83 0.02 − 0.04 1.24 0.44
+t-stat − 1.40 2.02 2.88 13.89 3.00 − 4.86 0.75 0.65 4.16 1.98 − 3.74 0.30 0.27 2.67 1.09 − 4.17 0.08 0.16 3.65 1.39
+Event driven 169 beta − 0.12 0.78 0.93 6.18 0.78 − 0.35 0.08 0.13 1.17 0.22 − 4.23 0.08 0.04 1.31 0.46 − 6.38 − 0.05 − 0.13 1.46 0.60
+t-stat − 0.69 3.38 3.88 21.54 2.89 − 2.80 1.26 1.34 10.87 1.88 − 2.31 0.40 0.42 3.21 1.08 − 2.86 − 0.31 − 0.14 3.40 1.35
+Fixed income arbitrage 62 beta 0.00 0.52 0.58 2.03 0.42 − 0.39 0.03 0.02 0.23 0.10 − 0.55 0.20 0.27 1.86 0.40 − 0.66 0.05 0.07 0.77 0.35
+t-stat 0.00 2.85 3.85 24.30 3.91 − 2.42 0.55 0.44 3.23 1.25 − 2.63 1.00 1.26 11.02 1.99 − 3.48 0.38 0.66 4.62 1.68
+Global macro 54 beta − 0.79 0.63 0.59 1.75 0.54 − 0.49 0.01 0.10 1.14 0.30 − 0.74 0.21 0.34 2.03 0.56 − 2.00 − 0.23 − 0.23 1.35 0.67
+t-stat − 1.56 1.53 1.71 7.66 1.62 − 2.97 0.19 0.59 6.16 1.84 − 1.93 0.71 0.92 6.05 1.51 − 6.51 − 0.83 − 0.73 4.52 1.95
+Long/Short equity hedge 520 beta − 1.53 0.84 0.89 7.60 0.75 − 1.37 0.33 0.38 3.13 0.44 − 3.04 − 0.01 0.03 3.49 0.59 − 2.57 − 0.03 − 0.09 2.45 0.60
+t-stat − 1.80 1.84 1.86 10.47 1.38 − 3.72 2.06 2.27 20.07 2.50 − 3.47 − 0.01 0.06 3.33 1.06 − 4.60 − 0.10 − 0.19 3.41 1.18
+Managed futures 114 beta − 1.84 0.48 0.42 3.69 0.73 − 0.81 − 0.01 0.03 2.30 0.37 − 0.44 0.88 0.89 2.62 0.67 − 2.65 − 0.37 − 0.39 1.14 0.63
+t-stat − 2.36 0.72 0.65 4.98 1.08 − 2.94 − 0.05 0.20 7.88 1.43 − 1.70 1.46 1.60 4.34 1.22 − 4.25 − 0.83 − 0.72 1.99 0.98
+Multi-strategy 59 beta − 0.41 0.71 0.71 2.68 0.47 − 0.31 0.07 0.15 1.34 0.26 − 1.81 0.10 0.12 2.40 0.51 − 1.84 0.07 0.01 0.78 0.41
+t-stat − 0.43 3.22 3.41 10.51 2.41 − 2.22 1.27 1.37 5.98 1.68 − 1.49 0.58 0.57 3.49 1.13 − 2.78 0.36 0.39 3.19 1.34
+Fund of funds 355 beta − 0.77 0.42 0.43 1.88 0.34 − 0.80 0.09 0.12 0.85 0.15 − 0.50 0.12 0.18 2.25 0.29 − 1.12 − 0.07 − 0.10 0.62 0.24
+t-stat − 3.55 2.34 2.67 10.51 2.14 − 2.65 1.56 1.84 9.44 1.80 − 1.59 0.83 0.95 4.84 1.17 − 3.63 − 0.53 − 0.42 3.32 1.28
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 13 =====
+REPLICATING HEDGE-FUND RETURNS 17
+T able 5 (Continued )
+Rcs /Delta1VIX Rgsci Signiﬁcance (%)
+Sample
+Category size Statistic Min Med Mean Max SD Min Med Mean Max SD Min Med Mean Max SD Statistic Min Med Mean Max SD
+Convertible arbitrage 82 beta 0.00 0.39 0.52 2.87 0.57 − 0.25 0.05 0.05 0.32 0.08 − 0.07 0.01 0.02 0.16 0.03 Adj. R2 − 11.0 16.0 17.3 66.2 15.4
+t-stat 0.19 3.06 2.95 7.72 1.58 − 1.41 0.50 0.66 3.56 0.98 − 1.15 0.52 0.51 2.17 0.69 p(F) 0.0 1.0 11.8 97.1 23.6
+Dedicated short bias 10 beta − 0.98 − 0.26 − 0.19 0.93 0.67 − 0.26 0.05 0.04 0.44 0.23 − 0.38 − 0.11 − 0.12 0.06 0.13 Adj. R2 − 3.5 39.7 40.4 79.5 25.4
+t-stat − 2.67 − 0.68 − 0.44 2.54 1.64 − 1.11 0.24 0.23 2.56 1.10 − 2.19 − 0.86 − 0.95 0.54 0.92 p(F) 0.0 0.0 8.3 83.0 26.2
+Emerging markets 102 beta − 0.56 0.46 0.59 2.89 0.67 − 1.41 − 0.05 0.01 3.91 0.50 − 0.34 0.05 0.06 0.34 0.09 Adj. R2 − 4.7 17.4 19.4 54.7 14.3
+t-stat − 1.97 1.32 1.33 4.82 1.36 − 3.95 − 0.35 − 0.28 3.88 1.17 − 1.46 0.68 0.60 2.40 0.79 p(F) 0.0 0.2 8.4 78.8 17.7
+Equity market neutral 83 beta − 1.78 − 0.03 − 0.06 0.72 0.31 − 1.19 0.02 0.03 0.80 0.23 − 0.12 0.01 0.02 0.38 0.07 Adj. R2 − 8.1 7.2 10.4 63.2 13.7
+t-stat − 3.83 − 0.27 − 0.35 3.34 1.44 − 3.10 0.22 0.25 3.95 1.23 − 2.05 0.48 0.43 2.80 1.11 p(F) 0.0 7.4 19.9 94.1 24.6
+Event driven 169 beta − 1.96 0.25 0.33 2.01 0.45 − 1.81 0.02 0.05 1.19 0.26 − 0.27 0.01 0.01 0.27 0.06 Adj. R2 − 7.5 15.5 19.5 68.5 16.4
+t-stat − 1.66 1.51 1.81 8.31 1.99 − 2.76 0.42 0.36 4.58 1.17 − 2.27 0.50 0.60 4.06 1.15 p(F) 0.0 0.3 11.1 88.6 20.0
+Fixed income arbitrage 62 beta − 0.70 0.10 0.19 1.54 0.46 − 0.71 0.05 0.07 0.50 0.18 − 0.06 0.01 0.02 0.15 0.05 Adj. R2 − 8.9 12.8 14.9 78.9 15.9
+t-stat − 3.29 0.80 1.25 11.74 2.56 − 3.16 0.85 1.16 5.62 1.93 − 1.76 0.57 0.52 2.52 1.10 p(F) 0.0 2.1 17.7 94.6 26.3
+Global macro 54 beta − 0.61 0.13 0.18 1.73 0.42 − 0.36 0.03 0.07 0.55 0.19 − 0.09 0.02 0.04 0.27 0.08 Adj. R2 − 12.6 8.9 14.8 74.0 17.3
+t-stat − 1.60 0.44 0.60 3.96 1.25 − 3.08 0.33 0.34 3.61 1.11 − 1.22 0.37 0.60 3.92 1.20 p(F) 0.0 4.9 16.8 97.0 24.3
+Long/Short equity hedge 520 beta − 1.37 0.17 0.28 4.55 0.59 − 1.67 0.07 0.07 2.76 0.33 − 0.33 0.04 0.06 0.88 0.11 Adj. R2 − 13.8 18.8 21.6 90.2 19.0
+t-stat − 5.28 0.58 0.69 4.94 1.36 − 4.70 0.46 0.38 3.67 1.28 − 3.31 0.74 0.77 5.91 1.13 p(F) 0.0 0.4 11.8 97.7 22.9
+Managed futures 114 beta − 5.98 − 0.33 − 0.35 3.20 0.82 − 0.75 0.14 0.15 1.29 0.32 − 0.31 0.11 0.13 0.80 0.15 Adj. R2 − 6.0 13.3 15.3 70.0 13.3
+t-stat − 2.85 − 0.92 − 0.73 2.56 1.04 − 2.81 0.73 0.74 4.36 1.28 − 2.15 1.32 1.36 5.25 1.22 p(F) 0.0 0.6 8.2 88.5 17.0
+Multi-strategy 59 beta − 0.48 0.07 0.17 1.64 0.41 − 0.38 0.04 0.09 0.95 0.19 − 0.05 0.03 0.04 0.75 0.11 Adj. R2 − 13.5 8.9 12.9 51.7 15.7
+t-stat − 2.20 0.72 1.21 6.34 2.12 − 1.59 0.68 0.87 3.72 1.31 − 1.34 0.87 0.81 2.90 0.97 p(F) 0.0 6.7 21.7 97.5 28.9
+Fund of funds 355 beta − 0.78 0.17 0.17 1.41 0.22 − 0.32 0.06 0.07 0.48 0.09 − 0.23 0.03 0.05 0.35 0.05 Adj. R2 − 7.2 20.4 22.3 72.3 14.9
+t-stat − 3.62 1.38 1.53 6.35 1.55 − 2.74 0.98 0.98 4.69 1.12 − 3.16 1.38 1.39 4.28 1.01 p(F) 0.0 0.2 5.7 84.0 14.3
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 14 =====
+18 J ASMINA HASANHODZIC AND ANDREW W. LO
+-1.00 
+-0.50 
+0.00 
+0.50 
+1.00 
+1.50 
+2.00 
+Convertible
+Arbitrage
+Dedicated
+Short Bias
+Emerging
+Markets
+Equity Market
+Neutral
+Event Driven Fixed Income
+Arbitrage
+Global Macro Long/Short
+Equity
+Managed
+Futures 
+Multi-Strategy Fund of
+Funds
+Average Regression Coefficient
+Manager-Specific Alpha S&P 500 Bonds
+USD Credit Spread DVIX
+Commodities
+Figure 2 Average regression coefﬁcients for multivariate linear regressions of monthly returns of hedge
+funds in the TASS Live database from February 1986 to September 2005 on six factors: the S&P 500
+total return, the Lehman Corporate AA Intermediate Bond Index return, the US Dollar Index return, the
+spread between the Lehman US Aggregate Long Credit BAA Bond Index and the Lehman T reasury Long
+Index, the ﬁrst-difference of the CBOE V olatility Index (VIX), and the Goldman Sachs Commodity Index
+(GSCI) total return.
+to risk premia from identiﬁable factors. If it is a
+signiﬁcant portion and the relationship is primar-
+ily linear, then a passive portfolio with just those
+risk exposures—created by means of liquid instru-
+ments such as index futures, forwards, and other
+marketable securities—may be a reasonable alter-
+native to a less liquid and opaque investment in
+the fund.
+T able 6 summarizes the results of the expected-
+return decomposition (2) for our sample of 1610
+funds, grouped according to their style categories
+and for all funds. Each row of T able 6 contains
+the average total mean return of funds in a given
+category and averages of the percent contributions
+of each of the six factors and the manager-speciﬁc
+alpha to that average total mean return.
+15 Note
+that the average percentage contributions add up
+to 100% when summed across all six factors and
+the manager-speciﬁc alpha because this decompo-
+sition sums to 100% for each fund, and when this
+decomposition is averaged across all funds, the sum
+is preserved.
+The ﬁrst row’s entries indicate that the most signiﬁ-
+cant contributors to the average total mean return of
+8.4% for Convertible Arbitrage funds are CREDIT
+(27.1%), USD (67.1%), BOND (34.9%), and
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 15 =====
+REPLICATING HEDGE-FUND RETURNS 19
+T able 6 Decomposition of total mean returns of hedge funds in the TASS Live database according to
+percentage contributions from six factors and manager-speciﬁc alpha, for 1610 hedge funds from February
+1986 to September 2005.
+Average of percentage contribution of factors to
+total expected return (%)Category Sample
+description size Avg. E[R] CREDIT USD SP500 BOND DVIX CMDTY ALPHA
+Convertible arbitrage 82 8.4 27.1 67.1 − 19.3 34.9 − 8.4 31.8 − 33.3
+Dedicated short bias 10 6.0 12.2 19.4 − 108.2 7.0 8.9 − 64.9 225.6
+Emerging markets 102 20.4 − 0.3 − 3.2 19.3 0.1 − 0.4 6.2 78.3
+Equity market neutral 83 8.1 0.2 3.6 4.0 3.9 1.3 6.3 80.8
+Event driven 169 13.0 2.1 3.0 4.3 9.4 − 0.7 3.1 79.0
+Fixed income arbitrage 62 9.5 − 1.4 3.3 2.7 18.5 − 0.5 4.4 73.1
+Global macro 54 11.4 2.0 8.1 9.7 25.0 − 3.3 10.0 48.6
+Long/Short equity hedge 520 14.6 1.1 1.9 17.8 2.1 − 1.8 8.4 70.5
+Managed futures 114 13.6 1.9 23.4 − 3.4 53.8 − 1.5 53.2 − 27.5
+Multi-strategy 59 10.8 0.5 3.5 5.7 10.1 − 1.9 3.2 78.9
+Fund of funds 355 8.3 0.5 5.4 9.7 8.8 − 2.8 7.3 71.1
+All Funds 1,610 11.3 2.3 7.8 8.5 11.3 − 1.9 10.9 61.0
+CMDTY (31.8%), and the average contribution
+of manager-speciﬁc alpha is − 33.3%. This implies
+that on average, Convertible Arbitrage funds earn
+more than all of their mean returns from the risk
+premia associated with the six factor exposures, and
+that the average contribution of other sources of
+alpha is negative! Of course, this does not mean
+that convertible-arbitrage managers are not adding
+value—T able 6’s results are averages across all funds
+in our sample, hence the positive manager-speciﬁc
+alphas of successful managers will be dampened
+and, in some cases, outweighed by the negative
+manager-speciﬁc alphas of the unsuccessful ones.
+In contrast to the Convertible Arbitrage funds,
+for the 10 funds in the Dedicated Short Bias cat-
+egory, the manager-speciﬁc alpha accounts for
+225.6% of the funds’ total mean return on average,
+and the contribution of the SP500 factor is neg-
+ative. This result is not as anomalous as it seems.
+The bull market of the 1990s implies a perfor-
+mance drag for any fund with negative exposure
+to the S&P 500, therefore, Dedicated Short Bias
+managers that have generated positive performance
+during this period must have done so through other
+means. A concrete illustration of this intuition is
+given by the return decomposition of the annual-
+ized average return of the two most successful funds
+in the Dedicated Short Bias category, funds 33735
+and 33736. These two funds posted annualized net-
+of-fee returns of 15.56% and 10.02%, respectively,
+but the contribution of the SP500 factor to these
+annualized returns was negative in both cases (both
+funds had negative SP500 beta exposures, as they
+should, and the S&P 500 yielded positive returns
+over the funds’ lifetimes).
+16
+Between the two extremes of Convertible Arbi-
+trage and Dedicated Short Bias funds, T able 6
+shows considerable variation in the importance
+of manager-speciﬁc alpha for the other categories.
+Over 80% of the average total return of Equity
+Market Neutral funds is due to manager-speciﬁc
+alpha, but for Managed Futures, the manager-
+speciﬁc alpha accounts for − 27.5%. For the entire
+sample of 1610 funds, 61% of the average total
+return is attributable to manager-speciﬁc alpha,
+implying that on average, the remaining 39% is
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 16 =====
+20 J ASMINA HASANHODZIC AND ANDREW W. LO
+due to the risk premia from our six factors. These
+results suggest that for certain types of hedge-fund
+strategies, a multi-factor portfolio may yield some
+of the same beneﬁts but in a transparent, scalable,
+and lower-cost vehicle.
+4 Linear clones
+The multivariate regression results in Section 3 sug-
+gest that linear clones may be able to replicate some
+of the risk exposures of hedge funds, and in this
+section we investigate this possibility directly by
+considering two types of clones. The ﬁrst type con-
+sists of “ﬁxed-weight” portfolios, where we use the
+entire sample of a given fund’s returns to estimate
+a set of portfolio weights for the instruments corre-
+sponding to the factors used in the linear regression.
+These portfolio weights are ﬁxed through time for
+each fund, hence the term “ﬁxed-weight.”
+17 But
+because this approach involves a certain degree of
+“look-ahead” bias—we use the entire history of a
+fund’s returns to construct the portfolio weights that
+are applied each period to compute the clone port-
+folio return—we also construct a second type of
+linear clone based on rolling-window regressions.
+4.1 Fixed-weight vs. rolling-window clones
+T o construct a ﬁxed-weight linear clone for fund i,
+we begin by regressing the fund’s returns {R
+it} on
+ﬁve of the six factors we considered in Section 3
+(we drop the DVIX factor because its returns are
+not as easily realized with liquid instruments),
+where we omit the intercept and constrain the beta
+coefﬁcients to sum to one:
+R
+it = βi1SP500t + βi2BONDt
++ βi3USDt + βi4CREDITt
++ βi5CMDTYt + ϵit ,
+t = 1, ... , T (4a)
+subject to 1 = βi1 +···+ βi5 (4b)
+This is the same technique proposed by Sharpe
+(1992) for conducting “style analysis,” however, our
+motivation is quite different. We omit the inter-
+cept because our objective is to estimate a weighted
+average of the factors that best replicates the fund’s
+returns, and omitting the constant term forces the
+least-squares algorithm to use the factor means to
+ﬁt the mean of the fund, an important feature of
+replicating hedge-fund expected returns with factor
+risk premia. And we constrain the beta coefﬁcients
+to sum to one to yield a portfolio interpretation
+for the weights. Note that we do not constrain the
+regression coefﬁcients to be non-negative as Sharpe
+(1992) does because unlike Sharpe’s original appli-
+cation to long-only mutual funds, in our context all
+ﬁve factors correspond to instruments that can be
+shortsold, and we do expect to be shortselling each
+of these instruments on occasion to achieve the kind
+of risk exposures hedge funds typically exhibit. For
+example, clones of Dedicated Short Bias funds will
+undoubtedly require shorting the SP500 factor.
+The estimated regression coefﬁcients {β
+∗
+ik} are then
+used as portfolio weights for the ﬁve factors, hence
+the portfolio returns are equivalent to the ﬁtted
+values R
+∗
+it of the regression equation. However,
+we implement an additional renormalization so
+that the resulting portfolio return ˆR
+it has the same
+sample volatility as the original fund’s return series:
+R∗
+it ≡ β∗
+i1SP500t + β∗
+i2BONDt + β∗
+i3USDt
++ β∗
+i4CREDITt + β∗
+i5CMDTYt (5)
+ˆRit ≡ γi R∗
+it , γi ≡
+√∑T
+t=1 (Rit − Ri )2/(T − 1)
+√∑T
+t=1 (R∗
+it − R
+∗
+i )2/(T − 1)
+(6)
+Ri ≡ 1
+T
+T∑
+t=1
+Rit , R
+∗
+i ≡ 1
+T
+T∑
+t=1
+R∗
+it (7)
+The motivation for this renormalization is to create
+a fair comparison between the clone portfolio and
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 17 =====
+REPLICATING HEDGE-FUND RETURNS 21
+the fund by equalizing their volatilities. Renormal-
+izing (5) is equivalent to changing the leverage of
+the clone portfolio, since the sum of the renormal-
+ized betas γ
+i
+∑
+k β∗
+ik will equal the renormalization
+factor γi , not one. If γi exceeds one, then pos-
+itive leverage is required, and if less than one,
+the portfolio is not fully invested in the ﬁve fac-
+tors. A more complete expression of the portfolio
+weights of clone i may be obtained by introducing
+an additional asset that represents leverage, that is,
+borrowing and lending, in which case the portfolio
+weights of the ﬁve factors and this additional asset
+must sum to one:
+1 = γ
+i (β∗
+i1 +···+ β∗
+i5) + δi (8)
+The clone return is then given by:
+ˆRit = γi (β∗
+i1 SP500t +···
++ β∗
+i5 CMDTYt ) + δi Rl (9)
+where Rl is the borrowing/lending rate. Since this
+rate depends on many factors such as the credit qual-
+ity of the respective counterparties, the riskiness of
+the instruments and portfolio strategy, the size of
+the transaction, and general market conditions, we
+do not attempt to assume a particular value for R
+l
+but simply point out its existence. 18
+As discussed above, ﬁxed-weight linear clones are
+affected by look-ahead bias because the entire histo-
+ries of fund and factor returns are used to construct
+the clones’ portfolio weights and renormalization
+factors. T o address this issue, we present an alter-
+nate method of constructing linear clones using a
+rolling window for estimating the regression coefﬁ-
+cients and renormalization factors. Rolling-window
+estimators can also address the ubiquitous issue
+of nonstationarity that affects most ﬁnancial time-
+series studies; time-varying means, volatilities, and
+general market conditions can be captured to some
+degree by using rolling windows.
+T o construct a “rolling-window” linear clone, for
+each month t, we use a 24-month rolling window
+from months t − 24 to t − 1 to estimate the same
+regression (4) as before
+19:
+Rit−k = βit1SP500t−k + βit2BONDt−k
++ βit3USDt−k + βit4CREDITt−k
++ βit5CMDTYt−k + ϵit−k ,
+k = 1, ... , 24 (10a)
+subject to 1 = βit1 +···+ βit5 (10b)
+but now the coefﬁcients are indexed by both i and
+t since we repeat this process each month for every
+fund i. The parameter estimates are then used in the
+same manner as in the ﬁxed-weight case to construct
+clone returns ˆR
+it :
+R∗
+it ≡ β∗
+it1SP500t + β∗
+it2BONDt + β∗
+it3USDt
++ β∗
+it4CREDITt + β∗
+it5CMDTYt (11)
+ˆRit ≡ γit R∗
+it , γit ≡
+√∑24
+k=1 (Rit−k − Rit )2/23
+√∑24
+k=1 (R∗
+it−k − R
+∗
+it )2/23
+(12)
+Rit ≡ 1
+24
+24∑
+k=1
+Rit−k , R
+∗
+it ≡ 1
+24
+24∑
+k=1
+R∗
+it−k (13)
+where the renormalization factors γit are now
+indexed by time t to reﬂect the fact that they are
+also computed within the rolling window. This
+implies that for any given clone i, the volatility
+of its returns over the entire history will no longer
+be identical to the volatility of its matching fund
+because the renormalization process is applied only
+to rolling windows, not to the entire history of
+returns. However, as long as volatilities do not shift
+dramatically over time, the rolling-window renor-
+malization process should yield clones with similar
+volatilities.
+Although rolling-window clones may seem more
+practically relevant because they avoid the most
+obvious forms of look-ahead bias, they have
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 18 =====
+22 J ASMINA HASANHODZIC AND ANDREW W. LO
+drawbacks as well. For example, the rolling-
+window estimation procedure generates more fre-
+quent rebalancing needs for the clone portfolio,
+which is counter to the passive spirit of the cloning
+endeavor. Moreover, rolling-window estimators are
+typically subject to greater estimation error because
+of the smaller sample size. This implies that at least
+part of the rebalancing of rolling-window clones
+is unnecessary. The amount of rebalancing can,
+of course, be controlled by adjusting the length
+of the rolling window—a longer window implies
+more stable weights, but stability implies less ﬂex-
+ibility in capturing potential nonstationarities in
+the data.
+Ultimately, the choice between ﬁxed-weight and
+rolling-window clones depends on the nature of
+the application, the time-series properties of the
+strategies being cloned, and the speciﬁc goals and
+constraints of the investor. A passive investor with
+little expertise in trading and risk management may
+well prefer the ﬁxed-weight clone, whereas a more
+active investor with trading capabilities and a desire
+to implement dynamic asset-allocation policies will
+prefer the rolling-window clone. For these rea-
+sons, we present results for both types of clones
+in Sections 4.2–4.5.
+4.2 Performance results
+T able 7 contains a comparison between the perfor-
+mance of ﬁxed-weight and rolling-window linear
+clones and the original funds from which the clones
+are derived.
+20 The results are striking—for several
+categories, the average mean return of the clones is
+only slightly lower than that of their fund counter-
+parts, and in some categories, the clones do better.
+For example, the average mean return of the Con-
+vertible Arbitrage ﬁxed-weight clones is 7.40%, and
+the corresponding ﬁgure for the funds is 8.41%.
+For Long/Short Equity Hedge funds, the aver-
+age mean return for ﬁxed-weight clones and funds
+is 13.12% and 14.59%, respectively. And in the
+Multi-Strategy category, the average mean return
+for ﬁxed-weight clones and funds is 10.32% and
+10.79%, respectively.
+In ﬁve cases, the average mean return of the
+ﬁxed-weight clones is higher than that of the
+funds: Dedicated Short Bias (6.70% vs. 5.98%),
+Equity Market Neutral (10.00% vs. 8.09%), Global
+Macro (15.54% vs. 11.38%), Managed Futures
+(27.97% vs. 13.64%), and Fund of Funds (9.29%
+vs. 8.25%). However, these differences are not
+necessarily statistically signiﬁcant because of the
+variability in mean returns of funds and clones
+within their own categories. Even in the case of
+Managed Futures, the difference in average mean
+return between ﬁxed-weight clones and funds—
+almost 15 percentage points—is not signiﬁcant
+because of the large ﬂuctuations in average mean
+returns of the Managed Futures ﬁxed-weight clones
+and their corresponding funds (e.g. one standard
+deviation of the average mean of the Managed
+Futures ﬁxed-weight clones is 16.32% and one
+standard deviation of the average mean of the cor-
+responding sample of funds is 9.35%, according
+to T able 7). Nevertheless, these results suggest that
+for certain categories, the performance of ﬁxed-
+weight clones may be comparable to that of their
+corresponding funds.
+On the other hand, at 9.84%, the average perfor-
+mance of the Event-Driven ﬁxed-weight clones is
+considerably lower than the 13.03% average for
+the funds. While also not statistically signiﬁcant,
+this gap is understandable given the idiosyncratic
+and opportunistic nature of most event-driven
+strategies. Moreover, a signiﬁcant source of the prof-
+itability of event-driven strategies is the illiquidity
+premium that managers earn by providing capital
+in times of distress. This illiquidity premium will
+clearly be missing from a clone portfolio of liquid
+securities, hence we should expect a sizable perfor-
+mance gap in this case. The same can be said for the
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 19 =====
+REPLICATING HEDGE-FUND RETURNS 23
+T able 7 Performance comparison of ﬁxed-weight and rolling-window linear clones of hedge funds in the TASS Live database and
+their corresponding funds, from February 1986 to September 2005. The category “Dedicated Short Bias*” excludes Fund 33735.
+Fixed-weight linear clones 24-month rolling-window linear clones
+Annual mean Annual SD (%) Annual Sharpe ρ1(%) p-value(Q12) Annual mean Annual SD (%) Annual Sharpe ρ1(%) p-value(Q6) (%)
+return (%) (%) return (%)Category Sample
+description size Mean SD Mean SD Mean SD Mean SD Mean SD Mean SD Mean SD Mean SD Mean SD Mean SD
+Funds
+Convertible arbitrage 82 8.41 5.11 6.20 5.28 2.70 5.84 42.2 17.3 11.0 22.2 4.04 7.83 5.76 4.55 2.31 8.96 42.3 16.2 12.4 19.4
+Dedicated short bias 10 5.98 4.77 28.27 10.05 0.25 0.24 5.5 12.6 24.2 20.3 2.58 7.19 25.91 14.20 0.02 0.42 8.3 5.5 31.9 19.0
+Dedicated short bias* 9 4.92 3.58 28.75 10.53 0.20 0.20 3.4 11.3 25.5 21.1 1.42 6.55 26.21 15.03 − 0.04 0.39 7.4 4.9 35.2 16.8
+Emerging markets 102 20.41 13.01 22.92 15.16 1.42 2.11 18.0 12.4 36.3 30.2 21.12 13.86 19.95 14.06 1.74 2.57 16.0 14.3 39.2 28.1
+Equity market neutral 83 8.09 4.77 7.78 5.84 1.44 1.20 9.1 23.0 32.6 29.7 5.71 4.14 6.60 5.91 1.44 1.68 5.3 24.0 40.2 33.9
+Event driven 169 13.03 8.65 8.40 8.09 1.99 1.37 22.2 17.6 27.0 29.3 11.65 10.45 7.62 7.68 2.01 1.43 17.2 17.8 31.1 29.8
+Fixed income arbitrage 62 9.50 4.54 6.56 4.41 2.05 1.48 22.1 17.6 35.9 35.2 7.80 7.59 5.73 4.52 2.17 1.81 23.3 21.4 30.1 32.4
+Global macro 54 11.38 6.16 11.93 6.10 1.07 0.58 5.8 12.2 43.1 32.5 9.01 6.72 11.16 6.50 0.91 0.73 6.6 18.9 44.7 31.2
+Long/Short equity hedge 520 14.59 8.14 15.96 9.06 1.06 0.58 12.8 14.9 36.0 30.5 11.90 8.93 13.90 8.69 1.04 0.77 9.8 16.7 42.0 28.5
+Managed futures 114 13.64 9.35 21.46 12.07 0.67 0.39 2.5 10.2 40.1 31.5 11.84 8.82 20.19 10.94 0.66 0.52 4.0 14.9 37.0 28.3
+Multi-strategy 59 10.79 5.22 8.72 9.70 1.86 1.03 21.0 20.1 28.2 30.1 8.97 6.13 7.65 10.10 1.86 1.25 18.3 22.5 29.1 28.6
+Fund of funds 355 8.25 3.73 6.36 4.47 1.66 0.86 23.2 15.0 27.1 26.3 7.34 3.95 5.68 4.29 1.67 0.97 22.6 16.3 24.0 26.5
+All except fund of funds 1255 13.29 8.71 13.95 10.76 1.39 1.88 15.7 18.3 33.2 30.9 11.15 9.86 12.38 10.12 1.38 2.64 13.5 19.8 36.6 29.8
+Linear clones
+Convertible arbitrage 82 7.40 3.17 6.20 5.28 1.52 0.62 10.7 10.5 55.6 24.9 2.78 4.95 6.20 6.57 0.71 0.77 6.4 12.7 43.8 29.1
+Dedicated short bias 10 6.70 11.59 28.27 10.05 0.32 0.48 2.8 5.9 73.6 17.5 6.83 16.18 29.31 15.61 0.09 0.45 0.4 8.8 36.7 28.7
+Dedicated short bias* 9 3.61 6.61 28.75 10.53 0.19 0.29 3.7 5.6 77.3 14.0 9.08 15.41 30.00 16.39 0.17 0.40 − 0.7 8.5 36.8 30.4
+Emerging markets 102 14.77 11.47 22.92 15.16 0.88 0.58 0.0 9.0 62.7 27.6 5.17 14.70 25.04 17.94 0.47 0.66 7.7 12.4 42.5 27.3
+Equity market neutral 83 10.00 7.00 7.78 5.84 1.42 0.58 1.8 9.6 57.0 24.7 4.43 4.90 7.91 6.49 0.64 0.68 4.2 12.7 47.8 27.0
+Event driven 169 9.84 6.69 8.40 8.09 1.43 0.52 4.3 11.0 55.8 24.1 6.96 8.33 7.79 7.10 1.05 0.56 3.0 13.3 39.6 27.3
+Fixed income arbitrage 62 8.35 5.20 6.56 4.41 1.48 0.59 4.1 8.4 64.4 29.8 4.47 4.63 6.85 5.17 0.84 0.71 4.3 9.9 40.8 30.0
+Global macro 54 15.54 8.35 11.93 6.10 1.41 0.55 2.6 8.3 52.2 23.8 12.97 8.90 12.48 7.38 1.08 0.59 4.1 11.1 45.3 28.2
+Long/Short equity hedge 520 13.12 8.68 15.96 9.06 0.98 0.57 − 0.1 10.0 59.7 26.3 9.08 11.03 15.83 10.64 0.76 0.68 0.3 15.6 42.5 29.1
+Managed futures 114 27.97 16.32 21.46 12.07 1.36 0.40 4.7 8.1 61.4 29.0 19.24 13.32 22.96 13.71 0.91 0.57 5.5 10.9 46.5 27.7
+Multi-strategy 59 10.32 7.21 8.72 9.70 1.51 0.62 2.3 10.1 59.7 28.8 5.33 7.52 9.16 9.59 0.71 0.60 0.8 13.0 35.9 28.2
+Fund of funds 355 9.29 5.62 6.36 4.47 1.59 0.44 − 0.1 11.1 50.5 24.7 5.67 4.57 6.22 5.40 1.11 0.54 0.0 13.0 39.8 28.5
+All except fund of funds 1255 13.27 10.48 13.95 10.76 1.19 0.61 2.2 10.2 59.2 26.4 8.42 11.06 14.20 12.14 0.79 0.67 2.8 13.9 42.6 28.4
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 20 =====
+24 J ASMINA HASANHODZIC AND ANDREW W. LO
+Emerging Markets ﬁxed-weight clones (14.77%)
+versus their fund counterparts (20.41%).
+For Dedicated Short Bias funds, the difference in
+average mean return between ﬁxed-weight clones
+and funds—6.70% and 5.98%, respectively—may
+seem somewhat counterintuitive in the light of the
+expected-return decomposition in T able 6, where
+we observed that Dedicated Short Bias funds were
+responsible for more than 100% of the average
+total returns of funds in this category. The fact
+that Dedicated Short Bias clones have better aver-
+age performance than the corresponding funds is
+due entirely to the clone of a single fund, 33735,
+and when this outlier is dropped from the sample,
+the average mean return of the remaining 9 clones
+drops to 3.61 % (see the “Dedicated Short Bias
+∗”
+row).21 The intuition for the underperformance of
+the ﬁxed-weight clones in this category is clear—
+given the positive trend in the S&P 500 during
+the 1980s and 1990s, a passive strategy of shorting
+the S&P 500 is unlikely to have produced attractive
+returns when compared to the performance of more
+nimble discretionary shortsellers.
+The results for the rolling-window clones are
+broadly consistent with those of the ﬁxed-weight
+clones, though the average performance of rolling-
+window clones is typically lower than that of their
+ﬁxed-weight counterparts. For example, the aver-
+age mean returns of rolling-window clones for all
+categories except Dedicated Short Bias are lower
+than their ﬁxed-weight versions, in some cases by
+a factor of two or three. Part of these differences
+can be explained by the different sample periods on
+which rolling-window clones are based—observe
+that the average mean returns of the underlying
+funds are lower in the rolling-window sample than
+in the ﬁxed-weight sample for all categories except
+Emerging Markets. But the more likely source
+of the performance difference between rolling-
+window and ﬁxed-weight clones is the combined
+effects of look-ahead bias for the ﬁxed-weight clones
+and the increased estimation errors implicit in the
+rolling-window clones.
+Given these two effects, the performance of the
+rolling-window clones is all the more remark-
+able in categories such as Dedicated Short Bias
+(6.83% average mean return vs. 2.58% average
+mean return for the corresponding sample of funds),
+Equity Market Neutral (4.43% clones vs. 5.71%
+funds), Global Macro (12.97% clones vs. 9.01%
+funds), Long/Short Equity Hedge (9.08% clones
+vs. 11.90% funds), and Managed Futures (19.24%
+clones vs. 11.84% funds). In the case of Dedi-
+cated Short Bias funds, it is not surprising that
+rolling-window clones are able to outperform both
+ﬁxed-weight clones and the funds on which they
+are based—the rolling-window feature provides
+additional ﬂexibility for capturing time-varying
+expected returns (such as the bull market of the
+1980s and 1990s) that a ﬁxed-weight strategy sim-
+ply cannot. And in the case of Managed Futures,
+as with the ﬁxed-weight clones, the rolling-window
+clones exhibit considerable cross-sectional variation
+in their mean returns hence the superior perfor-
+mance of clones in this case may not be statistically
+signiﬁcant.
+Nevertheless, as with ﬁxed-weight clones, rolling-
+window clones also fall short substantially in the
+categories of Emerging Markets (5.17% clones
+vs. 21.12% funds), Event Driven (6.96% clones
+vs. 11.65% funds), and Fixed Income Arbitrage
+(4.47% vs. 7.80%). Funds in these categories
+earn part of their expected return from bearing
+illiquidity risk, which is clearly absent from the
+clone portfolios constructed with the ﬁve factors
+we employ. Therefore, we should expect clones
+to underperform their fund counterparts in these
+categories.
+Another metric of comparison between clones and
+funds is the average Sharpe ratio, which adjusts
+for the volatilities of the respective strategies. Of
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 21 =====
+REPLICATING HEDGE-FUND RETURNS 25
+course, given our renormalization process (7), the
+standard deviations of the ﬁxed-weight clones are
+identical to their fund counterparts, so a compar-
+ison of Sharpe ratios reduces to a comparison of
+mean returns in this case. However, the average
+Sharpe ratio of a category is not the same as the
+ratio of that category’s average mean return to its
+average volatility, so the Sharpe ratio statistics in
+T able 7 and Figure 3 do provide some incremental
+information. Moreover, for rolling-window clones,
+there may be some differences in volatilities depend-
+ing on the time series properties of the underlying
+funds, which makes Sharpe ratio comparisons more
+informative.
+The average Sharpe ratio of the ﬁxed-weight sam-
+ple of Convertible Arbitrage funds is 2.70, which is
+almost twice the average Sharpe ratio of 1.52 for the
+ﬁxed-weight clones, a signiﬁcant risk-adjusted per-
+formance gap. Noticeable gaps also exist for Event
+Driven, Emerging Markets, and Fixed Income Arbi-
+trage clones versus funds (recall that funds in these
+categories are likely to earn illiquidity risk premia
+not available to the corresponding clones). How-
+ever, there is virtually no difference in average
+Sharpe ratios between ﬁxed-weight clones and funds
+in the Dedicated Short Bias, Equity Market Neu-
+tral, Long/Short Equity Hedge, Multi-Strategy, and
+Fund of Funds categories. And for Global Macro
+and Managed Futures, the average Sharpe ratios
+of the ﬁxed-weight clones are, in fact, higher than
+those of the funds in these categories.
+The gaps between average Sharpe ratios of rolling-
+window clones and those of the underlying funds
+tend to be more substantial—for the twin reasons
+cited above—but with some notable exceptions. On
+average, rolling-window clones in the Dedicated
+Short Bias, Global Macro, and Managed Futures
+categories do better than their fund counterparts
+on a risk-adjusted basis, with average Sharpe ratios
+of 0.09, 1.08, and 0.91, respectively, as com-
+pared to average Sharpe ratios of 0.02, 0.91, and
+0.66, respectively, for the corresponding sample
+of funds.
+4.3 Liquidity
+T able 7 provides another comparison worth noting:
+the average ﬁrst-order autocorrelation coefﬁcients
+of clones and funds. The ﬁrst-order autocorrela-
+tion ρ
+1 is the correlation between a fund’s current
+return and the previous month’s return, and Lo
+(2001, 2002) and Getmansky et al. (2004) observe
+that positive values for ρ
+1 in hedge-fund returns is
+a proxy for illiquidity risk. T able 7 and Figure 4
+show that the clones have much lower average
+autocorrelations than their fund counterparts, with
+the exception of Managed Futures for which both
+clones and funds have very low average autocorre-
+lations. For example, the average autocorrelation
+of Convertible Arbitrage funds in the ﬁxed-weight
+sample is 42.2%, and the corresponding average
+value for Convertible Arbitrage ﬁxed-weight and
+rolling-window clones is only 10.7% and 6.4%,
+respectively. The average autocorrelation of Fund
+of Funds is 23.2% in the ﬁxed-weight sample, and
+the corresponding value for the ﬁxed-weight and
+rolling-window clones is only − 0.1% and 0.0%,
+respectively.
+The last two columns of each of the two sub-
+panels in T able 7 provide a more formal measure
+of the statistical signiﬁcance of autocorrelation in
+the monthly returns of clones and funds, the
+Ljung–Box Q -statistic, based on the ﬁrst 12 auto-
+correlation coefﬁcients in the ﬁxed-weight case and
+on the ﬁrst 6 autocorrelation coefﬁcients in the
+rolling-window case.
+22 Smaller p-values indicate
+more statistically signiﬁcant autocorrelations, and
+for every single category, the average p-value of
+the funds is lower than that of the clones. These
+results conﬁrm our intuition that, by construction,
+clones are more liquid than their corresponding
+funds, highlighting another potential advantage of
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 22 =====
+26 J ASMINA HASANHODZIC AND ANDREW W. LO
+Performance Comparison of Clones vs. Funds
+Fixed-Weight Linear Clones
+2.70 
+0.25 
+0.20 
+1.42 
+1.44 
+1.99 
+2.05 
+1.07 
+1.06 
+0.67 
+1.86 
+1.66 
+1.39 
+1.52 
+0.32 
+0.19 
+0.88 
+1.42 
+1.43 
+1.48 
+1.41 
+0.98 
+1.36 
+1.51 
+1.59 
+1.19 
+0.00 
+0.50 
+1.00 
+1.50 
+2.00 
+2.50 
+3.00 
+Convertible
+Arbitrage
+Dedicated
+Short Bias
+Dedicated
+Short Bias*
+Emerging
+Markets
+Equity
+Market
+Neutral
+Event
+Driven
+Fixed
+Income
+Arbitrage
+Global
+Macro
+Long/Short
+Equity
+Hedge
+Managed
+Futures
+Multi-
+Strategy
+Fund of
+Funds
+All Except
+Fund of
+Funds
+Average Sharpe Ratio
+Funds Linear Clones
+Performance Comparison of Clones vs. Funds
+24-Month Rolling-Window Linear Clones
+2.31 
+0.02 
+-0.04 
+1.74 
+1.44 
+2.01 
+2.17 
+0.91 
+1.04 
+0.66 
+1.86 
+1.67 
+1.38 
+0.71 
+0.09 
+0.17 
+0.47 
+0.64 
+1.05 
+0.84 
+1.08 
+0.76 
+0.91 
+0.71 
+1.11 
+0.79 
+-0.50 
+0.00 
+0.50 
+1.00 
+1.50 
+2.00 
+2.50 
+3.00 
+Convertible
+Arbitrage
+Dedicated
+Short Bias
+Dedicated
+Short Bias*
+Emerging
+Markets
+Equity
+Market
+Neutral
+Event
+Driven
+Fixed
+Income
+Arbitrage
+Global
+Macro
+Long/Short
+Equity
+Hedge
+Managed
+Futures
+Multi-
+Strategy
+Fund of
+Funds
+All Except
+Fund of
+Funds
+Average Sharpe Ratio
+Funds Linear Clones
+Figure 3 Comparison of average Sharpe ratios of ﬁxed-weight and 24-month rolling-window linear clones
+and their corresponding funds in the TASS Live database, from February 1986 to September 2005. The
+category “Dedicated Short Bias
+∗” excludes Fund 33735.
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 23 =====
+REPLICATING HEDGE-FUND RETURNS 27
+Comparison of Average Autocorrelations of Funds and
+Fixed-Weight Linear Clones
+42.2 
+5.5 
+3.4 
+18.0 
+9.1 
+22.2 
+22.1 
+5.8 
+12.8 
+2.5 
+21.0 
+23.2 
+15.7 
+10.7 
+2.8 
+3.7 
+0.0 
+1.8 
+4.3 
+4.1 
+2.6 
+-0.1
+4.7 
+2.3 
+-0.1
+2.2 
+-5.0  
+0.0  
+5.0  
+10.0  
+15.0  
+20.0  
+25.0  
+30.0  
+35.0  
+40.0  
+45.0  
+Convertible
+Arbitrage
+Dedicated
+Short Bias
+Dedicated
+Short Bias*
+Emerging
+Markets
+Equity
+Market
+Neutral
+Event
+Driven
+Fixed
+Income
+Arbitrage
+Global
+Macro
+Long/Short
+Equity
+Hedge
+Managed
+Futures
+Multi-
+Strategy
+Fund of
+Funds
+All Except
+Fund of
+Funds
+Average Autocorrelation (%)
+Funds Linear Clones
+Comparison of Average Autocorrelations of Funds and
+24-Month Rolling-Window Linear Clones
+42.3 
+8.3 
+7.4 
+16.0 
+5.3 
+17.2 
+23.3 
+6.6 
+9.8 
+4.0 
+18.3 
+22.6 
+13.5 
+6.4 
+0.4 
+-0.7
+7.7 
+4.2 
+3.0 
+4.3 
+4.1 
+0.3 
+5.5 
+0.8 
+0.0 
+2.8 
+-5.0  
+0.0  
+5.0  
+10.0  
+15.0  
+20.0  
+25.0  
+30.0  
+35.0  
+40.0  
+45.0  
+Convertible
+Arbitrage
+Dedicated
+Short Bias
+Dedicated
+Short Bias*
+Emerging
+Markets
+Equity
+Market
+Neutral
+Event
+Driven
+Fixed
+Income
+Arbitrage
+Global
+Macro
+Long/Short
+Equity
+Hedge
+Managed
+Futures
+Multi-
+Strategy
+Fund of
+Funds
+All Except
+Fund of
+Funds
+Average Autocorrelation (%)
+Funds Linear Clones
+Figure 4 Comparison of average ﬁrst-order autocorrelation coefﬁcients of ﬁxed-weight and 24-month
+rolling-window linear clones and their corresponding funds in the TASS Live database, from February
+1986 to September 2005. The category “Dedicated Short Bias
+∗” excludes Fund 33735.
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 24 =====
+28 J ASMINA HASANHODZIC AND ANDREW W. LO
+clone portfolios over direct investments in hedge
+funds. However, this advantage comes at a cost;
+as we saw in Section 4.2, the performance gap
+between clones and funds is particularly large for
+those categories with the highest levels of illiquidity
+exposure.
+4.4 Leverage ratios
+Another consideration in evaluating the practical
+signiﬁcance of ﬁxed-weight linear clones is the
+magnitudes of the renormalization factors γ
+i .A s
+discussed in Section 4.1, these factors represent
+adjustments in the clone portfolios’ leverage so as
+to yield comparable levels of volatility. If the mag-
+nitudes are too large, this may render the cloning
+process impractical for the typical investor, who may
+not have sufﬁcient credit to support such leverage.
+The summary statistics in the left panel of T able 8
+for the renormalization factors {γ
+i} suggest that
+this is not likely to be a concern—the average γi
+across all funds in the ﬁxed-weight sample is 2.05,
+and the median value is 1.81, implying that the
+typical amount of additional leverage required to
+yield ﬁxed-weight clones of comparable volatility
+is 81–105% on average, which is far less than the
+leverage afforded by standard futures contracts such
+as the S&P 500.
+23 For the individual categories, the
+average value of γi for ﬁxed-weight clones varies
+from a low of 1.69 for Fund of Funds to a high
+of 2.76 for Managed Futures. This accords well
+with our intuition that Fund of Funds is lower
+in volatility because of its diversiﬁed investment
+proﬁle, and Managed Futures is higher in volatil-
+ity given the leverage already incorporated into the
+futures contracts traded by CTAs and CPOs. In
+fact, outside of the Managed Futures category, even
+the maximum values for γ
+i are relatively mild—
+ranging from 2.92 for Convertible Arbitrage to 8.85
+for Dedicated Short Bias—and the maximum value
+of 18.35 for Managed Futures is also reasonably
+conservative for that category.
+Developing intuition for the leverage ratios for the
+rolling-window clones is slightly more challeng-
+ing because they vary over time for each clone,
+so the right panel of T able 8 reports the cross-
+sectional means and standard deviations of the
+time-series means, standard deviations, ﬁrst-order
+autocorrelations, and Q -statistic p-values of each
+clone i’s {γ
+it}. For example, the value 1.62 is the
+mean across all rolling-window clones of the time-
+series-mean leverage ratio of each clone, and the
+value 0.46 is the cross-sectional standard deviation,
+across all rolling-window clones, of those time-series
+means. T able 8 shows that the average time series
+mean leverage ratios for rolling-window clones are
+somewhat lower than their ﬁxed-weight counter-
+parts but roughly comparable, ranging from a low
+of 1.38 for Fund of Funds to a high of 1.97 for
+Managed Futures, with standard deviations of the
+time-series means ranging from 0.31 for Fund of
+Funds to 0.75 for Dedicated Short Bias (recall that
+Dedicated Short Bias has only 10 funds, and that
+its short-bias mandate during the bull market is also
+likely to create more active rebalancings, contribut-
+ing to more volatile leverage ratios). However, none
+of these leverage ratios fall outside the realm of prac-
+tical possibility for the ﬁve instruments implicit in
+the cloning process.
+4.5 Equal-weighted clone portfolios
+The results in Sections 4.2–4.4 suggest that clone
+portfolios consisting primarily of futures and for-
+ward contracts, properly leveraged, can yield com-
+parable volatility levels and some of the same risk
+exposures as certain types of hedge-fund strategies.
+But these impressions are based on averages of the
+1610 funds in our sample and their correspond-
+ing clones, not on speciﬁc realizable portfolios. T o
+address this issue, in this section we report the
+characteristics of equal-weighted portfolios of all
+ﬁxed-weight and rolling-window clones, and com-
+pare them to the characteristics of equal-weighted
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 25 =====
+REPLICATING HEDGE-FUND RETURNS 29
+T able 8 Summary statistics for renormalization factors γi of ﬁxed-weight and 24-month rolling-window clones of hedge funds in
+the TASS Live database, from February 1986 to September 2005.
+Fixed-weight linear clone 24-month rolling-window linear clone
+renormalization factor renormalization factor
+TS-mean TS-SD ρ1 p-value(Q6)Category Sample
+description size Min Med Mean Max SD Mean SD Mean SD Mean SD Mean SD
+All funds 1610 0.11 1.81 2.05 18.35 0.96 1.62 0.46 0.36 0.28 80.7 14.6 1.9 9.4
+Convertible arbitrage 82 0.11 1.64 1.71 2.92 0.53 1.44 0.40 0.27 0.19 77.1 21.0 3.6 12.6
+Dedicated short bias 10 1.13 1.51 2.26 8.85 2.34 1.57 0.75 0.34 0.36 82.4 12.2 0.9 2.8
+Emerging markets 102 0.26 1.95 2.13 5.17 0.82 1.68 0.45 0.45 0.38 83.8 10.4 0.5 2.8
+Equity market neutral 83 0.39 2.17 2.18 4.25 0.80 1.78 0.54 0.40 0.26 77.6 17.4 5.2 17.3
+Event driven 169 0.40 1.60 1.78 4.45 0.62 1.44 0.36 0.28 0.21 81.5 13.1 1.5 8.2
+Fixed income arbitrage 62 0.40 1.69 2.07 5.46 1.01 1.47 0.40 0.32 0.21 79.0 14.9 2.9 12.2
+Global macro 54 1.13 2.44 2.60 5.67 1.15 1.86 0.45 0.44 0.34 78.2 17.7 2.0 6.3
+Long/Short equity hedge 520 1.02 1.92 2.18 6.32 0.89 1.75 0.46 0.38 0.26 79.3 15.1 1.6 8.6
+Managed futures 114 1.17 2.41 2.76 18.35 1.76 1.97 0.46 0.56 0.37 82.5 12.4 1.3 8.9
+Multi-strategy 59 0.45 1.89 2.04 3.75 0.75 1.57 0.46 0.38 0.30 81.8 11.7 1.6 9.5
+Fund of funds 355 0.75 1.58 1.69 7.53 0.65 1.38 0.31 0.27 0.20 82.8 13.3 1.7 8.8
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 26 =====
+30 J ASMINA HASANHODZIC AND ANDREW W. LO
+portfolios of the corresponding funds. By including
+all clones and funds in each of their respective port-
+folios, we avoid the potential selection biases that
+can arise from picking a particular subset of clones,
+for example, those with particularly high
+R
+2
+so r
+statistically signiﬁcant factor exposures.
+Figure 5 plots the cumulative returns of the equal-
+weighted portfolios of ﬁxed-weight and rolling-
+window clones, as well as the equal-weighted
+portfolios of their respective funds and the S&P
+500. The top panel shows that the equal-weighted
+portfolio of all ﬁxed-weight clones outperforms
+both the equal-weighted portfolio of correspond-
+ing funds and the S&P 500 over the sample period.
+However, the bottom panel shows that the perfor-
+mance of the equal-weighted portfolio of 24-month
+rolling-window clones is not quite as impressive,
+underperforming both the funds portfolio and the
+S&P 500. However, the clones portfolio underper-
+forms the S&P 500 only slightly, and apparently
+with less volatility as visual inspection suggests.
+T ables 9 and 10 and Figure 6 provide a more detailed
+performance comparison of the portfolios of clones
+and funds. In particular, Figure 6, which plots
+the Sharpe ratios of the equal-weighted portfolios
+of the two types of clones and their correspond-
+ing funds, for all funds and category by category,
+shows that for some categories the ﬁxed-weight
+clone portfolio underperforms the fund portfolio,
+for example, Dedicated Short Bias (0.09 for the
+clone portfolio vs. 0.28 for the fund portfolio),
+Emerging Markets (0.71 clones vs. 1.26 funds),
+Event Driven (1.89 clones vs. 3.08 funds), Fixed
+Income Arbitrage (1.79 clones vs. 2.93 funds), and
+Multi-Strategy (1.62 clones vs. 2.52 funds). How-
+ever, in other categories, the ﬁxed-weight clone
+portfolios have comparable performance and, in
+some cases, superior performance, for example,
+Managed Futures, where the ﬁxed-weight clone
+portfolio exhibits a Sharpe ratio of 1.80 versus 0.83
+for the corresponding fund portfolio. When all
+clones are used to construct an equal-weighted port-
+folio, T able 9 reports an annualized mean return of
+20.44% with an annualized standard deviation of
+10.23% over the sample period, implying a Sharpe
+ratio of 2.00. The annualized mean and standard
+deviation for an equal-weighted portfolio of all
+funds are 14.76% and 9.06%, respectively, yielding
+a Sharpe ratio of 1.63.
+The lower panel of Figure 6 provides a compar-
+ison of the Sharpe ratios of the rolling-window
+clone portfolios with their fund counterparts, which
+exhibits patterns similar to those of the ﬁxed-weight
+fund and clone portfolios. The rolling-window
+clone portfolios underperform in some categories
+but yield comparable performance in others, and
+superior performance in the categories of Dedicated
+Short Bias (0.19 clones vs. 0.12 funds), Equity Mar-
+ket Neutral (1.42 clones vs. 1.04 funds), Global
+Macro (1.48 clones vs. 1.39 funds), and Fund of
+Funds (1.68 clones vs. 1.61 funds). For the equal-
+weighted portfolio of all rolling-window clones, the
+average return is 12.69% with a standard devia-
+tion of 10.60%, yielding a Sharpe ratio of 1.20;
+by comparison, the equal-weighted portfolio of all
+funds has a 13.71% average return with a standard
+deviation of 8.51%, yielding a Sharpe ratio of 1.61.
+T ables 9 and 10 also report skewness, kurtosis, and
+autocorrelation coefﬁcients for the two types of
+clone portfolios, which gives a more detailed char-
+acterization of the risks of the return streams. For
+some of the categories, the differences in these mea-
+sures between clones and funds are quite striking.
+For example, according to T able 9, the portfolio of
+Fixed Income Arbitrage funds in the ﬁxed-weight
+case exhibits a skewness coefﬁcient of− 6, a kurtosis
+coefﬁcient of 59, and a ﬁrst-order autocorrelation
+coefﬁcient of 27 %, implying a negatively skewed
+return distribution with fat tails and signiﬁcant
+illiquidity exposure. In contrast, the portfolio of
+Fixed Income Arbitrage ﬁxed-weight clones has a
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 27 =====
+REPLICATING HEDGE-FUND RETURNS 31
+Cumulative Return of Equal-Weighted Portfolio of Funds and Clones
+Fixed-Weight Linear Clones
+0
+10
+20
+30
+40
+50
+Feb-86 Feb-88 Feb-90 Feb-92 Feb-94 Feb-96 Feb-98 Feb-00 Feb-02 Feb-04
+Funds Linear Clones SP500
+Cumulative Return of Equal-Weighted Portfolio of Funds and Clones
+24-Month Rolling-Window Linear Clones
+0
+2
+4
+6
+8
+10
+12
+Feb-86 Feb-88 Feb-90 Feb-92 Feb-94 Feb-96 Feb-98 Feb-00 Feb-02 Feb-04
+Funds Linear Clones SP500
+Figure 5 Cumulative returns of equal-weighted portfolios of funds and ﬁxed-weight and 24-month rolling-
+window linear clones, and the S&P 500 index, from February 1986 to September 2005.
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 28 =====
+32 J ASMINA HASANHODZIC AND ANDREW W. LO
+T able 9 Performance comparison of equal-weighted portfolios of all ﬁxed-weight linear clones versus funds in the
+TASS Live database, from February 1986 to September 2005.
+Dedicated short Emerging Equity market
+All funds Convertible arb bias markets neutral Event driven
+Statistic Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones
+Annual compound return 15.34 21.85 11.50 10.17 3.78 − 1.01 22.83 12.45 13.40 19.99 14.22 11.95
+Annualized mean 14.76 20.44 11.07 9.87 6.40 2.41 22.34 13.69 12.83 18.66 13.47 11.53
+Annualized SD 9.06 10.23 5.36 5.45 23.23 26.45 17.71 19.28 6.23 7.73 4.37 6.11
+Annualized Sharpe 1.63 2.00 2.07 1.81 0.28 0.09 1.26 0.71 2.06 2.41 3.08 1.89
+Skewness 100000 − 1 − 111 − 1 − 1
+Kurtosis 503221534182
+ρ
+1 (≥ 20% in red) 11 − 6 31 91 3 3 36 − 31 1 2 32 0
+ρ2 (≥ 20% in red) − 1 0567 − 12 − 87 − 3 3 14 10 4
+ρ3 (≥ 20% in red) − 11 0 − 4 − 2 − 69 − 36 21 16 − 12
+Correlations to various market indexes ( ≥ 50% in red, ≤− 25% in red):
+S&P 500 index 44 69 48 63 − 66 − 90 47 88 63 7 58 78
+MSCI World index 40 59 42 52 − 71 − 92 51 81 92 34 9 62
+Russell 1000 index 44 68 49 63 − 70 − 90 48 88 63 6 60 78
+Russell 2000 index 45 49 52 54 − 84 − 73 52 73 − 11 8 71 64
+NASDAQ 100 stock index 38 53 42 48 − 78 − 74 40 74 32 6 52 66
+BBA LIBOR USD 3− month − 13 − 37 − 29 − 35 2 − 12 − 8 − 6 − 8 − 29 − 8 − 22
+DJ Lehman Bond Comp GLBL 13 57 22 49 2 7 − 51 71 5 52 − 62 6
+US T reasury N/B − 10 − 46 − 10 − 35 − 16 − 34 12 7 − 9 − 52 8 − 18
+Gold (Spot $/oz) 5 − 6 − 9 − 1 − 15 − 80611 − 5 − 7
+Oil (Generic 1st ‘CL ’ Future) − 51 6 − 20 − 9 − 14 − 9 − 9 9 16 29 − 12
+US Dollar spot index 2 − 1 0617 2 19 − 15 − 15 2 18 9
+Five risk factors
+CREDIT 3 − 92 03 0 − 39 − 53 38 55 − 9 − 15 37 37
+USD − 15 − 13 − 2 − 13 5 59 − 13 − 44 − 10 14 − 2 − 1
+BOND 13 63 24 58 10 25 − 29 1 1 67 33 8
+SP500 44 69 48 63 − 66 − 90 47 88 63 8 58 78
+DVIX − 22 − 32 − 24 − 43 50 70 − 36 − 64 6 − 21 − 50 − 50
+CMDTY 5 27 − 14 − 1 − 12 − 1 3 01 61 73 8 51 2
+CSFB/T remont indexes
+All funds 82 56 46 50 − 65 − 42 55 47 34 48 63 57
+Convertible arbitrage 47 26 79 37 − 19 − 83 42 13 82 4 53 31
+Dedicated short bias − 69 − 62 − 44 − 43 84 77 − 58 − 77 − 26 − 31 − 73 − 68
+Emerging markets 72 44 42 38 − 64 − 58 94 55 21 24 60 49
+Equity market neutral 50 39 36 25 − 29 − 39 26 38 51 29 36 36
+Event driven 77 57 64 56 − 57 − 56 69 63 38 35 89 64
+Fixed income arbitrage 33 20 39 30 − 5 5 24 10 26 22 33 22
+Global macro 54 36 26 36 − 25 − 62 81 72 24 33 13 5
+Long/Short equity hedge 82 61 43 47 − 79 − 58 55 64 36 39 71 60
+Managed futures 14 0 − 12 − 41 01 7 − 13 − 1 119 − 17 − 7
+Multi-strategy 23 13 29 20 − 22 − 10 0 13 27 8 21 16
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 29 =====
+REPLICATING HEDGE-FUND RETURNS 33
+T able 9 (Continued )
+Fixed-income Long/Short
+arbitrage Global macro equity hedge Managed futures Multi-strategy Fund of funds
+Statistic Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones
+Annual compound return 10.93 7.91 15.56 24.90 16.79 17.40 15.15 38.37 15.43 15.08 12.30 18.74
+Annualized mean 10.48 7.73 14.91 22.87 16.35 17.15 15.96 34.73 14.59 14.51 11.93 17.61
+Annualized SD 3.58 4.31 8.64 9.40 11.84 14.01 19.24 19.32 5.78 8.94 7.48 7.97
+Annualized Sharpe 2.93 1.79 1.73 2.43 1.38 1.22 0.83 1.80 2.52 1.62 1.59 2.21
+Skewness − 6010 − 2 − 1102120
+Kurtosis 5 9350 1 85208771
+ρ
+1 (≥ 20% in red) 27 − 21 71 71 4 − 659 22 − 7 20 5
+ρ2 (≥ 20% i n r e d ) 1 3539 − 3 − 3 − 15 − 41 5 − 2 − 88
+ρ3 (≥ 20% in red) 1 1 − 71 1 − 62 − 1 3 11 51 2 − 10 − 1
+Correlations to various market indexes ( ≥ 50% in red, ≤− 25% in red):
+S&P 500 index − 5 − 41 04 7 77 95 − 1 − 24 3 71 31 66
+MSCI World index − 6 − 10 6 38 63 78 − 1 − 24 4 60 29 49
+Russell 1000 index − 4 − 41 04 7 79 95 − 3 − 24 4 71 31 65
+Russell 2000 index 2 2 7 30 86 78 − 7 − 13 45 53 32 49
+NASDAQ 100 Stock index 2 − 33 3 3 72 78 − 7 − 94 1 58 28 49
+BBA LIBOR USD 3− Month − 4 − 25 − 13 − 35 − 5 − 12 − 13 − 40 − 15 − 19 − 9 − 35
+DJ Lehman Bond Comp GLBL 6 39 13 66 − 71 42 7 81 10 40 10 45
+US T reasury N/B − 8 − 48 − 13 − 58 8 − 7 − 28 − 85 3 − 28 − 9 − 40
+Gold (Spot $/oz) − 1 7 15 6 − 10 − 11 13 6 3 − 41 0 − 10
+Oil (Generic 1st ‘CL ’ future) 10 20 17 17 − 571 2 59 2 1 − 21 7
+US Dollar spot index 11 17 − 5 − 10 17 8 − 14 − 27 − 6 − 695
+Five risk factors
+CREDIT 19 19 2 0 29 28 − 24 − 60 23 18 2 0
+USD 18 32 − 4 − 7 − 7 − 12 − 11 − 11 − 8 − 10 − 97
+BOND 14 60 17 78 22 12 3 88 64 11 2 60
+SP500 − 4 − 41 04 8 77 95 − 1 − 14 3 71 31 66
+DVIX 27 0 0 − 28 − 56 − 61 13 18 − 28 − 45 − 9 − 34
+CMDTY 7 24 18 25 3 18 7 34 16 30 8 29
+CSFB/T remont indexes
+All funds 37 29 61 49 72 55 23 17 62 55 91 57
+Convertible arbitrage 48 32 26 28 37 21 1 7 46 24 52 28
+Dedicated short bias 4 7 − 24 − 35 − 82 − 74 13 13 − 52 − 55 − 57 − 53
+Emerging markets 21 7 24 26 64 52 − 9 − 11 50 40 70 40
+Equity market neutral − 4 − 13 62 84 64 11 81 24 73 74 83 5
+Event driven 24 18 38 42 74 62 − 12 − 7 61 51 76 54
+Fixed income arbitrage 79 37 18 25 21 12 8 13 25 20 43 25
+Global macro 42 36 58 40 37 29 35 25 35 37 68 40
+Long/Short equity hedge 12 8 42 42 89 65 47 64 58 83 56
+Managed futures − 3 9 40 8 − 7 − 7 84 34 6 2 16 2
+Multi-strategy 35 22 31 13 20 11 7 − 13 81 32 71 4
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 30 =====
+34 J ASMINA HASANHODZIC AND ANDREW W. LO
+T able 10 Performance comparison of equal-weighted portfolios of all 24-month rolling-window linear clones versus
+funds in the TASS Live database, from February 1986 to September 2005.
+Dedicated short Emerging Equity market
+All funds Convertible arb bias markets neutral Event driven
+Statistic Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones
+Annual compound return 14.21 12.83 11.07 6.88 − 0.64 1.53 16.92 5.34 7.53 12.05 13.64 10.18
+Annualized mean 13.71 12.69 10.71 6.84 3.40 5.92 17.43 8.58 7.55 11.77 12.95 9.90
+Annualized SD 8.51 10.60 5.79 5.85 27.86 30.63 18.16 24.15 7.23 8.26 4.23 5.80
+Annualized Sharpe 1.61 1.20 1.85 1.17 0.12 0.19 0.96 0.36 1.04 1.42 3.06 1.71
+Skewness 100101 − 1 − 2 − 21 − 2 − 1
+Kurtosis 8453666 1 572 1 26
+ρ
+1 (≥ 20% in red) 5 2 12 − 58 − 2 30 73 1 4 36 − 6
+ρ2 (≥ 20% in red) − 7 − 71 3 9 − 8 − 28 4 − 196 1 28
+ρ3 (≥ 20% in red) − 1 654 − 20 24 − 22 − 18 − 8 − 4 − 2
+Correlations to various market indexes ( ≥ 50% in red, ≤− 25% in red):
+S&P 500 index 41 52 40 61 − 57 − 78 53 76 12 24 52 65
+MSCI World index 28 37 39 50 − 63 − 79 57 69 11 25 47 50
+Russell 1000 index 41 52 42 61 − 61 − 78 54 77 13 24 54 66
+Russell 2000 index 42 37 49 46 − 80 − 53 55 60 15 12 63 48
+NASDAQ 100 stock index 35 41 41 46 − 76 − 67 44 62 14 15 46 50
+BBA LIBOR USD 3-Month − 11 − 13 − 27 − 21 3 − 24 − 5 − 4 − 2 − 30 − 7 − 16
+DJ Lehman Bond Comp GLBL 6 24 20 31 3 8 − 9 1 12 43 − 21 6
+US T reasury N/B − 8 − 17 − 6 − 20 − 14 − 34 15 12 − 9 − 38 9 − 13
+Gold (Spot $/oz) 3 3 − 5 − 6 − 1 4762 − 7 − 25 − 3
+Oil (Generic 1st ‘CL ’ Future) 0 15 − 8 − 2 − 17 − 16 − 168 1 859
+US Dollar spot index 13 4 − 2 4 8 20 11 3 − 10 − 51 11 3
+Five risk factors
+CREDIT 13 16 23 36 − 34 − 45 42 50 − 11 − 34 53 6
+USD − 4 − 9 − 7 − 33 04 4 − 20 − 16 − 75 − 64
+BOND 14 30 20 37 12 29 − 44 1 0 51 42 8
+SP500 41 52 40 61 − 57 − 78 53 76 12 24 52 66
+DVIX − 20 − 38 − 16 − 33 46 60 − 44 − 62 − 6 − 12 − 41 − 47
+CMDTY 8 21 − 24 − 11 − 20 7 6 13 26 9 16
+CSFB/T remont indexes
+All funds 83 56 49 39 − 81 − 27 58 47 33 37 63 57
+Convertible arbitrage 44 31 81 30 − 11 − 33 42 13 12 0 53 33
+Dedicated short bias − 67 − 66 − 44 − 47 79 56 − 59 − 69 − 28 − 32 − 72 − 63
+Emerging markets 69 50 40 37 − 71 − 41 94 53 25 27 60 51
+Equity market neutral 48 43 30 19 − 12 − 30 27 26 52 26 35 31
+Event driven 75 61 62 48 − 60 − 38 70 67 37 36 90 64
+Fixed income arbitrage 34 23 45 26 − 4 − 72 72 02 51 93 32 8
+Global macro 58 35 29 26 − 39 53 22 11 83 13 03 8
+Long/Short equity hedge 80 59 45 38 − 83 − 31 57 57 38 33 70 57
+Managed futures 18 − 9 − 14 − 13 6 24 − 15 − 27 51 1 − 17 − 10
+Multi-strategy 21 3 35 10 − 40 − 39 − 13 2 18 2 09
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 31 =====
+REPLICATING HEDGE-FUND RETURNS 35
+T able 10 (Continued )
+Fixed-income Long/Short
+arbitrage Global macro equity hedge Managed futures Multi-strategy Fund of funds
+Statistic Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones Funds Clones
+Annual compound return 8.60 4.57 12.74 17.92 17.17 12.79 14.07 14.88 11.31 8.05 10.71 13.84
+Annualized mean 8.36 4.56 12.44 17.26 16.42 12.96 14.83 16.04 10.91 8.06 10.43 13.35
+Annualized SD 4.11 4.07 8.95 11.66 9.82 13.04 18.19 20.58 5.45 7.74 6.49 7.96
+Annualized Sharpe 2.03 1.12 1.39 1.48 1.67 0.99 0.82 0.78 2.00 1.04 1.61 1.68
+Skewness − 7 − 1000 − 1100010
+Kurtosis 6 843114312253
+ρ
+1 (≥ 20% in red) 26 − 1 4 81 21 7 − 1 1 21 21 7 − 1 351
+ρ2 (≥ 20% in red) 2 − 19 − 1 0831 − 14 − 1 1 1 5912
+ρ3 (≥ 20% in red) − 64 − 38 − 41 0 − 12 2 22 9 − 51 3
+Correlations to various market indexes ( ≥ 50% in red, ≤− 25% in red):
+S&P 500 index − 9 3 20 27 74 86 − 5 − 84 4 61 34 44
+MSCI World index − 9 − 32 12 0 64 70 − 12 − 15 48 55 29 32
+Russell 1000 index − 8 3 21 27 77 86 − 6 − 84 5 61 35 45
+Russell 2000 index 2 11 20 12 88 65 − 9 − 94 64 43 63 0
+NASDAQ 100 stock index − 1 2 13 15 74 69 − 10 − 84 4 53 29 35
+BBA LIBOR USD 3-Month − 6 − 11 − 17 − 21 − 9 − 6 − 9 − 12 − 11 − 2 − 11 − 12
+DJ Lehman Bond Comp GLBL 5 12 23 27 6 15 19 34 4 17 9 25
+US T reasury N/B − 7 − 21 − 19 − 32 2 − 4 − 28 − 42 2 − 13 − 9 − 19
+Gold (Spot $/oz) 2 10 14 2 − 7 − 8 9 10 8 − 581
+Oil (Generic 1st ‘CL ’ Future) 10 16 2 13 − 12 0 5 17 15 28 7 19
+US Dollar spot index 13 15 − 10 10 17 8 − 3 − 3 12 7 11 3
+Five Risk Factors
+CREDIT 22 31 2 3 28 29 − 22 − 28 27 29 14 13
+USD 19 14 − 12 0 − 3 − 9 − 2 − 7 − 90 − 4 − 2
+BOND 14 31 25 39 10 16 23 41 7 22 15 33
+SP500 − 9 3 21 27 74 86 − 5 − 84 3 61 34 45
+DVIX 27 − 14 − 5 − 18 − 48 − 58 17 8 − 17 − 41 − 13 − 36
+CMDTY 5 14 5 15 0 11 10 21 20 34 13 26
+CSFB/T remont indexes
+All funds 34 21 61 43 73 52 25 14 58 41 90 55
+Convertible arbitrage 49 28 25 32 37 24 1 12 44 18 46 32
+Dedicated short bias 6 − 10 − 26 − 36 − 83 − 72 13 1 − 43 − 52 − 56 − 59
+Emerging markets 15 13 29 33 63 52 − 6 − 2 51 34 68 46
+Equity market neutral − 9 9 33 39 43 40 16 21 34 31 49 41
+Event driven 24 27 35 40 74 61 − 12 0 58 45 73 59
+Fixed income arbitrage 82 20 19 23 23 17 10 7 27 15 39 26
+Global macro 42 19 58 37 39 28 37 18 34 26 69 38
+Long/Short equity hedge 9 11 44 35 89 59 41 1 58 44 81 53
+Managed futures − 6 6 43 12 − 8 − 14 83 2 772 2 0 − 9
+Multi-strategy 40 11 28 5 18 7 4 − 11 37 17 25 4
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 32 =====
+36 J ASMINA HASANHODZIC AND ANDREW W. LO
+Performance comparison of equal-weighted actual-fund vs. clone portfolios
+Fixed-weight linear clones
+1.63
+2.07
+0.28
+0.18
+1.26
+2.06
+3.08
+2.93
+1.73
+1.38
+0.83
+2.52
+1.59
+2.00
+1.81
+0.09
+-0.09
+0.71
+2.41
+1.89
+1.79
+2.43
+1.22
+1.80
+1.62
+2.21
+-0.50
+0.00
+0.50
+1.00
+1.50
+2.00
+2.50
+3.00
+3.50
+All Funds Convertible
+Arbitrage
+Dedicated
+Short Bias
+Dedicated
+Short Bias*
+Emerging
+Markets
+Equity
+Market
+Neutral
+Event Driven Fixed
+Income
+Arbitrage
+Global
+Macro
+Long/Short
+Equity
+Hedge
+Managed
+Futures
+Multi-
+Strategy
+Fund of
+Funds
+Annualized Sharpe
+Funds Linear clones
+Performance comparison of equal-weighted actual-fund vs. clone portfolios
+24-month rolling-window linear clones
+1.61
+1.85
+0.12
+0.09
+0.96
+1.04
+3.06
+2.03
+1.39
+1.67
+0.82
+2.00
+1.61
+1.20
+1.17
+0.19
+0.26
+0.36
+1.42
+1.71
+1.12
+1.48
+0.99
+0.78
+1.04
+1.68
+0.00
+0.50
+1.00
+1.50
+2.00
+2.50
+3.00
+3.50
+All Funds Convertible
+Arbitrage
+Dedicated
+Short Bias
+Dedicated
+Short Bias*
+Emerging
+Markets
+Equity
+Market
+Neutral
+Event Driven Fixed
+Income
+Arbitrage
+Global
+Macro
+Long/Short
+Equity
+Hedge
+Managed
+Futures
+Multi-
+Strategy
+Fund of
+Funds
+Annualized Sharpe
+Funds Linear clones
+Figure 6 Comparison of Sharpe ratios of equal-weighted portfolios of funds versus ﬁxed-weight and 24-
+month rolling-window linear clones of hedge funds in the TASS Live database, from February 1986 to
+September 2005.
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 33 =====
+REPLICATING HEDGE-FUND RETURNS 37
+skewness of 0, a kurtosis of 3, and a ﬁrst-order
+autocorrelation of − 2%, and the portfolio of Fixed
+Income Arbitrage rolling-window clones has simi-
+lar characteristics, which is consistent with the fact
+that the clone portfolios are comprised of highly
+liquid securities. Other examples of this differ-
+ence in liquidity exposure include the portfolios of
+funds in Convertible Arbitrage, Emerging Markets,
+Event Driven, Multi-Strategy, and Fund of Funds
+categories, all of which exhibit signiﬁcant posi-
+tive ﬁrst-order autocorrelation coefﬁcients (31%,
+36%, 32%, 22%, and 20%, respectively) in con-
+trast to their ﬁxed-weight clone counterparts (9%,
+− 3%, 0%, − 7%, and 5 %, respectively). Similarly,
+the ﬁrst-order autocorrelations of the portfolios of
+funds in these ﬁve categories using the rolling-
+window sample (12%, 30%, 36%, 17%, and 5%,
+respectively) are all larger than their rolling-window
+clone counterparts ( − 5%,7 %, − 6%, − 13%,
+and 1%).
+While the statistical properties of clone portfolios
+may seem more attractive, it should be kept in
+mind that some of these characteristics are related to
+performance. In particular, one source of negative
+skewness and positive kurtosis is the kind of option-
+based strategies associated with Capital Decimation
+Partners (see Section 2.1), which is a legitimate
+source of expected return. And liquidity exposure is
+another source of expected return, as in the case of
+Fixed Income Arbitrage where one common theme
+is to purchase illiquid bonds and shortsell more liq-
+uid bonds with matching nominal cashﬂows. By
+reducing exposures to these risk factors through
+clones, we should expect a corresponding reduc-
+tion in expected return. For example, in the case
+of Fixed Income Arbitrage, T able 9 reports that
+the portfolio of funds yields an average return of
+10.48% with a standard deviation of 3.58% for
+a Sharpe ratio of 2.93, as compared to the ﬁxed-
+weight portfolio of clones’ average return of 7.73%
+with a standard deviation of 4.31% for a Sharpe
+ratio of 1.79.
+In addition to its expected return and volatility, a
+portfolio’s correlation with major market indexes
+is another important characteristic that concerns
+hedge-fund investors because of the diversiﬁcation
+beneﬁts that alternative investments have tradi-
+tionally provided. T ables 9 and 10 show that the
+ﬁxed-weight and rolling-window clone portfolios
+exhibit correlations that are similar to those of
+their matching portfolios of funds for a variety of
+stock, bond, currency, commodity, and hedge-fund
+indexes.
+24 For example, the portfolio of Convertible
+Arbitrage funds in the ﬁxed-weight sample has a
+48% correlation to the S&P 500, a − 29% cor-
+relation to 3-month LIBOR, a 6 % correlation to
+the US Dollar Index, and a 79 % correlation to
+the CSFB/T remont Convertible Arbitrage Index. In
+comparison, the portfolio of Convertible Arbitrage
+ﬁxed-weight clones has a 63% correlation to the
+S&P 500, a − 35% correlation to 3-month LIBOR,
+a 1% correlation to the US Dollar Index, and a
+37% correlation to the CSFB/T remont Convertible
+Arbitrage Index.
+However, some differences do exist. The equal-
+weighted portfolios of funds tend to have higher
+correlation with the corresponding CSFB/T remont
+Hedge-Fund Index of the same category than the
+equal-weighted portfolios of both types of clones.
+For example, the correlation between the portfo-
+lio of funds and the CSFB/T remont Hedge-Fund
+Index in the ﬁxed-weight sample is 82%, and the
+corresponding correlation for the portfolio of ﬁxed-
+weight clones with the same index is 56%, and the
+same pair of correlations for the rolling-window
+case is 83% and 56%, respectively. This pattern
+is repeated in every single category for both types
+of clones, and is not unexpected given that the
+CSFB/T remont indexes are constructed from the
+funds themselves. On the other hand, the portfolios
+of clones are sometimes more highly correlated with
+certain indexes than their fund counterparts because
+of how the clones are constructed. For example,
+the correlation of the portfolio of Equity Market
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 34 =====
+38 J ASMINA HASANHODZIC AND ANDREW W. LO
+T able 11 Comparison of signs and absolute differences of correlations of funds and clones to 28
+market indexes, where ﬁxed-weight and 24-month rolling-window linear clones are constructed
+from hedge funds in the TASS Live database, from February 1986 to September 2005.
+Fixed-weight linear clones Rolling-window linear clones
+% Same Mean SD % Same Mean SD
+Category sign |ρf − ρc|| ρf − ρc| sign |ρf − ρc|| ρf − ρc|
+All funds 86 19 11 93 12 7
+Convertible arbitrage 100 12 10 93 12 10
+Dedicated short bias 93 13 7 89 19 13
+Emerging markets 79 19 12 86 10 9
+Equity market neutral 86 19 13 96 12 10
+Event driven 89 12 10 86 11 6
+Fixed income arbitrage 86 13 13 71 14 13
+Global macro 100 20 17 93 10 7
+Long/Short equity hedge 89 11 6 96 10 6
+Managed futures 96 15 20 96 9 11
+Multi-strategy 93 14 10 93 12 6
+Fund of funds 89 23 11 96 13 9
+Neutral ﬁxed-weight clones with the BOND fac-
+tor is 67%, whereas the correlation of the portfolio
+of corresponding Equity Market Neutral funds is
+only 11%. This difference is likely the result of
+the fact that the BOND factor is one of the ﬁve
+factors used to construct clone returns, so the cor-
+relations of clone portfolios to these factors will
+typically be larger in absolute value than those of
+the corresponding fund portfolios.
+A summary of the differences in correlation prop-
+erties between funds and clones is provided by
+T able 11. The ﬁrst column in each of the two
+sub-panels labelled “% Same Sign” contains the
+percentage of the 28 market-index correlations in
+T ables 9 and 10, respectively, for which the fund
+correlation and the clone correlation are of the same
+sign. The next two columns of each sub-panel con-
+tain the mean and standard deviation of the absolute
+differences in fund- and clone-correlation across the
+28 market-index correlations. These results show
+remarkable agreement in sign for both ﬁxed-weight
+and rolling-window clones, ranging from 71% to
+100%, and mean absolute-differences ranging from
+9% to 23%. And even for the largest mean absolute-
+difference of 23% (ﬁxed-weight clones in the Fund
+of Funds category), 89% of the correlations exhibit
+the same sign in this category.
+Overall, the results in T ables 9–11 show that the
+correlations of clone portfolios are generally com-
+parable in sign and magnitude to those of the fund
+portfolios, implying that portfolios of clones can
+provide some of the same diversiﬁcation beneﬁts as
+their hedge-fund counterparts.
+5 Conclusion
+A portion of every hedge fund’s expected return is
+risk premia—compensation to investors for bearing
+certain risks. One of the most important beneﬁts of
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 35 =====
+REPLICATING HEDGE-FUND RETURNS 39
+hedge-fund investments is the non-traditional types
+of risks they encompass, such as tail risk, liquid-
+ity risk, and credit risk. Most investors would do
+well to take on small amounts of such risks if they
+are not already doing so because these factors usu-
+ally yield attractive risk premia, and many of these
+risks are not highly correlated with those of tra-
+ditional long-only investments. Although talented
+hedge-fund managers are always likely to outper-
+form passive ﬁxed-weight portfolios, the challenges
+of manager selection and monitoring, the lack of
+transparency, the limited capacity of such managers,
+and the high fees may tip the scales for the institu-
+tional investor in favor of clone portfolios. In such
+circumstances, portable beta may be a reasonable
+alternative to portable alpha.
+Our empirical ﬁndings suggest that the possibil-
+ity of cloning hedge-fund returns is real. For
+certain hedge-fund categories, the average perfor-
+mance of clones is comparable—on both a raw-
+return and a risk-adjusted basis—to their hedge-
+fund counterparts. For other categories like Event
+Driven and Emerging Markets, the clones are less
+successful.
+The differences in performance of clones across
+hedge-fund categories raise an important philo-
+sophical issue: What is the source of the clones’
+value-added? One possible interpretation is that the
+cloning process “reverse-engineers” a hedge fund’s
+proprietary trading strategy, thereby proﬁting from
+the fund’s intellectual property. T wo assumptions
+underlie this interpretation, both of which are
+rather unlikely: (1) it is possible to reverse-engineer
+a hedge fund’s strategy using a linear regression of its
+monthly returns on a small number of market-index
+returns; and (2) all hedge funds possess intellec-
+tual property worth reverse-engineering. Given the
+active nature and complexity of most hedge-fund
+strategies, it is hard to imagine reverse-engineering
+them by regressing their monthly returns on ﬁve
+factors. However, if such strategies have risk
+factors in common, it is not hard to imagine
+identifying them by averaging a reasonable cross-
+section of time-series regressions of monthly returns
+on those risk factors. As for whether all hedge
+funds have intellectual property worth reverse-
+engineering, we have purposely included all the
+TASS hedge funds in our sample—not just the suc-
+cessful ones—and it is unlikely that all of the 1610
+funds possess signiﬁcant manager-speciﬁc alpha.
+In fact, for our purposes, the main attraction
+of this sample of hedge funds is the funds’ beta
+exposures.
+Our interpretation of the clones’ value-added is less
+devious: By analyzing the monthly returns of a large
+cross-section of hedge funds (some of which have
+genuine manager-speciﬁc alpha, and others which
+do not), it is possible to identify common risk fac-
+tors from which those funds earn part, but not
+necessarily all, of their expected returns. By taking
+similar risk exposures, it should be possible to earn
+similar risk premia from those exposures, hence at
+least part of the hedge funds’ expected returns can be
+attained, but in a lower-cost, transparent, scalable,
+and liquid manner.
+As encouraging as our empirical results may seem,
+a number of qualiﬁcations should be kept in mind.
+First, we observed a signiﬁcant performance dif-
+ference between ﬁxed-weight and rolling-window
+clones, and this gap must be weighed carefully in
+any practical implementation of the cloning pro-
+cess. The ﬁxed-weight approach yields better histor-
+ical performance and lower turnover, but is subject
+to look-ahead bias so the performance may not
+be achievable out-of-sample. The rolling-window
+approach yields less attractive historical perfor-
+mance, but the simulated performance may be more
+attainable, and the ﬂexibility of rolling-window
+estimators may be critical for capturing nonsta-
+tionarities such as time-varying means, volatilities,
+and regime changes. The costs and beneﬁts of each
+approach must be evaluated on a case-by-case basis
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 36 =====
+40 J ASMINA HASANHODZIC AND ANDREW W. LO
+with the speciﬁc objectives and constraints of the
+investor in mind.
+Second, despite the promising properties of lin-
+ear clones in several style categories, it is well-
+known that certain hedge-fund strategies contain
+inherent nonlinearities that cannot be captured
+by linear models (see, e.g., Capital Multiplica-
+tion Partners). Therefore, more sophisticated non-
+linear methods—including nonlinear regression,
+regime-switching processes, stochastic volatility
+models, and Kat and Palaro’s (2005) copula-based
+algorithm—may yield signiﬁcant beneﬁts in terms
+of performance and goodness-of-ﬁt. However, there
+is an important trade-off between the goodness-of-
+ﬁt and complexity of the replication process, and
+this trade-off varies from one investor to the next.
+As more sophisticated replication methods are used,
+the resulting clone becomes less passive, requiring
+more trading and risk-management expertise, and
+eventually becoming as dynamic and complex as the
+hedge-fund strategy itself.
+Third, the replicating factors we proposed are only a
+small subset of the many liquid instruments that are
+available to the institutional investor. By expanding
+the universe of factors to include options and other
+derivative securities, and customizing the set of fac-
+tors to each hedge-fund category (and perhaps to
+each fund), it should be possible to achieve addi-
+tional improvements in performance, including the
+ability to capture tail risk and other nonlinearities
+in a ﬁxed-weight portfolio. In fact, Haugh and Lo
+(2001) show that a judiciously constructed ﬁxed-
+weight portfolio of simple put and call options can
+yield an excellent approximation to certain dynamic
+trading strategies, and this approach can be adopted
+in our context to create better clones.
+Finally, we have not incorporated any transactions
+costs or other frictions into our performance anal-
+ysis of the clone portfolios, which will clearly have
+an impact on performance. The more passive clones
+will be less costly to implement, but they may
+not capture as many risk exposures and nonlinear-
+ities as the more sophisticated versions. However,
+by construction, clones will have a signiﬁcant cost
+advantage over a traditional fund of funds invest-
+ment, not only because of the extra layer of fees that
+funds of funds typically charge, but also because
+of the clone portfolio’s more efﬁcient use of capi-
+tal due to the cross-netting of margin requirements
+and incentive fees. For example, consider a fund
+of funds with equal allocations to two managers,
+each of which charges a 2% management fee and a
+20% incentive fee, and suppose that in a given year,
+one manager generates a 25% return and the other
+manager loses 5 %. Assuming a 1% management
+fee and a 10% incentive fee for the fund of funds,
+and no loss carryforwards for the underlying funds
+from previous years, this scenario yields a net return
+of only 4.05% for the fund of funds investors. In
+this case, the fees paid by the investors amount to a
+stunning 59.5% of the net proﬁts generated by the
+underlying hedge funds.
+Of course, a number of implementation issues
+remain to be resolved before hedge-fund clones
+become a reality, for example, the estimation meth-
+ods for computing clone portfolio weights, the
+implications of the implied leverage required by our
+renormalization process, the optimal rebalancing
+interval, the types of strategies to be cloned, and
+the best method for combining clones into a sin-
+gle portfolio. We are cautiously optimistic that the
+promise of our initial ﬁndings will provide sufﬁcient
+motivation to take on these practical challenges.
+Acknowledgments
+Research support from AlphaSimplex Group and
+the MIT Laboratory for Financial Engineering is
+gratefully acknowledged. We thank T om Bren-
+nan, Nicholas Chan, John Cox, Arnout Eikeboom,
+Gifford Fong (the editor), Jacob Goldﬁeld, Shane
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 37 =====
+REPLICATING HEDGE-FUND RETURNS 41
+Haas, Charles Harris, Eric Rosenfeld, Kendall
+Walker, an anonymous referee, and participants at
+the CFA Institute Risk Symposium 2006, the Octo-
+ber 2006 MIT Sloan Leaders Network, and Le Club
+B 2006 for many helpful comments.
+Notes
+1 Nevertheless, derivatives-based replication strategies may
+serve a different purpose that is not vitiated by com-
+plexity: risk attribution, with the ultimate objective
+of portfolio risk management. Even if an underlying
+hedge-fund strategy is simpler than its derivatives-based
+replication strategy, the replication strategy may still be
+useful in measuring the overall risk exposures of the hedge
+fund and designing a hedging policy for a portfolio of
+hedge-fund investments.
+2 As a matter of convention, throughout this paper we
+deﬁne the Sharpe ratio as the ratio of the monthly average
+return to the monthly standard deviation, then annualize
+by multiplying by the square root of 12. In the original
+deﬁnition of the Sharpe ratio, the numerator is the excess
+return of the fund, in excess of the risk-free rate. Given
+the time variation in this rate over our sample period, we
+use the total return so as to allow readers to select their
+own benchmarks.
+3 The margin required per contract is assumed to be:
+100 ×{ 15% × (current level of the SPX)
+− (put premium) − (amount out of the money) }
+where the amount out of the money is equal to the current
+level of the SPX minus the strike price of the put.
+4 This ﬁgure varies from broker to broker, and is meant to
+be a rather conservative estimate that might apply to a
+$10M startup hedge fund with no prior track record.
+5 This example was ﬁrst proposed by Merton in his
+15.415 Finance Theory class at the MIT Sloan School
+of Management.
+6 During the period from November 1976 to December
+2004, the annualized mean and standard deviation of
+Berkshire Hathaway’s Series A shares were 29.0% and
+26.1%, respectively, for a Sharpe ratio of 1.12 using 0%
+for the risk-free benchmark return.
+7 Once a hedge fund decides not to report its performance,
+is liquidated, is closed to new investment, restructured,
+or merged with other hedge funds, the fund is transferred
+into the “Graveyard” database. A hedge fund can only be
+listed in the “Graveyard” database after being listed in the
+“Live" database. Because the TASS database fully rep-
+resents returns and asset information for live and dead
+funds, the effects of suvivorship bias are minimized.
+However, the database is subject to backﬁll bias—when a
+fund decides to be included in the database, TASS adds
+the fund to the “Live” database and includes all available
+prior performance of the fund. Hedge funds do not need
+to meet any speciﬁc requirements to be included in the
+TASS database. Due to reporting delays and time lags
+in contacting hedge funds, some Graveyard funds can
+be incorrectly listed in the Live database for a period of
+time. However, TASS has adopted a policy of transferring
+funds from the Live to the Graveyard database if they do
+not report over an 8- to 10-month period.
+8 For studies attempting to quantify the degree and impact
+of survivorship bias, see Baquero et al. (2005), Brown
+et al. (1992), Brown et al. (1999), Brown et al. (1997),
+Carpenter and Lynch (1999), Fung and Hsieh (1997b,
+2000), Hendricks et al. (1997), Horst et al. (2001), Liang
+(2000), and Schneeweis and Spurgin (1996).
+9 See Posthuma and van der Sluis (2003).
+10 We are not aware of any studies focusing on this type of
+bias, but the impact of selection on statistical inference
+has been explored in some detail by several authors. See,
+for example, Leamer (1978) and the citations within.
+11 TASS deﬁnes returns as the change in net asset value
+during the month (assuming the reinvestment of any
+distributions on the reinvestment date used by the fund)
+divided by the net asset value at the beginning of the
+month, net of management fees, incentive fees, and other
+fund expenses. Therefore, these reported returns should
+approximate the returns realized by investors.
+12 This is no coincidence—TASS is owned by T remont
+Capital Management, which created the CSFB/T remont
+indexes in partnership with Credit Suisse First Boston.
+13 It is no coincidence that the categories with the highest
+degree of average positive serial correlation are also the
+categories with the highest average Sharpe ratios. Smooth
+return series will, by deﬁnition, have higher Sharpe ratios
+than more volatile return series with the same mean.
+14 Litterman (2005) calls such risk exposures “exotic betas”
+and argues that “[t]he adjective ‘exotic’ distinguishes it
+from market beta, the only beta which deserves to get paid
+a risk premium.” We disagree—there are several well-
+established economic models that illustrate the possibility
+of multiple sources of systematic risk, each of which com-
+mands a positive risk premium, for example, Merton
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 38 =====
+42 J ASMINA HASANHODZIC AND ANDREW W. LO
+(1973) and Ross (1976). We believe that hedge funds
+are practical illustrations of these multi-factor models of
+expected returns.
+15 Throughout this paper, all statistics except for those
+related to the ﬁrst-order autocorrelation have been annu-
+alized to facilitate interpretation and comparison.
+16 In fact, a decomposition of the total mean returns of
+these two funds shows that the six factors account for very
+little of the two funds’ performance, hence the manager-
+speciﬁc alphas are particularly signiﬁcant for these two
+managers (see Hasanhodzic and Lo, 2006b, T able 8 for
+details).
+17 In Hasanhodzic and Lo (2006a) and in a previous draft
+of this paper, we used the term “buy-and-hold” to
+describe this type of clone. Although this is consistent
+with the passive nature of the clone portfolio, it is not
+strictly accurate because a portfolio with ﬁxed weights
+does require periodic rebalancing to maintain those ﬁxed
+weights. Moreover, if a clone is to be implemented via
+futures and forward contracts as we propose, then even in
+the absence of portfolio rebalancings, some trading will
+be necessary as maturing contracts are “rolled” into those
+of the next maturity date. For these reasons, we now refer
+to clone portfolios with constant portfolio weights over
+time as “ﬁxed-weight” clones.
+18 However, it should be kept in mind that the futures and
+forward contracts corresponding to the ﬁve factors in
+Eq. (5) have sizable amounts of leverage built into the
+contracts themselves, so that for reasonable values of γ
+i ,
+we can re-write Eq. (9) as:
+ˆRit = β∗
+i1 (γi SP500t ) +···
++ β∗
+i5
+(
+γi CMDTYt
+)
++ δi Rl (14)
+= β∗
+i1 SP500∗
+t +···+ β∗
+i5 CMDTY∗
+t (15)
+where we have redeﬁned ﬁve new instruments in Eq. (15)
+that can achieve γi times the leverage of the original
+instruments in (9) at no additional cost. Since the coefﬁ-
+cients {β
+∗
+ik} sum to one by construction, there is no need
+for any additional borrowing or lending because each
+redeﬁned instrument is already leveraged by the factor
+γ
+i , hence δi ≡ 0 in Eq. (15).
+19 If there are missing observations within this 24-month
+window, we extend the window backwards in time until
+we obtain 24 datapoints for our regression. Our choice
+of 24 months for the rolling window was a compromise
+between the desire to capture nonstationarities in the data
+and the need for a sufﬁcient number of observations to
+estimate the parameters of the clone. We did not try
+other window lengths because we wished to reduce the
+impact of “backtest bias” or over-ﬁtting on our empirical
+results.
+20 Note that each type of clone has its own set of matching
+results for the funds. This is due to the fact that the ﬁrst 24
+months of each fund’s history are used to calibrate the ini-
+tial estimates of the rolling-window clones, hence they are
+not included in the rolling-window dataset from which
+fund and clone performance statistics are computed.
+21 Speciﬁcally, fund 33735 has a small but positive SP500
+beta coefﬁcient, hence the clone portfolio for this fund
+is long the S&P 500 throughout the sample period from
+April 1997 to March 2005, implying a strong positive
+contribution for the SP500 factor. Because the SP500
+beta coefﬁcient is small and the SP500 factor is the most
+volatile of the ﬁve factors, the un-renormalized volatility
+of the clone portfolio is considerably smaller than the
+volatility of the fund, which causes our renormalization
+process to magnify the positive mean return of the clone
+substantially.
+22 Ljung and Box (1978) propose the following statistic
+to gauge the signiﬁcance of the ﬁrst m autocorrelation
+coefﬁcients of a time series with T observations:
+Q = T (T +2)
+m∑
+k=1
+ˆρ2
+k/(T − k) (16)
+which is asymptotically χ2
+m under the null hypothesis
+of no autocorrelation. By forming the sum of squared
+autocorrelations, the statisticQ reﬂects the absolute mag-
+nitudes of the ˆρ
+k s irrespective of their signs, hence funds
+with large positive or negative autocorrelation coefﬁcients
+will exhibit large Q -statistics.
+23 As of July 28, 2006, the initial margin requirement of
+the S&P 500 futures contract that trades on the Chicago
+Mercantile Exchange is $19,688, with a maintenance
+margin requirement of $15,750. Given the contract value
+of $250 times the S&P 500 Index and the settlement price
+of 1284.30 on July 28, 2006 for the September 2006 con-
+tract, the initial and maintenance margin requirements
+are 6.1% and 4.9% of the contract value, respectively,
+implying leverage ratios of 16.3 and 20.4, respectively
+(see http://www.cme.com for further details).
+24 Except for the SP500 and DVIX factors, the index returns
+used to compute the correlations in T ables 9 and 10
+are derived solely from the indexes themselves in the
+usual way (Return
+t ≡ (Indext − Indext− 1)/Indext ), with
+no accounting for any distributions. The SP500 factor
+does include dividends, and the DVIX factor is the ﬁrst
+difference of the month-end VIX index.
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 39 =====
+REPLICATING HEDGE-FUND RETURNS 43
+A Appendix
+The following is a list of category descriptions, taken
+directly from TASS documentation, that deﬁne the
+criteria used by TASS in assigning funds in their
+database to one of 11 possible categories:
+Convertible Arbitrage This strategy is identiﬁed
+by hedge investing in the convertible securities of a
+company. A typical investment is to be long the con-
+vertible bond and short the common stock of the
+same company. Positions are designed to generate
+proﬁts from the ﬁxed income security as well as the
+short sale of stock, while protecting principal from
+market moves.
+Dedicated Short Bias Dedicated short sellers
+were once a robust category of hedge funds before
+the long bull market rendered the strategy difﬁcult
+to implement. A new category, short biased, has
+emerged. The strategy is to maintain net short as
+opposed to pure short exposure. Short biased man-
+agers take short positions in mostly equities and
+derivatives. The short bias of a manager’s portfolio
+must be constantly greater than zero to be classiﬁed
+in this category.
+Emerging Markets This strategy involves equity
+or ﬁxed income investing in emerging markets
+around the world. Because many emerging mar-
+kets do not allow short selling, nor offer viable
+futures or other derivative products with which to
+hedge, emerging market investing often employs a
+long-only strategy.
+Equity Market Neutral This investment strategy
+is designed to exploit equity market inefﬁciencies
+and usually involves being simultaneously long and
+short matched equity portfolios of the same size
+within a country. Market neutral portfolios are
+designed to be either beta or currency neutral, or
+both. Well-designed portfolios typically control for
+industry, sector, market capitalization, and other
+exposures. Leverage is often applied to enhance
+returns.
+Event Driven This strategy is deﬁned as “spe-
+cial situations” investing designed to capture price
+movement generated by a signiﬁcant pending
+corporate event such as a merger, corporate restruc-
+turing, liquidation, bankruptcy, or reorganiza-
+tion. There are three popular sub-categories in
+event-driven strategies: risk (merger) arbitrage,
+distressed/high yield securities, and Regulation D.
+Fixed Income Arbitrage The ﬁxed income arbi-
+trageur aims to proﬁt from price anomalies between
+related interest rate securities. Most managers trade
+globally with a goal of generating steady returns
+with low volatility. This category includes interest
+rate swap arbitrage, US and non-US govern-
+ment bond arbitrage, forward yield curve arbitrage,
+and mortgage-backed securities arbitrage. The
+mortgage-backed market is primarily US-based,
+over-the-counter, and particularly complex.
+Global Macro Global macro managers carry long
+and short positions in any of the world’s major cap-
+ital or derivative markets. These positions reﬂect
+their views on overall market direction as inﬂu-
+enced by major economic trends and/or events. The
+portfolios of these funds can include stocks, bonds,
+currencies, and commodities in the form of cash or
+derivatives instruments. Most funds invest globally
+in both developed and emerging markets.
+Long/Short Equity Hedge This directional strat-
+egy involves equity-oriented investing on both the
+long and short sides of the market. The objective is
+not to be market neutral. Managers have the ability
+to shift from value to growth, from small to medium
+to large capitalization stocks, and from a net long
+position to a net short position. Managers may use
+futures and options to hedge. The focus may be
+regional, such as long/short US or European equity,
+or sector speciﬁc, such as long and short technology
+or healthcare stocks. Long/Short equity funds tend
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT
+
+
+===== PAGE 40 =====
+44 J ASMINA HASANHODZIC AND ANDREW W. LO
+to build and hold portfolios that are substantially
+more concentrated than those of traditional stock
+funds.
+Managed Futures This strategy invests in listed
+ﬁnancial and commodity futures markets and cur-
+rency markets around the world. The managers
+are usually referred to as Commodity T rading
+Advisors, or CTAs. T rading disciplines are gener-
+ally systematic or discretionary. Systematic traders
+tend to use price and market speciﬁc information
+(often technical) to make trading decisions, while
+discretionary managers use a judgmental approach.
+Multi-Strategy The funds in this category are
+characterized by their ability to dynamically allocate
+capital among strategies falling within several
+traditional hedge-fund disciplines. The use of many
+strategies, and the ability to reallocate capital
+between them in response to market opportunities,
+means that such funds are not easily assigned to any
+traditional category.
+The Multi-Strategy category also includes funds
+employing unique strategies that do not fall under
+any of the other descriptions.
+Fund of Funds A “Multi Manager” fund will
+employ the services of two or more trading advi-
+sors or Hedge Funds who will be allocated cash by
+the T rading Manager to trade on behalf of the fund.
+References
+Agarwal, V . and Naik, N. (2000a). “Generalised Style Analysis
+of Hedge Funds.” Journal of Asset Management 1, 93–109.
+Agarwal, V . and Naik, N. (2000b). “On T aking the Alterna-
+tive Route: Risks, Rewards, and Performance Persistence of
+Hedge Funds.” Journal of Alternative Investments 2, 6–23.
+Agarwal, V . and Naik, N. (2004). “Risk and Portfolio Deci-
+sions Involving Hedge Funds.” Review of Financial Studies
+17, 63–98.
+Baquero, G., Horst, J. and V erbeek, M. (2005). “Sur-
+vival, Look-Ahead Bias, and Persistence in Hedge Fund
+Performance.”Journal of Financial and Quantitative Analysis
+40, 493–517.
+Bertsimas, D., Kogan, L., and Lo, A. (2001). “Hedg-
+ing Derivative Securities and Incomplete Markets: An
+ϵ-Arbitrage Approach.” Operations Research 49, 372–397.
+Brown, S., Goetzmann, W ., Ibbotson, R., and Ross, S.
+(1992). “Survivorship Bias in Performance Studies.”Review
+of Financial Studies 5, 553–580.
+Brown, S., Goetzmann, W ., and Ibbotson, R. (1999).
+“Offshore Hedge Funds: Survival and Performance 1989–
+1995.” Journal of Business 72, 91–118.
+Brown, S., Goetzmann, W ., and Park, J. (1997). “Conditions
+for Survival: Changing Risk and the Performance of Hedge
+Fund Managers and CTAs.” Yale School of Management
+Working Paper No. F-59.
+Brown, S., Goetzmann, W ., and Park, J. (2000). “Hedge
+Funds and the Asian Currency Crisis.” Journal of Portfolio
+Management 26, 95–101.
+Capocci, D. and Hubner, G. (2004). “Analysis of Hedge Fund
+Performance.” Journal of Empirical Finance 11, 55–89.
+Carpenter, J. and Lynch, A. (1999). “Survivorship Bias and
+Attrition Effects in Measures of Performance Persistence.”
+Journal of Financial Economics 54, 337–374.
+Edwards, F . and Caglayan, M. (2001). “Hedge Fund Perfor-
+mance and Manager Skill.” Journal of Futures Markets 21,
+1003–1028.
+Ennis, R. and Sebastian, M. (2003). “A Critical Look at the
+Case for Hedge Funds: Lessons from the Bubble.” Journal
+of Portfolio Management 29, 103–112.
+Fung, W . and Hsieh, D. (1997a). “Empirical Characteristics
+of Dynamic T rading Strategies: The Case of Hedge Funds.”
+Review of Financial Studies 10, 275–302.
+Fung, W . and Hsieh, D. (1997b). “Investment Style and Sur-
+vivorship Bias in the Returns of CTAs: The Information
+Content of T rack Records.”Journal of Portfolio Management
+24, 30–41.
+Fung, W . and Hsieh, D. (2000). “Performance Characteristics
+of Hedge Funds and Commodity Funds: Natural vs. Spu-
+rious Biases.” Journal of Financial and Quantitative Analysis
+35, 291–307.
+Fung, W . and Hsieh, D. (2001). “The Risk in Hedge Fund
+Strategies: Theory and Evidence from T rend Followers.”
+Review of Financial Studies 14, 313–341.
+Fung, W . and Hsieh, D. (2004). “Hedge Fund Benchmarks:
+A Risk-Based Approach.” Financial Analysts Journal 60,
+65–80.
+Getmansky, M., Lo, A., and Makarov, I. (2004). “An Econo-
+metric Analysis of Serial Correlation and Illiquidity in
+Hedge-Fund Returns.” Journal of Financial Economics 74,
+529 –609.
+JOURNAL OF INVESTMENT MANAGEMENT SECOND QUARTER 2007
+
+
+===== PAGE 41 =====
+REPLICATING HEDGE-FUND RETURNS 45
+Getmansky, M., Lo, A., and Mei, S. (2004). “Sifting
+Through the Wreckage: Lessons from Recent Hedge-
+Fund Liquidations.” Journal of Investment Management 2,
+6–38.
+Hasanhodzic, J. and Lo, A. (2006a). “Attack of the Clones.”
+Alpha, June, 54–63.
+Hasanhodzic, J. and Lo, A. (2006b). “Can Hedge-Fund
+Returns Be Replicated?: The Linear Case” (August 16,
+2006). Available at SSRN: <http://ssrn.com/abstract=
+924565>.
+Haugh, M. and Lo, A. (2001). “Asset Allocation and
+Derivatives.” Quantitative Finance 1, 45–72.
+Hendricks, D., Patel, J., and Zeckhauser, R. (1997). “The J-
+Shape of Performance Persistence Given Survivorship Bias.”
+Review of Economics and Statistics 79, 161–170.
+Hill, J., Mueller, B., and Balasubramanian, V . (2004). “The
+‘Secret Sauce’ of Hedge Fund Investing—T rading Risk
+Dynamically.” Goldman Sachs Equity Derivatives Strategy ,
+November 2.
+Horst, J., Nijman, T ., and V erbeek, M. (2001). “Eliminating
+Look-Ahead Bias in Evaluating Persistence in Mutual Fund
+Performance.” Journal of Empirical Finance 8, 345–373.
+Kat, H. and Palaro, H. 2005, “Who Needs Hedge
+Funds? A Copula-Based Approach to Hedge Fund Return
+Replication.” Alternative Investment Research Centre
+Working paper No. 27, Cass Business School, City Uni-
+versity, London.
+Kat, H. and Palaro, H. (2006a). “Replication and Evaluation
+of Fund of Hedge Funds Returns.” Alternative Investment
+Research Centre Working paper No. 28, Cass Business
+School, City University, London.
+Kat, H. and Palaro, H. (2006b). “Superstars or Average
+Joes?: A Replication-Based Performance Evaluation of 1917
+Individual Hedge Funds.” Alternative Investment Research
+Centre Working paper No. 30, Cass Business School, City
+University, London.
+Leamer, E. (1978). Speciﬁcation Searches .N e wY o r k :J o h n
+Wiley and Sons.
+Liang, B. (1999). “On the Performance of Hedge Funds.”
+Financial Analysts Journal, 72–85.
+Liang, B. (2000). “Hedge Funds: The Living and the Dead.”
+Journal of Financial and Quantitative Analysis35, 309–326.
+Litterman, R. (2005). “Beyond Active Alpha.” Goldman
+Sachs Asset Management.
+Ljung, G. and Box, G. (1978). “On a Measure of Lack of Fit
+in Time Series Models.” Biometrika 65, 297–304.
+Lo, A. (2001). “Risk Management For Hedge Funds: Intro-
+duction and Overview.” Financial Analysts Journal 57,
+16–33.
+Lo, A. (2002). “The Statistics of Sharpe Ratios.” Financial
+Analysts Journal 58, 36–50.
+Merton, R. (1973). “An Intertemporal Capital Asset Pricing
+Model.” Econometrica 41, 867–887.
+Merton, R. (1981). “On Market Timing and Investment Per-
+formance I: An Equilibrium Theory of Value for Market
+Forecasts.” Journal of Business 54, 363–406.
+Posthuma, N. and van der Sluis, P . (2003). “A Reality Check
+on Hedge Funds Returns” (July 8, 2003). Available at
+SSRN: <http://ssrn.com/abstract=438840>.
+Ross, S. (1976). “The Arbitrage Theory of Capital Asset
+Pricing.” Journal of Economic Theory 13, 341–360.
+Schneeweis, T . and Spurgin, R. (1996). “Survivor Bias
+in Commodity T rading Advisor Performance.” Journal of
+Futures Markets 16, 757–772.
+Schneeweis, T . and Spurgin, R. (1998). “Multi-Factor Analy-
+sis of Hedge Fund, Managed Futures, and Mutual Fund
+Return and Risk Characteristics.” Journal of Alternative
+Investments 1, 1–24.
+Sharpe, W . F . (1992). “Asset Allocation: Management
+Style and Performance Measurement.” Journal of Portfolio
+Management 18, 7–19.
+Keywords: Hedge fund; portfolio management; risk
+management
+SECOND QUARTER 2007 J OURNAL OF INVESTMENT MANAGEMENT

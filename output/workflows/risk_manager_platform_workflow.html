@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multi-Strategy Risk Manager Platform Workflow</title>
+  <style>
+    :root {
+      --bg: #071014;
+      --surface: #0c171d;
+      --surface-2: #101e25;
+      --surface-3: #13242c;
+      --line: #29404a;
+      --line-strong: #45616c;
+      --text: #e8f0f2;
+      --muted: #91a7af;
+      --cyan: #32c8df;
+      --green: #40c985;
+      --yellow: #e8bc55;
+      --orange: #e38a4c;
+      --red: #e06464;
+      --blue: #78aef0;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; min-height: 100%; background: var(--bg); color: var(--text); }
+    body {
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      padding: 28px;
+      background:
+        linear-gradient(rgba(70, 104, 116, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(70, 104, 116, 0.055) 1px, transparent 1px),
+        var(--bg);
+      background-size: 24px 24px;
+    }
+    .frame {
+      width: 1840px;
+      min-height: 1020px;
+      margin: 0 auto;
+      border: 1px solid var(--line-strong);
+      background: rgba(7, 16, 20, 0.97);
+      padding: 24px 26px 20px;
+      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.35);
+    }
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      padding: 0 0 18px;
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0; font-size: 29px; font-weight: 700; letter-spacing: 0; }
+    .subtitle { margin-top: 6px; color: var(--muted); font-size: 13px; }
+    .status {
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 8px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .pill { border: 1px solid var(--line-strong); background: var(--surface-2); padding: 6px 9px; }
+    .pill strong { color: var(--text); font-weight: 650; }
+    .stages {
+      display: grid;
+      grid-template-columns: 1.02fr 1.24fr 1.05fr 1.28fr 1.28fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+    .stage {
+      position: relative;
+      min-width: 0;
+      border-top: 2px solid var(--stage);
+      padding-top: 9px;
+    }
+    .stage:not(:last-child)::after {
+      content: "›";
+      position: absolute;
+      right: -13px;
+      top: 48%;
+      color: var(--line-strong);
+      font-size: 34px;
+      line-height: 1;
+    }
+    .stage-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      min-height: 34px;
+      margin-bottom: 8px;
+    }
+    .stage-title strong { font-size: 14px; }
+    .stage-title span { color: var(--stage); font-size: 11px; font-weight: 700; }
+    .stack { display: grid; gap: 8px; }
+    .node {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 10px 11px;
+      min-height: 58px;
+    }
+    .node.emphasis { border-color: var(--stage); background: var(--surface-2); }
+    .node.decision { border-color: var(--yellow); background: #211d14; }
+    .node.blocked { border-color: var(--red); background: #221619; }
+    .node-title { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .node-copy { color: var(--muted); font-size: 10.5px; line-height: 1.42; }
+    .owner { margin-top: 6px; color: var(--stage); font-size: 9.5px; font-weight: 650; }
+    .gate-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin-top: 7px;
+    }
+    .gate {
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: #0a1419;
+      padding: 5px 4px;
+      text-align: center;
+      font-size: 9px;
+    }
+    .bus {
+      margin: 18px 0 14px;
+      border: 1px solid var(--cyan);
+      background: #0b2027;
+      display: grid;
+      grid-template-columns: 240px 1fr 290px;
+      align-items: center;
+      min-height: 64px;
+    }
+    .bus-title { padding: 13px 15px; border-right: 1px solid #246979; }
+    .bus-title strong { display: block; color: var(--cyan); font-size: 13px; }
+    .bus-title span { color: var(--muted); font-size: 10px; }
+    .bus-items { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 14px; }
+    .bus-item { border: 1px solid #24515c; background: #0b1920; color: #b7cbd1; padding: 5px 7px; font-size: 9.5px; }
+    .bus-note { border-left: 1px solid #246979; padding: 10px 14px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .workstation {
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      padding: 12px;
+    }
+    .workstation-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .workstation-head strong { font-size: 13px; }
+    .workstation-head span { color: var(--muted); font-size: 10px; }
+    .modules {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 5px;
+    }
+    .module {
+      min-height: 57px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      padding: 8px 7px;
+      font-size: 9.5px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+    .module b { display: block; color: var(--text); font-size: 10px; margin-bottom: 3px; }
+    .feedback {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .feedback-item {
+      border: 1px dashed var(--line-strong);
+      background: #091318;
+      padding: 9px 11px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+    .feedback-item strong { color: var(--text); }
+    footer {
+      margin-top: 13px;
+      padding-top: 11px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 9.5px;
+    }
+    .legend { display: flex; gap: 13px; }
+    .legend span::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 5px; background: var(--c); }
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <header>
+      <div>
+        <h1>Multi-Strategy Risk Manager Platform Workflow</h1>
+        <div class="subtitle">Strategy evidence, portfolio proposal, independent risk challenge, human decision authority, and expectation-versus-realized monitoring.</div>
+      </div>
+      <div class="status">
+        <div class="pill">Capital <strong>$1,000,000</strong></div>
+        <div class="pill">Scope <strong>20 → 40 Strategies</strong></div>
+        <div class="pill">Execution <strong>Human Approval Only</strong></div>
+      </div>
+    </header>
+
+    <section class="stages">
+      <article class="stage" style="--stage: var(--blue)">
+        <div class="stage-title"><strong>1. Data & Controls</strong><span>INPUT</span></div>
+        <div class="stack">
+          <div class="node emphasis"><div class="node-title">Market Data Adapters</div><div class="node-copy">yfinance now, OpenBB and boss API later. Prices, volume, ETF proxies, macro indicators.</div><div class="owner">DATA ENGINEERING</div></div>
+          <div class="node"><div class="node-title">Positions, Allocations & Ledger</div><div class="node-copy">Current strategy weights, capital, position history, transaction records.</div></div>
+          <div class="node"><div class="node-title">News, Events & Macro</div><div class="node-copy">Cross-asset stress, regime inputs, event and political-risk proxies.</div></div>
+          <div class="node emphasis"><div class="node-title">Data Quality Gate</div><div class="node-copy">Source, timestamp, missing values, stale data, schema, and failure-state checks.</div></div>
+        </div>
+      </article>
+
+      <article class="stage" style="--stage: var(--cyan)">
+        <div class="stage-title"><strong>2. Strategy Research & Evidence</strong><span>RESEARCH</span></div>
+        <div class="stack">
+          <div class="node"><div class="node-title">Strategy Registry & Specification</div><div class="node-copy">Universe, hypothesis, signal, position construction, rebalance, failure modes.</div></div>
+          <div class="node"><div class="node-title">Signals, Positions & Costs</div><div class="node-copy">One-day lag, buy 5 bps, sell 5 bps, turnover and cost-adjusted returns.</div></div>
+          <div class="node emphasis"><div class="node-title">Backtest + Walk-Forward / OOS</div><div class="node-copy">Long history, rolling windows, bias checks, regime and stress-period evidence.</div></div>
+          <div class="node emphasis"><div class="node-title">Eight-Part Strategy Risk Packet</div><div class="node-copy">Summary, distribution, tails, drawdown, stability, regimes, comparison, decision packet.</div></div>
+          <div class="node decision"><div class="node-title">Evidence Gate</div><div class="node-copy">Pass to allocation candidate, or Research Hold / Redesign.</div></div>
+        </div>
+      </article>
+
+      <article class="stage" style="--stage: var(--green)">
+        <div class="stage-title"><strong>3. Portfolio Proposal</strong><span>PM OWNED</span></div>
+        <div class="stack">
+          <div class="node"><div class="node-title">Current Multi-Strategy Portfolio</div><div class="node-copy">20 simultaneous strategies, PnL, risk contribution, allocation and exposure.</div></div>
+          <div class="node emphasis"><div class="node-title">PM / Portfolio Construction Proposal</div><div class="node-copy">Investment thesis, proposed weights, expected benefit and implementation window.</div><div class="owner">PORTFOLIO MANAGER</div></div>
+          <div class="node"><div class="node-title">Constrained Allocation Model</div><div class="node-copy">Diversification, drawdown, turnover, cost, factor concentration and limits.</div></div>
+          <div class="node"><div class="node-title">Current vs Proposed Trade List</div><div class="node-copy">Buy / sell direction, dollar amount, transaction cost and weight change.</div></div>
+          <div class="node blocked"><div class="node-title">Responsibility Boundary</div><div class="node-copy">Risk Manager challenges the proposal. Risk Manager does not own the alpha thesis.</div></div>
+        </div>
+      </article>
+
+      <article class="stage" style="--stage: var(--orange)">
+        <div class="stage-title"><strong>4. Independent Risk Review</strong><span>CHALLENGE</span></div>
+        <div class="stack">
+          <div class="node emphasis"><div class="node-title">Risk Engine & Limit Policy</div><div class="node-copy">Portfolio, strategy, factor, scenario, correlation, rebalance and evidence limits.</div><div class="owner">INDEPENDENT RISK MANAGER</div></div>
+          <div class="node"><div class="node-title">Double-Check Decision Gates</div><div class="node-copy">Direction, evidence, duplicate exposure, cost, benefit and risk-improvement checks.</div><div class="gate-row"><div class="gate">LIMITS</div><div class="gate">STRESS</div><div class="gate">COST</div></div></div>
+          <div class="node"><div class="node-title">Expected Impact & Limitations</div><div class="node-copy">Risk before/after, factor change, expected cost, confidence, and invalidation criteria.</div></div>
+          <div class="node decision"><div class="node-title">System Risk Conclusion</div><div class="node-copy">No objection, conditions required, blocking objection, or escalation required.</div></div>
+          <div class="node blocked"><div class="node-title">Required Modifications</div><div class="node-copy">Return blocked or conditional proposals to PM for redesign and resubmission.</div></div>
+        </div>
+      </article>
+
+      <article class="stage" style="--stage: var(--yellow)">
+        <div class="stage-title"><strong>5. Decision, Execution & Monitoring</strong><span>GOVERNANCE</span></div>
+        <div class="stack">
+          <div class="node decision"><div class="node-title">Authorized Human Decision</div><div class="node-copy">Approve, Approve with Conditions, Reject, or Escalate. Named authority and expiry required.</div><div class="owner">DECISION AUTHORITY</div></div>
+          <div class="node"><div class="node-title">Execution Authorization</div><div class="node-copy">Final weights, implementation window, trade list, and cost estimate confirmed.</div></div>
+          <div class="node emphasis"><div class="node-title">Trading / Operations</div><div class="node-copy">Execute only after authorization. Reconcile positions, weights, and realized cost.</div></div>
+          <div class="node emphasis"><div class="node-title">Expectation vs Realized</div><div class="node-copy">T+1, 21D, and 63D monitoring. Compare expected risk improvement with actual outcome.</div></div>
+          <div class="node blocked"><div class="node-title">Invalidate / Escalate / Learn</div><div class="node-copy">New breaches, excess cost, failed thesis, or rising concentration trigger review.</div></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="bus">
+      <div class="bus-title"><strong>Dashboard Artifact & Audit Trail</strong><span>Canonical API-ready output contract</span></div>
+      <div class="bus-items">
+        <span class="bus-item">strategy registry</span><span class="bus-item">risk packets</span><span class="bus-item">limit checks</span><span class="bus-item">factor matrix</span><span class="bus-item">correlation</span><span class="bus-item">proposal</span><span class="bus-item">independent review</span><span class="bus-item">human decision</span><span class="bus-item">monitoring checkpoints</span>
+      </div>
+      <div class="bus-note">Future APIs replace data adapters. Strategy logic, risk logic, governance records, and workstation modules retain the same contract.</div>
+    </section>
+
+    <section class="workstation">
+      <div class="workstation-head"><strong>Institutional Risk Workstation</strong><span>Daily operating surface driven by the artifact and governance workflow</span></div>
+      <div class="modules">
+        <div class="module"><b>Portfolio Command Center</b>What happened today?</div>
+        <div class="module"><b>Strategy Monitor</b>20+ strategies and drill-down</div>
+        <div class="module"><b>Allocation & Rebalance</b>Proposal and decision center</div>
+        <div class="module"><b>Risk Factors</b>Exposure, limits, scenarios</div>
+        <div class="module"><b>Correlation</b>Duplicate exposure and diversification</div>
+        <div class="module"><b>Market & Macro</b>Regime, cross-asset and events</div>
+        <div class="module"><b>Backtesting Lab</b>Evidence, WFO and bias checks</div>
+        <div class="module"><b>Strategy Library</b>Research lifecycle and approvals</div>
+        <div class="module"><b>Daily Risk Report</b>Decision log and audit trail</div>
+      </div>
+    </section>
+
+    <section class="feedback">
+      <div class="feedback-item"><strong>Proposal Feedback Loop:</strong> conditions, blocking objections, or rejection return to PM / Portfolio Construction for modification and resubmission.</div>
+      <div class="feedback-item"><strong>Monitoring Feedback Loop:</strong> expectation failures update risk limits, strategy research assumptions, and future proposals.</div>
+      <div class="feedback-item"><strong>Data Failure Rule:</strong> stale, missing, or unreconciled data blocks downstream conclusions and requires human review.</div>
+    </section>
+
+    <footer>
+      <div class="legend">
+        <span style="--c: var(--green)">within process</span>
+        <span style="--c: var(--yellow)">human decision</span>
+        <span style="--c: var(--orange)">independent challenge</span>
+        <span style="--c: var(--red)">block / invalidate</span>
+      </div>
+      <div>Research-grade governance workflow. No automated investment advice or execution.</div>
+    </footer>
+  </main>
+</body>
+</html>

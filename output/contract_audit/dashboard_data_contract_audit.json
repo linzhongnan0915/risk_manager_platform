@@ -1,0 +1,340 @@
+{
+  "audit_version": "0.1.0",
+  "artifact_path": "output/dashboard_artifact.json",
+  "as_of_date": "2026-06-07",
+  "strategy_count": 20,
+  "summary": {
+    "overall_coverage": 1.0,
+    "strategy_table_coverage": 1.0,
+    "strategy_drilldown_coverage": 1.0,
+    "allocation_coverage": 1.0,
+    "priority_gap_count": 0
+  },
+  "top_level_sections": [
+    {
+      "section": "metadata",
+      "present": true,
+      "artifact_paths_checked": [
+        "as_of_date",
+        "initial_capital",
+        "strategy_count",
+        "strategy_return_source"
+      ]
+    },
+    {
+      "section": "data_quality",
+      "present": true,
+      "artifact_paths_checked": [
+        "data_quality"
+      ]
+    },
+    {
+      "section": "portfolio",
+      "present": true,
+      "artifact_paths_checked": [
+        "risk_summary",
+        "portfolio_series"
+      ]
+    },
+    {
+      "section": "risk_limits",
+      "present": true,
+      "artifact_paths_checked": [
+        "risk_limits"
+      ]
+    },
+    {
+      "section": "strategies",
+      "present": true,
+      "artifact_paths_checked": [
+        "strategies"
+      ]
+    },
+    {
+      "section": "factors",
+      "present": true,
+      "artifact_paths_checked": [
+        "factors"
+      ]
+    },
+    {
+      "section": "correlation",
+      "present": true,
+      "artifact_paths_checked": [
+        "correlation"
+      ]
+    },
+    {
+      "section": "allocation",
+      "present": true,
+      "artifact_paths_checked": [
+        "allocation"
+      ]
+    },
+    {
+      "section": "market_macro",
+      "present": true,
+      "artifact_paths_checked": [
+        "market_monitor"
+      ]
+    },
+    {
+      "section": "news_event_risk",
+      "present": true,
+      "artifact_paths_checked": [
+        "news_risk"
+      ]
+    },
+    {
+      "section": "backtesting_research",
+      "present": true,
+      "artifact_paths_checked": [
+        "literature_strategy_backtests"
+      ]
+    },
+    {
+      "section": "decision_log",
+      "present": true,
+      "artifact_paths_checked": [
+        "daily_decision_log"
+      ]
+    },
+    {
+      "section": "decision_review",
+      "present": true,
+      "artifact_paths_checked": [
+        "decision_review"
+      ]
+    },
+    {
+      "section": "decision_workflow",
+      "present": true,
+      "artifact_paths_checked": [
+        "decision_workflow"
+      ]
+    },
+    {
+      "section": "rebalance_simulation",
+      "present": true,
+      "artifact_paths_checked": [
+        "rebalance_simulation"
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "module": "Portfolio Command Center",
+      "required_components": [
+        "compact_kpi_strip",
+        "kpi_sparklines",
+        "allocation_table",
+        "allocation_visual",
+        "top_contributors_detractors",
+        "portfolio_pnl_drawdown_chart",
+        "strategy_performance_table",
+        "rebalance_recommendation",
+        "factor_exposure_heatmap",
+        "human_review_alerts",
+        "transaction_cost_net_benefit_approval_status"
+      ],
+      "required_data_count": 6,
+      "present_data": [
+        "risk_summary",
+        "portfolio_series",
+        "allocation",
+        "strategies",
+        "risk_limits",
+        "recommendations"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Strategy Monitor",
+      "required_components": [
+        "dense_strategy_table",
+        "strategy_filter_bar",
+        "risk_badges",
+        "strategy_detail_drawer"
+      ],
+      "required_data_count": 0,
+      "present_data": [],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Allocation & Rebalance",
+      "required_components": [
+        "allocation_decision_table",
+        "risk_before_after_panel",
+        "rebalance_trade_list",
+        "optimizer_constraints",
+        "approval_decision_center"
+      ],
+      "required_data_count": 10,
+      "present_data": [
+        "current_weights",
+        "proposed_weights",
+        "weight_changes",
+        "buy_sell_direction",
+        "dollar_amount",
+        "estimated_transaction_cost",
+        "risk_before_after",
+        "factor_concentration_before_after",
+        "correlation_before_after",
+        "human_approval_status"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Risk Factors & Exposure",
+      "required_components": [
+        "portfolio_factor_exposure",
+        "strategy_factor_heatmap",
+        "factor_risk_contribution",
+        "factor_return_contribution",
+        "scenario_shock_table",
+        "risk_limit_breaches"
+      ],
+      "required_data_count": 4,
+      "present_data": [
+        "factor_exposure",
+        "risk_limits",
+        "strategies",
+        "market_monitor"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Correlation & Diversification",
+      "required_components": [
+        "strategy_correlation_matrix",
+        "duplicate_exposure_alerts",
+        "effective_strategy_count",
+        "diversification_summary"
+      ],
+      "required_data_count": 3,
+      "present_data": [
+        "correlation",
+        "strategies",
+        "allocation"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Market & Macro Monitor",
+      "required_components": [
+        "market_snapshot",
+        "macro_regime_panel",
+        "cross_asset_risk_indicators",
+        "news_event_risk"
+      ],
+      "required_data_count": 2,
+      "present_data": [
+        "market_monitor",
+        "news_risk"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Backtesting & Research Lab",
+      "required_components": [
+        "selected_strategy_picker",
+        "gross_vs_net_chart",
+        "equity_curve",
+        "drawdown_chart",
+        "rolling_sharpe",
+        "return_distribution",
+        "walk_forward_table",
+        "bias_checklist",
+        "data_quality_panel",
+        "regime_performance_matrix",
+        "approval_workflow"
+      ],
+      "required_data_count": 3,
+      "present_data": [
+        "literature_strategy_backtests",
+        "strategies",
+        "data_quality"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Strategy Library & Workflow",
+      "required_components": [
+        "strategy_registry",
+        "research_pipeline_status",
+        "evidence_status",
+        "approval_status",
+        "future_strategy_slots"
+      ],
+      "required_data_count": 2,
+      "present_data": [
+        "strategies",
+        "literature_modules"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    },
+    {
+      "module": "Daily Risk Report / Decision Log",
+      "required_components": [
+        "daily_risk_memo",
+        "open_alerts",
+        "limit_breach_table",
+        "data_quality_warning_table",
+        "strategy_alerts",
+        "rebalance_recommendation",
+        "decision_timeline",
+        "export_controls"
+      ],
+      "required_data_count": 4,
+      "present_data": [
+        "daily_decision_log",
+        "risk_limits",
+        "data_quality",
+        "recommendations"
+      ],
+      "missing_data": [],
+      "coverage": 1.0
+    }
+  ],
+  "strategy_table": {
+    "strategy_count": 20,
+    "required_field_count": 29,
+    "present_for_all_count": 29,
+    "missing_by_field": {},
+    "coverage": 1.0,
+    "ui_ready_missing_fields": []
+  },
+  "strategy_drilldown": {
+    "strategy_count": 20,
+    "required_section_count": 19,
+    "present_for_all_count": 19,
+    "missing_by_section": {},
+    "coverage": 1.0
+  },
+  "allocation": {
+    "required_field_count": 10,
+    "present_fields": [
+      "current_weights",
+      "proposed_weights",
+      "weight_changes",
+      "estimated_transaction_cost",
+      "risk_before",
+      "risk_after",
+      "turnover",
+      "optimizer_constraints",
+      "recommendation",
+      "human_approval_required"
+    ],
+    "missing_fields": [],
+    "coverage": 1.0
+  },
+  "priority_gaps": []
+}

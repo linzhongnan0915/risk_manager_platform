@@ -1,0 +1,585 @@
+{
+  "as_of_date": "2026-06-07",
+  "market_monitor": [
+    {
+      "ticker": "BIL",
+      "name": "1-3 Month T-Bill ETF",
+      "last": 91.4499969482422,
+      "daily_return": 0.00043751541987302467,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "CWB",
+      "name": "SPDR Bloomberg Convertible Securities ETF",
+      "last": 105.2300033569336,
+      "daily_return": -0.04039759399266252,
+      "status": "warning",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "DBC",
+      "name": "Invesco DB Commodity Index Tracking Fund",
+      "last": 29.229999542236328,
+      "daily_return": -0.021753669236502016,
+      "status": "warning",
+      "risk_interpretation": "Commodity/inflation proxy softer"
+    },
+    {
+      "ticker": "DBMF",
+      "name": "iMGP DBi Managed Futures Strategy ETF",
+      "last": 30.65999984741211,
+      "daily_return": -0.020134261734796044,
+      "status": "warning",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "EEM",
+      "name": "MSCI Emerging Markets ETF",
+      "last": 64.58999633789062,
+      "daily_return": -0.06526776028684755,
+      "status": "warning",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "EFA",
+      "name": "MSCI EAFE ETF",
+      "last": 102.26000213623048,
+      "daily_return": -0.025631204289966125,
+      "status": "warning",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "EMB",
+      "name": "USD Emerging Markets Bond ETF",
+      "last": 95.4000015258789,
+      "daily_return": -0.007284047443878894,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "FXE",
+      "name": "Euro Currency ETF",
+      "last": 106.29000091552734,
+      "daily_return": -0.008026137173165138,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "FXY",
+      "name": "Japanese Yen ETF",
+      "last": 57.310001373291016,
+      "daily_return": -0.000697421131547582,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "GLD",
+      "name": "Gold ETF",
+      "last": 396.239990234375,
+      "daily_return": -0.036545333189379026,
+      "status": "warning",
+      "risk_interpretation": "Commodity/inflation proxy softer"
+    },
+    {
+      "ticker": "HYG",
+      "name": "High Yield Corporate Bond ETF",
+      "last": 79.43000030517578,
+      "daily_return": -0.005010666625380189,
+      "status": "normal",
+      "risk_interpretation": "Credit sleeve under pressure; monitor spread widening"
+    },
+    {
+      "ticker": "IEF",
+      "name": "7-10 Year Treasury ETF",
+      "last": 93.62000274658205,
+      "daily_return": -0.005312367035796295,
+      "status": "normal",
+      "risk_interpretation": "Duration assets under pressure; rates may be rising"
+    },
+    {
+      "ticker": "IVE",
+      "name": "S&P 500 Value ETF",
+      "last": 226.5399932861328,
+      "daily_return": -0.011476218108068648,
+      "status": "normal",
+      "risk_interpretation": "Equity/style proxy stable"
+    },
+    {
+      "ticker": "IVV",
+      "name": "iShares Core S&P 500 ETF",
+      "last": 740.9099731445312,
+      "daily_return": -0.026181990060679006,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "IVW",
+      "name": "S&P 500 Growth ETF",
+      "last": 134.60000610351562,
+      "daily_return": -0.0380903798416915,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "IWM",
+      "name": "Russell 2000 ETF",
+      "last": 281.6499938964844,
+      "daily_return": -0.03547829020469484,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "JNK",
+      "name": "High Yield Bond ETF",
+      "last": 95.7300033569336,
+      "daily_return": -0.004368155613936886,
+      "status": "normal",
+      "risk_interpretation": "Credit sleeve under pressure; monitor spread widening"
+    },
+    {
+      "ticker": "LQD",
+      "name": "Investment Grade Corporate Bond ETF",
+      "last": 108.16999816894533,
+      "daily_return": -0.006247131967920372,
+      "status": "normal",
+      "risk_interpretation": "Credit sleeve under pressure; monitor spread widening"
+    },
+    {
+      "ticker": "MDY",
+      "name": "S&P MidCap 400 ETF",
+      "last": 674.5900268554688,
+      "daily_return": -0.019462708208686674,
+      "status": "warning",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "MNA",
+      "name": "IQ Merger Arbitrage ETF",
+      "last": 36.459999084472656,
+      "daily_return": 0.004407709387739045,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "MTUM",
+      "name": "iShares MSCI USA Momentum Factor ETF",
+      "last": 306.4700012207031,
+      "daily_return": -0.05953292474659366,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "QQQ",
+      "name": "Nasdaq 100 ETF",
+      "last": 705.0599975585938,
+      "daily_return": -0.04800095663859216,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "QUAL",
+      "name": "iShares MSCI USA Quality Factor ETF",
+      "last": 213.13999938964844,
+      "daily_return": -0.019279447872380784,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "SHY",
+      "name": "1-3 Year Treasury ETF",
+      "last": 81.86000061035156,
+      "daily_return": -0.00207239024107142,
+      "status": "normal",
+      "risk_interpretation": "Rates exposure stable"
+    },
+    {
+      "ticker": "SPY",
+      "name": "S&P 500 ETF",
+      "last": 737.5499877929688,
+      "daily_return": -0.0258093996346227,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "SVXY",
+      "name": "Short VIX Futures ETF",
+      "last": 53.77000045776367,
+      "daily_return": -0.037242579645211826,
+      "status": "warning",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "TIP",
+      "name": "TIPS ETF",
+      "last": 109.25,
+      "daily_return": -0.004827826427311166,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "TLT",
+      "name": "20+ Year Treasury ETF",
+      "last": 85.05999755859375,
+      "daily_return": -0.005146227384868474,
+      "status": "normal",
+      "risk_interpretation": "Duration assets under pressure; rates may be rising"
+    },
+    {
+      "ticker": "USMV",
+      "name": "iShares MSCI USA Min Vol Factor ETF",
+      "last": 95.63999938964844,
+      "daily_return": -0.010552495694357011,
+      "status": "normal",
+      "risk_interpretation": "Equity/style proxy stable"
+    },
+    {
+      "ticker": "USO",
+      "name": "United States Oil Fund",
+      "last": 133.02000427246094,
+      "daily_return": -0.027204922270455012,
+      "status": "warning",
+      "risk_interpretation": "Commodity/inflation proxy softer"
+    },
+    {
+      "ticker": "UUP",
+      "name": "US Dollar Bullish ETF",
+      "last": 28.020000457763672,
+      "daily_return": 0.0064655281677161724,
+      "status": "normal",
+      "risk_interpretation": "USD pressure rising"
+    },
+    {
+      "ticker": "VIX",
+      "name": "CBOE Volatility Index",
+      "last": 21.51000022888184,
+      "daily_return": 0.39675329621434674,
+      "status": "watch",
+      "risk_interpretation": "Volatility stress rising"
+    },
+    {
+      "ticker": "VLUE",
+      "name": "iShares MSCI USA Value Factor ETF",
+      "last": 191.9199981689453,
+      "daily_return": -0.04155017526956073,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "VOO",
+      "name": "Vanguard S&P 500 ETF",
+      "last": 678.0,
+      "daily_return": -0.02594603571809695,
+      "status": "warning",
+      "risk_interpretation": "Equity/style proxy down; review beta and factor concentration"
+    },
+    {
+      "ticker": "VXX",
+      "name": "Short-Term VIX Futures ETN",
+      "last": 25.209999084472656,
+      "daily_return": 0.07276591848819813,
+      "status": "watch",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "XLF",
+      "name": "Financial Sector ETF",
+      "last": 52.29999923706055,
+      "daily_return": 0.0021076952145246963,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    },
+    {
+      "ticker": "XLI",
+      "name": "Industrial Sector ETF",
+      "last": 174.17999267578125,
+      "daily_return": -0.011239844148311695,
+      "status": "normal",
+      "risk_interpretation": "Market proxy updated from yfinance fallback"
+    }
+  ],
+  "news_risk": {
+    "watch_level": "urgent_review",
+    "news_risk_score": 15,
+    "items": [
+      {
+        "headline": "Lithium ETF LIT Returned 125% to Investors Who Bought at Last Year\u2019s Low",
+        "topic": "general",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Equity Beta"
+        ],
+        "risk_interpretation": "Review portfolio factor exposure and scenario shocks. Headline: Lithium ETF LIT Returned 125% to Investors Who Bought at Last Year\u2019s Low",
+        "human_review": false
+      },
+      {
+        "headline": "Mizuho Strategist: Healthcare Is Now a Value Sector as Pharma Stocks Underperform Tech",
+        "topic": "central_bank",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Rates Duration",
+          "Equity Beta",
+          "USD"
+        ],
+        "risk_interpretation": "Policy path affects duration, equity multiples, and USD risk. Headline: Mizuho Strategist: Healthcare Is Now a Value Sector as Pharma Stocks Underperform Tech",
+        "human_review": false
+      },
+      {
+        "headline": "How $350,000 in International Dividend Stocks Can Produce $19,000 a Year and Reduce U.S. Concentration Risk",
+        "topic": "rates",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Rates Duration",
+          "Real Yields"
+        ],
+        "risk_interpretation": "Rates headline affects duration sleeves and curve-sensitive strategies. Headline: How $350,000 in International Dividend Stocks Can Produce $19,000 a Year and Reduce U.S. Concentration Risk",
+        "human_review": false
+      },
+      {
+        "headline": "KORU Is Up 236% Year to Date but Just Lost Half Its Value in a Single Trading Day",
+        "topic": "general",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Equity Beta"
+        ],
+        "risk_interpretation": "Review portfolio factor exposure and scenario shocks. Headline: KORU Is Up 236% Year to Date but Just Lost Half Its Value in a Single Trading Day",
+        "human_review": false
+      },
+      {
+        "headline": "$10,000 Invested in XLK on New Year\u2019s Eve Is Worth $13,434 Today",
+        "topic": "general",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Equity Beta"
+        ],
+        "risk_interpretation": "Review portfolio factor exposure and scenario shocks. Headline: $10,000 Invested in XLK on New Year\u2019s Eve Is Worth $13,434 Today",
+        "human_review": false
+      },
+      {
+        "headline": "Should You Really Invest in QQQ Right Now? Or Is IVV the Better Buy? Here's What the Data Suggests.",
+        "topic": "general",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Equity Beta"
+        ],
+        "risk_interpretation": "Review portfolio factor exposure and scenario shocks. Headline: Should You Really Invest in QQQ Right Now? Or Is IVV the Better Buy? Here's What the Data Suggests.",
+        "human_review": false
+      },
+      {
+        "headline": "If You Hold This 20 Year Treasury ETF You Are Losing Money Even With Yields Up",
+        "topic": "central_bank",
+        "severity": "medium",
+        "severity_score": 2,
+        "affected_factors": [
+          "Rates Duration",
+          "Equity Beta",
+          "USD"
+        ],
+        "risk_interpretation": "Policy path affects duration, equity multiples, and USD risk. Headline: If You Hold This 20 Year Treasury ETF You Are Losing Money Even With Yields Up",
+        "human_review": false
+      },
+      {
+        "headline": "Don't Wait: Right Now Is an Excellent Opportunity to Rebalance Your Portfolio",
+        "topic": "general",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Equity Beta"
+        ],
+        "risk_interpretation": "Review portfolio factor exposure and scenario shocks. Headline: Don't Wait: Right Now Is an Excellent Opportunity to Rebalance Your Portfolio",
+        "human_review": false
+      },
+      {
+        "headline": "The Jobs Report Released Today Was Great. That\u2019s Bad News for Bond Yields.",
+        "topic": "macro",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Equity Beta",
+          "Rates Duration",
+          "Credit Spread"
+        ],
+        "risk_interpretation": "Macro release may shift growth/inflation regime assumptions. Headline: The Jobs Report Released Today Was Great. That\u2019s Bad News for Bond Yields.",
+        "human_review": false
+      },
+      {
+        "headline": "The Spill: A 5% Long Bond Yield Has Traders Circling TLT",
+        "topic": "rates",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Rates Duration",
+          "Real Yields"
+        ],
+        "risk_interpretation": "Rates headline affects duration sleeves and curve-sensitive strategies. Headline: The Spill: A 5% Long Bond Yield Has Traders Circling TLT",
+        "human_review": false
+      },
+      {
+        "headline": "EMB\u2019s 6 Percent Emerging Market Bond Yield Hides Hard Currency Sovereign Default Risk Most Income Investors Have Never Modeled",
+        "topic": "rates",
+        "severity": "high",
+        "severity_score": 3,
+        "affected_factors": [
+          "Rates Duration",
+          "Real Yields"
+        ],
+        "risk_interpretation": "Rates headline affects duration sleeves and curve-sensitive strategies. Headline: EMB\u2019s 6 Percent Emerging Market Bond Yield Hides Hard Currency Sovereign Default Risk Most Income Investors Have Never Modeled",
+        "human_review": true
+      },
+      {
+        "headline": "How a 56-Year-Old Built a $1.4 Million Bridge Portfolio That Pays $7,200 a Month Through Year 10 of Retirement",
+        "topic": "central_bank",
+        "severity": "low",
+        "severity_score": 1,
+        "affected_factors": [
+          "Rates Duration",
+          "Equity Beta",
+          "USD"
+        ],
+        "risk_interpretation": "Policy path affects duration, equity multiples, and USD risk. Headline: How a 56-Year-Old Built a $1.4 Million Bridge Portfolio That Pays $7,200 a Month Through Year 10 of Retirement",
+        "human_review": false
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "action": "Reduce equity_beta exposure",
+      "rationale": "Reduce or hedge factor exposure",
+      "approval_required": true,
+      "category": "factor_risk"
+    },
+    {
+      "priority": "high",
+      "action": "Reduce credit_spread exposure",
+      "rationale": "Reduce or hedge factor exposure",
+      "approval_required": true,
+      "category": "factor_risk"
+    },
+    {
+      "priority": "medium",
+      "action": "Review rates_duration utilization",
+      "rationale": "Reduce or hedge factor exposure",
+      "approval_required": true,
+      "category": "factor_risk"
+    },
+    {
+      "priority": "medium",
+      "action": "Review factor_herfindahl utilization",
+      "rationale": "Keep",
+      "approval_required": true,
+      "category": "factor_risk"
+    },
+    {
+      "priority": "medium",
+      "action": "Review max_factor_change_per_rebalance utilization",
+      "rationale": "Keep",
+      "approval_required": true,
+      "category": "factor_risk"
+    },
+    {
+      "priority": "medium",
+      "action": "Review cash_exposure utilization",
+      "rationale": "Keep",
+      "approval_required": true,
+      "category": "factor_risk"
+    },
+    {
+      "priority": "high",
+      "action": "Address portfolio limit: latest_63d_rolling_volatility",
+      "rationale": "Latest 63-day rolling volatility versus the live monitoring limit.",
+      "approval_required": true,
+      "category": "portfolio_limit"
+    },
+    {
+      "priority": "high",
+      "action": "Address portfolio limit: current_drawdown",
+      "rationale": "Current strategy drawdown versus the live monitoring drawdown limit.",
+      "approval_required": true,
+      "category": "portfolio_limit"
+    },
+    {
+      "priority": "high",
+      "action": "Address portfolio limit: current_drawdown",
+      "rationale": "Current strategy drawdown versus the live monitoring drawdown limit.",
+      "approval_required": true,
+      "category": "portfolio_limit"
+    },
+    {
+      "priority": "high",
+      "action": "Address portfolio limit: current_drawdown",
+      "rationale": "Current strategy drawdown versus the live monitoring drawdown limit.",
+      "approval_required": true,
+      "category": "portfolio_limit"
+    },
+    {
+      "priority": "high",
+      "action": "Address portfolio limit: current_drawdown",
+      "rationale": "Current strategy drawdown versus the live monitoring drawdown limit.",
+      "approval_required": true,
+      "category": "portfolio_limit"
+    },
+    {
+      "priority": "high",
+      "action": "Address portfolio limit: current_drawdown",
+      "rationale": "Current strategy drawdown versus the live monitoring drawdown limit.",
+      "approval_required": true,
+      "category": "portfolio_limit"
+    },
+    {
+      "priority": "medium",
+      "action": "Review factor concentration",
+      "rationale": "Largest absolute portfolio factor exposure is cash at 0.39.",
+      "approval_required": true,
+      "category": "factor_concentration"
+    },
+    {
+      "priority": "high",
+      "action": "Review news-linked factor risks",
+      "rationale": "News risk score is elevated. Cross-check affected factors before approving allocation changes.",
+      "approval_required": true,
+      "category": "news"
+    },
+    {
+      "priority": "medium",
+      "action": "Review drawdown and hedge budget",
+      "rationale": "One or more market proxies moved into warning status.",
+      "affected_tickers": [
+        "CWB",
+        "DBC",
+        "DBMF",
+        "EEM",
+        "EFA",
+        "GLD",
+        "IVV",
+        "IVW",
+        "IWM",
+        "MDY",
+        "MTUM",
+        "QQQ",
+        "QUAL",
+        "SPY",
+        "SVXY",
+        "USO",
+        "VLUE",
+        "VOO"
+      ],
+      "approval_required": true,
+      "category": "market"
+    },
+    {
+      "priority": "medium",
+      "action": "Review proposed rebalance",
+      "rationale": "Score-tilted proposal constrained by min/max weights, turnover, transaction cost, diversification, and mandatory human approval.",
+      "estimated_transaction_cost": 74.99999999999999,
+      "approval_required": true,
+      "category": "allocation"
+    }
+  ]
+}

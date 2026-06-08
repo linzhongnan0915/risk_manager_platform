@@ -1,0 +1,856 @@
+
+
+===== PAGE 1 =====
+Dynamic Asset Allocation  
+Through the Business Cycle:  
+A Macro Regime Approach
+Global Multi-Asset Group
+“ When the facts change, I change my mind. What do you do, sir?” 
+    —Attributed to John Maynard Keynes 1 
+Investors across the board, from institutional to retail, face the common dilemma of how to 
+manage an asset allocation over time. Should allocations be fixed and strategic, or should they 
+be actively managed? We believe that a dynamic approach to asset allocation is the best way 
+to capitalize on changing investment opportunities and risk environments. But how should the 
+allocation be actively managed? It is well documented that owning cheap or undervalued assets 
+typically yields good results. We believe this approach works best over longer time horizons; 
+however, it is not a reliable indicator over shorter time frames. To better manage assets over 
+the short and medium term, we use forward-looking macroeconomic analysis that helps us 
+determine our asset allocation during particular phases of the business cycle. 
+Mark Hamilton
+Chief Investment Officer
+Asset Allocation
+Alessio de Longis
+Portfolio Manager
+Global Multi-Asset Group
+Not FDIC Insured
+May Lose Value
+Not Bank Guaranteed
+Executive  Summary
+•  While valuation is a powerful predictor of long-term asset returns, we believe its power  
+as a performance indicator declines as the investment horizon shortens.
+•  We have developed a macro regime framework to allocate assets dynamically through 
+the stages of the business cycle over the short and medium term. 
+•  We use leading economic indicators to identify macro regimes in a timely manner, and 
+provide empirical evidence of how the prices of equities, credit and sovereign fixed 
+income are driven by the change, not the level, of growth under different macro regimes. 
+•  Using our macro framework, historical analysis of the last 45 years shows that asset returns 
+vary significantly between regimes, with major implications for asset allocation decisions.
+1.  Two Keynes biographers, Lord Robert Skidelsky and Donald Moggridge, believe the quotation is apocryphal. Wall Street Journal columnist  
+Jason Zweig has offered $10 to the first person to identify the source of the remark. 
+
+
+===== PAGE 2 =====
+2
+The Limits of Valuation
+Valuation-based investment frameworks are power -
+ful predictors of long-term forward returns. However, 
+a close look at the data makes it clear that valuation 
+is not a reliable indicator over shorter time frames.
+In Exhibit 1, we use earnings yield—the inverse of 
+the P/E ratio2—as a proxy for valuation methods 
+in general.  Exhibit 1    We plot earnings yield for a 
+number of periods and chart the subsequent 10-year 
+annualized return for the S&P 500 Index. We would 
+expect to see that high earnings yields lead to strong 
+returns, and vice versa. In fact, the data confirms a 
+remarkably strong relationship between earnings 
+yield and long-term forward returns. Over the period 
+since 1970, we find that roughly half of the variability 
+of 10-year forward returns can be explained by the 
+starting valuation point. The data tells us that invest -
+ing when the market is cheap has typically delivered 
+strong subsequent returns over a 10-year horizon. 
+By the same token, investing when the market is 
+expensive tends to deliver below-average returns 
+over the same horizon. 
+Why is this the case? When earnings yields are rela -
+tively high, a portfolio gains two advantages that help 
+it do well over time. First, the portfolio is exposed to 
+a higher amount of corporate earnings per unit of 
+cost. Second, equity prices tend to mean revert over 
+time, giving the portfolio an additional benefit from 
+potential price appreciation. Exactly the opposite 
+occurs when earnings yields are low. A portfolio 
+receives less in starting yield and is less likely to earn 
+a significant amount via price appreciation because 
+its stocks are already expensive and prices tend to 
+mean revert downward.
+However, this relationship weakens significantly 
+when the time horizon is shortened. Looking out over 
+three years, the starting valuation point explains only 
+12% of the variability of returns. Over this window, 
+sometimes expensive markets delivered good 
+returns over three years, while sometimes cheap 
+markets delivered poor returns. Further, when the 
+time horizon is shortened to one month, valuation 
+gives us barely any predictive power. Exhibit 2  
+Valuation is less helpful over the short term because 
+it is influenced by the economic environment, the 
+business cycle, investor risk appetite, and monetary 
+policy, all of which can drive valuations higher or lower. 
+In contrast, these effects are less important over the 
+long term.
+If valuation doesn’t provide the necessary insight 
+into the drivers of short- and medium-term returns, 
+what does? We believe that macroeconomic analysis 
+provides helpful insights over shorter horizons. As 
+we will show later, asset price performance varies 
+considerably between different phases of the 
+business cycle. By incorporating a macro regime 
+framework into the investment process, we can 
+better manage risk and capture opportunities to help 
+deliver a better investor experience in the short to 
+medium term. 
+OppenheimerFunds
+®
+2.  Price-to-Earnings (P/E) Ratio: The valuation ratio of a company’s current share price compared to its per-share earnings. 
+
+
+===== PAGE 3 =====
+3
+The Right Way to Invest
+2 4 6 8 10 12 14 16–5
+0
+5
+10
+15
+20
+25
+Earnings Yield (%)
+Forward Returns (%)
+R2 = 51%
+Source: Bloomberg, 8/31/15. Past performance does not guarantee future results.
+   Exhibit 1: Valuation Is a “Good” Predictor in the Long Term 
+   Earnings Yield vs. 10-Year Forward Returns of the S&P 500 Index Since 1970 
+   Exhibit 2: Valuation’s Effectiveness Decreases at Shorter Time Horizons
+0
+10
+20
+30
+40
+50
+60%
+1-Month 
+Forward Return
+1-Year 
+Returns
+3-Year 
+Returns
+5-Year 
+Returns
+7-Year 
+Returns
+10-Year 
+Returns
+Investment Horizon
+R-Squared of Earnings Yield vs. 
+Forward Returns of S&P 500 Index
+50.6%
+32.6%
+18.5%
+11.7%
+7.7% 0.7%
+Less Useful
+Source: Bloomberg, 8/31/15. Past performance does not guarantee future results.
+The index is unmanaged and cannot be purchased directly by investors. Index performance is shown for illustrative purposes only 
+and does not predict or depict the performance of any investment.
+
+
+===== PAGE 4 =====
+4
+Defining Macro Regimes 
+It is well understood that financial markets are heavily 
+affected by the macro environment. For instance, 
+common wisdom suggests that recessions are 
+associated with underperformance in risky assets; 
+however, empirical evidence does not necessarily 
+confirm this assertion, at least not on the surface. 
+In the latest business cycle, for example, the U.S. 
+economy was still contracting through the end of 
+2009, with –0.2% year-over-year growth in the fourth 
+quarter, while high yield and equity markets were up 
+nearly 60% and 30%, respectively, that year.3 So, why 
+the disconnect? Is there a better way to define macro 
+regimes that is more relevant to financial markets? 
+Though not an official designation, the often-cited 
+definition of a recession is two consecutive quarters 
+of negative GDP growth.4 We argue that macro regime 
+analysis is more nuanced than just measuring whether 
+growth is positive or negative, and that such a metric is 
+not the key threshold driving financial markets.
+We believe that a better way to define the business 
+cycle and its macro regimes is to determine how 
+growth is performing versus its long-term trend and, 
+more importantly, to assess its direction, i.e., the 
+change in growth. As we will show later, the combi -
+nation of these two metrics has major implications 
+for asset prices and portfolio decisions.
+We define four phases, or macro regimes, as follows:
+•  Recovery, when growth is below trend  
+and accelerating.
+•  Expansion, when growth is above trend  
+and accelerating.
+•  Slowdown, when growth is above trend  
+and decelerating.
+•  Contraction, when growth is below trend  
+and decelerating.
+As illustrated in Exhibit 3, each phase has its own 
+economic environment with unique growth and 
+inflation dynamics, corporate profitability and credit 
+conditions. Next, we review in more detail each 
+macro regime and its implications for monetary and 
+fiscal policy which, in turn, play a critical role in the 
+evolution of the business cycle and financial markets 
+performance. Exhibit 3  
+Recovery: Growth is below trend  
+and accelerating
+Recovery is the stage that occurs when the econ -
+omy is coming out of a recession, with a growth rate 
+that is below trend but improving. Although others 
+limit the definition of recovery to periods when GDP 
+growth is positive, we also include periods when 
+GDP growth is still negative, but showing improve -
+ments from past readings that were even more 
+negative, i.e., growth going from –5% to –2% on an 
+annual basis.
+In this phase the economy is relatively weak, with 
+unemployment still rising and inflation falling due to 
+ample spare capacity. Profit margins, while still low, 
+are bottoming out because of previous cuts in invest-
+ment and labor costs. Monetary and fiscal policies 
+are geared towards supporting economic activity 
+and countering disinflationary pressures; the result is 
+ample financial liquidity and positive credit growth. As 
+we will see later, risky assets generally deliver strong 
+performance during the recovery phase. 
+Expansion: Growth is above trend  
+and accelerating
+As the economy continues to improve, it reaches 
+an expansion when its growth rate is above histor -
+ical trend and still accelerating. In this phase the 
+economy fully benefits from the lagged effects of 
+expansionary policies adopted during the recov -
+ery. Earnings growth and profit margins expand 
+rapidly, leading to strong business and consumer 
+confidence, falling unemployment and rising 
+consumption. Credit growth continues to expand. 
+Consequently, inflationary pressures begin to 
+emerge and monetary policy enters a gradual but 
+OppenheimerFunds
+®
+3. Returns based on the JPMorgan Domestic High Yield Index and the SP 500 Index.
+4. Similarly, the official designation from the National Bureau of Economic Research defines a recession as a “significant decline in economic activity spread across 
+the economy” http://www.nber.org/cycles/recessions.html.
+
+
+===== PAGE 5 =====
+5
+steady tightening cycle aimed at containing infla -
+tion and excessive credit creation. As shown later, 
+equities are the best performing asset class in 
+this regime. Generally, this expansion phase can 
+continue for a long period, even several years, until 
+the economy begins to respond to tighter monetary 
+policy, entering the subsequent slowdown phase. 
+Slowdown: Growth is above trend  
+and decelerating
+While growth remains solidly above trend, it starts 
+decelerating due to lagged effects from monetary 
+policy tightening. Credit growth begins to slow  
+in response to tighter financial conditions and accu -
+mulated leverage in the system. Profit margins are 
+no longer expanding, while labor markets remain 
+tight due to lack of spare capacity. As a result, wage 
+and inflationary pressures continue to warrant  
+restrictive monetary policy, further reinforcing the 
+slowdown. This phase of the business cycle is  
+particularly uncertain, with growth decelerations and 
+re-accelerations frequently alternating. Financial 
+markets performance is also mixed, with insignificant 
+risk-adjusted returns. Generally, these peak cyclical 
+conditions can last for a couple of years, until the 
+slowdown eventually becomes more pronounced, 
+leading the economy into a contraction. 
+Contraction: Growth is below trend  
+and decelerating
+The economy enters a contraction when growth dips 
+below its long-term trend and continues to deceler-
+ate. Within our framework, we consider the economy 
+to be in contraction not only when growth is negative, 
+but also when growth is still positive, lower than trend 
+growth and falling, i.e., a growth rate of 1% for an 
+economy with an historical trend of 2%. This differs 
+from the typical definition of a recession, which 
+describes two or more quarters of negative growth. 
+In this final stage growth deteriorates rapidly due 
+to tight lending standards, credit contraction and 
+excessive inventories. Finally, the unemployment 
+rate steadily rises as companies shed workers 
+in response to falling profitability. Disinflationary 
+pressures rapidly emerge, central banks ease 
+aggressively, and governments respond with fiscal 
+spending to support employment. As this adjust -
+ment process advances, the economy stabilizes and 
+responds to expansionary policies, moving itself 
+back into recovery and into a new business cycle. 
+Risky assets severely underperform during contrac -
+tions, while government bonds are typically the best 
+performing asset class.
+The Right Way to Invest
+   Exhibit 3: Understanding the Business Cycle   
+   Stylized Business Cycle
+Contraction
+Monetary
+Policy
+Credit
+Profit 
+Margins
+Easing
+Contracting
+Contracting
+Recovery
+Monetary
+Policy
+Credit
+Profit 
+Margins
+Easy
+Expanding
+Bottoming
+Out
+Slowdown
+Monetary
+Policy
+Credit
+Profit 
+Margins
+Tight
+Decelerating
+Peaking
+Expansion
+Monetary
+Policy
+Credit
+Profit 
+Margins
+Tightening
+Growing
+Expanding
+DeceleratingAccelerating
+Trend
+Below Trend
+Level of Growth
+Above Trend
+
+
+===== PAGE 6 =====
+6
+   Exhibit 4: Broad CategoriesForward-Looking Macro Analysis: 
+Constructing a Leading Indicator  
+of the Business Cycle
+Traditionally, economists use indicators such as GDP, 
+industrial production, or the unemployment rate 
+to perform historical analysis of economic cycles. 
+However, these measures are impractical for making 
+investment decisions in real time, for three reasons:
+•  First, these statistics are released with  
+a substantial lag to their reference period  
+(often 1-2 months). 
+• Second, they are subject to multiple revisions. 
+•  Third, financial markets tend to lead real  
+economic activity, not the other way around.
+Therefore, by the time this information is available, 
+it tells us something about the past, and it is not 
+predictive of future asset price returns. Indeed, 
+these reasons are often cited to justify the common 
+skepticism about macro analysis and its usefulness 
+for an investment decision process. 
+To overcome these problems, we construct a 
+leading indicator of the U.S. business cycle using 
+economic and financial data that are released in a 
+timely manner, available at high frequency (at least 
+monthly), and not subject to revisions. By focusing 
+on forward-looking indicators, we aim to anticipate 
+turning points in economic activity and financial 
+markets performance. To capture the breadth of the 
+cycle rather than relying on one specific industry or 
+indicator, we collect information from different parts 
+of the economy, selecting indicators from five broad 
+categories (see Exhibit 4 for more details), and 
+combine them into one composite leading indicator. 
+Exhibit 4  
+Business surveys
+Surveys of manufacturing and service  
+industries provide a timely read of sentiment  
+in the corporate sector. Respondents’ assess -
+ment of prospective demand, order books,  
+and inventories offer insights into their outlook 
+for future production, hiring intentions, and 
+investment spending.
+Consumer Surveys
+Sentiment surveys contain valuable information 
+about consumer expectations on future job pros-
+pects, their spending intentions in the near future, 
+as well as their overall confidence in the economy. 
+This information tends to lead growth in actual 
+consumer spending.
+Manufacturing Activity
+Although manufacturing is a small part of overall 
+GDP, especially in developed markets, it is one of 
+the most cyclical sectors of the economy, carry-
+ing valuable information about potential turning 
+points in overall economic activity. Information 
+about new orders, inventories, working hours, and 
+job vacancies provide early indications of likely 
+changes in economic momentum.
+Construction and Housing
+Analogous to manufacturing, the housing sector 
+is particularly cyclical and responsive to the 
+flow of credit in the economy. Indicators such as 
+building permits, housing starts and mortgage 
+applications, among others, provide early signals 
+of turning points in the cycle. 
+Monetary and Financial Conditions
+Monetary policy affects the economy with a  
+lag, usually over the course of one or two years. 
+As a result, proxy measures of monetary and 
+financial conditions offer some of the best leading 
+indicators of future growth. These measures 
+include short-term real interest rates, the slope of 
+the yield curve, money supply growth, and so on.
+OppenheimerFunds
+®
+
+
+===== PAGE 7 =====
+7
+We repeat this process for a large set of countries 
+and regions, gathering a comprehensive view of 
+economic performance around the world. As one 
+example, Exhibit 5 plots our proprietary leading eco -
+nomic indicator for the U.S. going back to the 1970s. 
+Exhibit 5   
+The historical perspective in Exhibit 5 demonstrates 
+how cycles follow repetitive patterns over time, with a 
+full cycle typically completed over 7 to 10 years. This 
+recurrence is an important reminder that the econ -
+omy always tends to revert back to its trend, and that 
+every acceleration phase is inevitably followed by a 
+deceleration, and vice versa. A comparison of the 
+theoretical business cycle in Exhibit 3 with the actual 
+data in Exhibit 5 highlights the differences between 
+economic theory and reality: 
+•  Over the long term the four regimes follow one 
+another in a “predictable” fashion, with recov -
+eries followed by expansions, then slowdowns, 
+and then contractions, as suggested by theory. 
+However, in practice the cycle experiences 
+several shorter term back and forth movements 
+between regimes. Especially at the peak of the 
+cycle, the economy goes through typical “soft 
+patches,” where expansions and slowdowns 
+frequently alternate. 
+•  Second, the four regimes do not occur with equal 
+duration and persistency. Economies typically 
+spend only 15%–20% of the time in recoveries, 
+15%–20% in contractions, 30%–35% in expan -
+sions, and 30%–35% in slowdowns. Note in 
+Exhibit  5 how our leading indicator experiences 
+sharp falls and V-shaped rebounds in “below-
+trend” regimes (i.e., recovery and contraction), 
+while it follows a more gradual evolution in “above-
+trend” regimes (i.e., expansion and slowdown).
+Having described our leading indicators, in the next 
+section we investigate their historical performance 
+over the past 45 years and verify their ability to anticipate 
+turning points in financial markets.
+The Right Way to Invest
+97
+98
+99
+100
+101
+102
+Jan 1970
+Index
+Trend
+Jul 2015Jan 1980 Jan 1990 Jan 2010Jan 2000
+I OFI GMAG United States LEI
+Source: OppenheimerFunds’ Global Multi-Asset Group proprietary research of the U.S. Business Cycle Leading Indicator, 8/31/15.  
+Past performance does not guarantee future results.
+   Exhibit 5: A 45-Year History of the U.S. Business Cycle
+OppenheimerFunds’ Global Multi-Asset Group (OFI GMAG) Proprietary U.S. Leading 
+Economic Indicator (LEI) (1/31/70–7/31/15)
+
+
+===== PAGE 8 =====
+8
+Applying Theory to Practice:  
+The Last Decade 
+Looking at recent history as an example, Exhibit 6 
+describes in detail the period between the two reces -
+sions of 2000 and 2008, which serves as a perfect 
+template of business cycle dynamics and financial 
+markets performance in each regime. Exhibit 6 
+Recovery
+The business cycle began with a recovery regime 
+that lasted from April 2001 to June 2003. Our leading 
+indicator began to rebound, driven mainly by improving 
+business surveys, construction activity, and aggressive 
+monetary easing by the Federal Reserve, which took 
+the Fed Funds rate to an historic low of 1%. Although 
+the stock market continued to underperform due to 
+excessive valuations from the technology bubble, other 
+risky assets such as credit outperformed.
+Expansion
+The economy moved into the expansion regime when 
+the U.S. began to grow above trend, beginning in the 
+third quarter of 2003. Our indicator registered broad 
+improvements in housing activity, consumer senti -
+ment, and stronger labor market conditions until the 
+first quarter of 2006. As wage and inflationary pres -
+sures started to emerge, the Fed began raising rates 
+steadily from June 2004 to June 2006. Equities were 
+the best performing asset class, while credit offered 
+stable income with low volatility, outperforming sover -
+eign bonds.
+Slowdown
+After three years of policy tightening, the economy 
+peaked in the first quarter of 2006, just before the 
+Federal Reserve’s final hikes, and entered the slow-
+down regime. The slowdown was led by a substantial 
+deceleration in housing activity, followed by manufac-
+turing and falling consumer confidence. In spite of the 
+slowdown, labor markets exhibited strength for another 
+12 months through mid-2007, with rising wages and 
+falling unemployment, which caused the Fed to remain 
+on hold. While stocks continued to outperform, driven 
+mainly by strong growth in emerging markets, credit 
+markets were showing clear signs of stress, confirming 
+a tightening in lending standards.
+Contraction
+Our indicator showed that the economy entered 
+into the contraction regime at the end of 2007, when 
+the U.S. started growing below trend, driven by a 
+widespread deterioration in all its components. 
+The economy then experienced a severe recession 
+lasting almost 18 months. Risky assets underper -
+formed dramatically, while government bonds were 
+the only asset class able to provide protection and 
+diversification. Our indicator showed that a new 
+business cycle began with a recovery that started in 
+the second quarter of 2009, led by very accommo -
+dative monetary policy (i.e., quantitative easing), and 
+rebounding business and consumer confidence.
+OppenheimerFunds
+®
+97
+98
+99
+100
+101
+102
+Dec-00
+Index
+Trend
+Dec-02
+Dec-04
+Dec-06
+Dec-08
+Apr-09
+I OFI GMAG United States LEI
+Dec-01
+Dec-03
+Dec-05
+Dec-07
+Jun-01
+Jun-02
+Jun-03
+Jun-04
+Jun-05
+Jun-06
+Jun-07
+Jun-08
+Recovery
+4/30/01–6/30/03
+Expansion
+7/31/03–2/28/06
+Slowdown
+3/31/06 –1 1/30/07
+Contraction
+1 2/31/07 –4/30/09
+Source: OppenheimerFunds’ Global Multi-Asset Group proprietary research of the U.S. Business Cycle Leading Indicator, 8/31/15.  
+Past performance does not guarantee future results.
+   Exhibit 6: The 2001–2008 Business Cycle
+  OFI GMAG U.S. Leading Economic Indicator (12/31/00–4/30/09)
+n OFI GMAG United States LEI
+
+
+===== PAGE 9 =====
+9
+Historical Performance of Asset 
+Classes During the Business Cycle
+Using historical monthly data, we determine the cur -
+rent macro regime based on the most recent level 
+and change in our leading indicator, relying only on 
+information available at the time. Assuming we will 
+remain in the same regime over the following month, 
+we measure the performance of traditional risk pre -
+mia, i.e., relative performance between major asset 
+classes, such as equities, high yield, investment 
+grade, government bonds and cash. Exhibit 7 sum -
+marizes our findings for the performance of U.S. risk 
+premia during the multiple business cycles experi -
+enced between 1970 and 2013. Exhibit 7  
+Recovery
+Risky assets do remarkably well, and investors are 
+compensated for taking on additional risk. Both 
+equities and credit outperform government bonds; 
+in addition, high yield credit outperforms investment 
+grade and delivers the best total returns as an asset 
+class, often outperforming equities. This perfor -
+mance is consistent with the common perception that 
+high yield spreads tend to compress rapidly towards 
+the end of a recession, providing substantial price 
+appreciation for investors, and leading the turn in the 
+broader risk appetite. Government bonds provide 
+attractive returns over cash, since inflation is still 
+falling and monetary policy is in its final easing stage. 
+Expansion 
+Equities are the best-performing asset class in the 
+expansion phase, benefiting from the sustained 
+acceleration in economic momentum, which trans -
+lates into rapid earnings growth and expansion in 
+profit margins. Credit markets, which experienced 
+the bulk of spread compression in the recovery 
+phase, are now mainly an income proposition. 
+Spreads stabilize at or below historical average, 
+supported by solid macro backdrop and limited vol -
+atility. High yield still outperforms investment grade, 
+but this relative outperformance is mostly explained 
+by higher yields rather than price outperformance. 
+Because of rising inflation and tightening monetary 
+policy, government bonds are the worst-performing 
+asset class, barely matching returns from cash.
+Slowdown
+This phase of the cycle is the most uncertain for 
+asset allocation decisions. Despite economic growth 
+being above trend, equity, credit, and government 
+bond markets all deliver similar performance, 
+broadly in line with cash yields, which at this stage 
+have risen because of cumulative policy tightening. 
+Once volatility is factored in, this macro environment 
+offers unattractive risk-adjusted returns, arguing for 
+a neutral asset allocation stance. 
+The Right Way to Invest
+   Exhibit 7: Different Risk Premia Have Outperformed in Different Macro Regimes 
+   U.S. Historical Returns
+I U.S. Equity Premium I U.S. High Yield Premium I U.S. Credit Premium I U.S. Duration Premium
+11 %
+4%
+1%
+–1%
+2%
+–1% 0%
+1%
+–20%
+–5%
+–2%
+10%
+12%
+10%
+5% 5%
+Recovery
+Expansion Slowdown
+Contraction
+Sources: OppenheimerFunds’ proprietary research of the U.S. Business Cycle Leading Indicator, 12/31/14. Bloomberg. Annualized 
+monthly returns of the defined risk premia from January 1970 to December 2013. Risk Premia are defined as follows: U.S. Equity 
+Premium = MSCI U.S. Total Return Index – U.S. Treasuries 10-YR. High Yield Premium = U.S. High Yield – U.S. Investment Grade 
+Credit. Credit Premium = U.S. Investment Grade – U.S. Treasuries. Duration Premium = U.S. Treasuries 10-YR – U.S. T-bills 
+3-Month. See definitions page for index definitions. Past performance does not guarantee future results.
+
+
+===== PAGE 10 =====
+10
+Contraction
+Government bonds are the best-performing asset 
+class, supported by severe risk aversion, falling infla -
+tion and aggressive monetary policy easing. In this 
+environment, the appropriate asset allocation strat -
+egy should reduce risk by underweighting exposures 
+to equities and credit, and overweighting high quality 
+government bonds. 
+Applying this methodology to other regions of the 
+world yields very similar conclusions. In Exhibit 8, 
+we replicate the analysis for the European business 
+cycle and its impact on European risk premia.  
+Exhibit 8   The overall mapping of asset returns to 
+macro regimes is remarkably similar to what we have 
+seen for the United States, confirming the validity 
+and intuition of this macro framework. 5
+This description of the relative performance between 
+asset classes is very intuitive and consistent with 
+economic priors. Our analysis shows that asset 
+returns vary significantly across different business 
+cycle regimes, and it demonstrates that the change 
+in growth is far more important than the level of 
+growth. Financial markets respond to accelerations 
+and decelerations in growth, not the level of growth, 
+as proven by the dramatically different performance 
+in recoveries versus contractions (i.e., same level 
+but opposite change), and expansions versus slow -
+downs (again, same level but opposite change). 
+Our analysis demonstrates that risky assets such as 
+equities and credit perform best during recoveries 
+and expansions, when growth is accelerating. This 
+is when investors are best compensated to increase 
+risk in their portfolios. On the other hand, defensive 
+assets such as long-dated government bonds offer 
+the best returns during contractions, when growth is 
+low and decelerating. Finally, the analysis indicates 
+that slowdown regimes are highly uncertain, deliver -
+ing insignificant risk-adjusted returns over cash. 
+OppenheimerFunds
+®
+   Exhibit 8: Different Risk Premia Have Outperformed in Different Macro Regimes
+   European Historical Returns
+I European Equity Premium I European High Yield Premium
+I European Credit Premium I European Duration Premium
+12%
+3%
+0% –1% –2%
+–6%
+–1%
+2%
+–13%
+–3%–3%
+6%
+12%
+16%
+6%
+3%
+Recovery
+Expansion Slowdown
+Contraction
+Source: OppenheimerFunds’ proprietary research of the Euro area Business Cycle Leading Indicator, 12/31/14. Annualized monthly 
+returns of the defined risk premia from January 1970 to December 2013. Risk Premia are defined as follows: European Equity 
+Premium = market cap weighted average of Equity risk premia for Germany, France, Italy, Spain, Belgium and Netherlands, using 
+MSCI Indices – Citigroup 7-10-YR Treasury Indices (or estimated total returns using 10-YR yields from the OECD before Citigroup 
+data is available). European High Yield Premium = Barclays Pan European (Euro) Index – Barclays Euro Aggregate Corporate 
+Bond Index, from 1/29/99. European Credit Premium = Barclays Euro Aggregate Corporate Excess Returns Index, from 9/30/98. 
+European Duration Premium = From 1985–2013, Citigroup Germany 7-10-YR Treasury – 3M German T Bill; from 1970–1985, 
+Total return estimates from Germany 10-YR yields (OECD data) – 3M German T-Bill. See definitions page for index definitions. 
+Past performance does not guarantee future results.
+5. Performance patterns illustrated in Exhibit 7 and Exhibit 8 are very similar when using risk-adjusted returns.
+
+
+===== PAGE 11 =====
+11
+Conclusion
+Valuation is a powerful tool for long-term asset 
+allocation decisions, but its effectiveness over the 
+medium term is substantially weaker. Over shorter 
+time horizons asset prices are driven, among other 
+things, by fluctuations in the business cycle and eco -
+nomic policies enacted along with it. Using leading 
+indicators of the business cycle, we built a real-time 
+framework to determine the current phase of the 
+cycle and make informed investment decisions. Our 
+analysis shows that asset prices are mostly driven 
+by the change in growth, not the level of growth. In 
+other words, knowing the current growth rate of the 
+economy per se does not provide insights into the 
+likely performance of financial markets. Instead, 
+what matters for asset prices are accelerations and 
+decelerations in growth. 
+There are strong underlying linkages between 
+economic growth, corporate earnings, the health 
+of balance sheets, the ability of companies to invest 
+productively, and consumers’ desire to spend and 
+consume. All these phenomena are self-reinforcing 
+and affect asset prices in a significant way. When the 
+economic cycle is improving, risk assets—equities 
+and credit in particular—perform well, and vice versa.
+While it is imperative to anticipate the cycle with 
+forward-  looking economic information, macro 
+regimes tend to be persistent in the medium term, 
+allowing investors to adapt to the changing economic 
+environment and adjust their portfolios accordingly.
+It is also important to note that while our macro 
+regimes framework is a very significant and power -
+ful input to our investment process, we do not rely 
+on it on a standalone basis. It is one part of a well- 
+structured system designed to give us insights into 
+drivers of financial markets and asset prices. We 
+combine macro analysis with market indicators used 
+to assess valuation and momentum, and use risk 
+measures to assess volatility and the credit cycle. 
+Together, these multiple perspectives help us create 
+asset allocations based on a comprehensive view of 
+the opportunities and risks in the marketplace.
+The Right Way to Invest
+Index Definitions
+The S&P 500 Index is a market capitalization weighted index of the 500 largest domestic U.S. stocks.
+The Barclays Aggregate Bond Index is an index of U.S. Government and corporate bonds that includes reinvestment of dividends.
+The Barclays U.S. Aggregate Credit Index includes both corporate and non-corporate sectors. The corporate sectors are Industrial, Utility and Finance, 
+which include both U.S. and non-U.S. corporations. The non-corporate sectors are Sovereign, Supranational, Foreign Agency and Foreign Local Government. 
+The index is calculated monthly on a price-only and total-return basis. All returns are market value-weighted inclusive of accrued interest.
+The Barclays Pan-European High-Yield (Euro) Index measures the market of non-investment-grade, fixed rate corporate bonds denominated in euro.
+The Barclays Euro Corporate Bond Index is a broad-based benchmark that measures the investment-grade, euro-denominated, fixed rate corporate bond market.
+Credit Suisse U.S. High Yield Index tracks the performance of domestic non-investment-grade corporate bonds. 
+Citigroup 3-Month Treasury Bill Index is an unmanaged index that tracks short-term U.S. Government debt instruments. 
+Citigroup 10-Year Treasury Benchmark On-the-Run Index is an unmanaged index that tracks the performance of on-the-run U.S. Government debt instruments 
+with approximately 10 years to maturity. 
+The MSCI Total Return Index measures the price performance of markets with the income from constituent dividend payments.
+The MSCI Europe Index is a free-float weighted equity index designed to measure the equity market performance of the developed markets in Europe.
+U.S. Duration Premium: U.S. Treasuries 10-Yr – U.S. T-Bills 3-Month. For the 10-Yr Treasuries, Citigroup 10-Year Treasury Benchmark On-the-Run Total Return 
+Index is used from 1980 onward. Prior to 1980, history is backfilled with estimated total returns using 10-Yr yields from Bloomberg between 1970 and 1980.
+U.S. High Yield Premium: U.S. High Yield – U.S. Investment Grade Credit, using the Credit Suisse U.S. High Yield Index and the Barclays U.S. Aggregate Credit Index.
+U.S. Credit Premium: U.S. Investment Grade – U.S. Treasuries, using the Barclays U.S. Aggregate Credit Excess Return Index from 1988 onward. Prior to 1988, 
+we backfill the excess returns using the Barclays U.S. Aggregate Credit Total Return Index minus estimated duration-equivalent U.S. Treasury total returns.
+U.S. Equity Premium: MSCI Total Return Index – U.S. Treasuries 10-Yr. 
+The indices are unmanaged and cannot be purchased directly by investors.
+
+
+===== PAGE 12 =====
+Mark Hamilton
+Chief Investment Officer, Asset Allocation  
+Mark Hamilton, CIO, Asset Allocation, leads the Firm’s efforts 
+to design and implement multi-asset products and solutions. 
+He serves as portfolio manager of Oppenheimer Global 
+Allocation Fund, Oppenheimer Global Multi-Asset Growth Fund, 
+Oppenheimer Global Multi-Alternatives Fund, Oppenheimer 
+Global Multi-Asset Income Fund and Oppenheimer Portfolio 
+Series Funds. He joined the Firm in 2013 after a 19-year career 
+at AllianceBernstein.
+Alessio de Longis
+Portfolio Manager, Global Multi-Asset Group
+Alessio de Longis, CFA, is a portfolio manager for the Global  
+Multi-Asset Group (GMAG), which he joined in October 2013. 
+Additionally, Mr. de Longis leads the group’s macro strategy,  
+focusing on business cycle dynamics, global macro regimes,  
+and their impact on asset class risks and returns, and manages 
+active currency strategies in GMAG’s funds. From 2004 to 2013,  
+he was a member of the Global Debt team.
+The authors thank John Muth, Research Analyst, for his contributions.
+These views represent the opinions of OppenheimerFunds, Inc. and are not intended as investment advice or to predict or depict the performance 
+of any investment. These views are as of 11/5/15 and are subject to change based on subsequent developments.
+Shares of Oppenheimer funds are not deposits or obligations of any bank, are not guaranteed by any bank, are not insured by the 
+FDIC or any other agency, and involve investment risks, including the possible loss of the principal amount invested.
+Before investing in any of the Oppenheimer funds, investors should carefully consider 
+a fund’s investment objectives, risks, charges and expenses. Fund prospectuses and 
+summary prospectuses contain this and other information about the funds, and may be 
+obtained by asking your financial advisors, visiting our website at oppenheimerfunds.com 
+or calling 1.800.CALL OPP (225.5677). Investors should read prospectuses and  
+summary prospectuses carefully before investing.
+Oppenheimer funds are distributed by OppenheimerFunds Distributor, Inc.
+225 Liberty Street, New York, NY 10281-1008
+© 2015 OppenheimerFunds Distributor, Inc. All rights reserved.
+ND0000.004.1015 November 5, 2015
+Visit Us 
+oppenheimerfunds.com  
+ 
+Call Us 
+800 225 5677  
+ 
+Follow Us

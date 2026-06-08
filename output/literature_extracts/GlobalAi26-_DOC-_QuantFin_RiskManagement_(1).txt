@@ -1,0 +1,92 @@
+[para 5] TRADING / STRATEGY + IMPLEMENTATION
+[para 7] NAUTILUS TRADER / NautilusTrader is an open-source, production-grade, Rust-native engine for multi-asset, multi-venue trading systems.
+[para 8] https://github.com/nautechsystems/nautilus_trader
+[para 9] https://www.instagram.com/p/DYzUHQiFp-g/?utm_source=ig_web_button_share_sheet
+[para 10] https://nautilustrader.io/
+[para 11] NautilusTrader is an open-source, high-performance, production-grade algorithmic trading platform, providing quantitative traders with the ability to backtest portfolios of automated trading strategies on historical data with an event-driven engine, and also deploy those same strategies live, with no code changes.
+[para 14] TAURIC RESEARCH / TradingAgents: Multi-Agents LLM Financial Trading Framework
+[para 15] https://github.com/TauricResearch/TradingAgents
+[para 18] QLIB - AI INVESTMENT PLATFORM
+[para 19] https://github.com/microsoft/qlib
+[para 20] https://arxiv.org/abs/2009.11189
+[para 21] Qlib is an open-source, AI-oriented quantitative investment platform that aims to realize the potential, empower research, and create value using AI technologies in quantitative investment, from exploring ideas to implementing productions. Qlib supports diverse machine learning modeling paradigms, including supervised learning, market dynamics modeling, and reinforcement learning.
+[para 22] An increasing number of SOTA Quant research works/papers in diverse paradigms are being released in Qlib to collaboratively solve key challenges in quantitative investment. For example, 1) using supervised learning to mine the market's complex non-linear patterns from rich and heterogeneous financial data, 2) modeling the dynamic nature of the financial market using adaptive concept drift technology, and 3) using reinforcement learning to model continuous investment decisions and assist investors in optimizing their trading strategies.
+[para 25] KRONOS - LLM for FINANCE
+[para 26] https://github.com/shiyu-coder/Kronos
+[para 27] Kronos is the first AI foundation model built to understand financial markets like a language model understands text. It turns candlestick data into tokens and learns patterns across stocks, crypto, forex, and more.
+[para 28] Trained on data from 45+ global exchanges. Up to 500M parameters. Already exploding on GitHub.
+[para 29] Kronos is the first open-source foundation model for financial candlesticks (K-lines), trained on data from over 45 global exchanges.
+[para 34] TRADING / RESEARCH
+[para 36] TRADING - SOURCE OF FREE RESEARCH PAPERS
+[para 37] sci-hub.se
+[para 38] Free research papers
+[para 41] PAPER - VOL SURFACE w DEEP LEARNING
+[para 42] Title: Deep Learning Option Pricing with Market Implied Volatility Surfaces
+[para 43] Authors: Lijie Ding, Egang Lu, Kin Cheung
+[para 44] Published: September 7, 2025
+[para 45] 🔗 arXiv:
+[para 46] arxiv.org/abs/2509.05911
+[para 47] What It Does
+[para 48] The paper presents a deep learning framework that learns the implied volatility surface directly from historical SPX options data (end-of-day S&P 500 quotes, 2018–2023) — exactly as described in the reel caption. Rather than relying on Black-Scholes' constant-volatility assumption, it captures real market dynamics including fat tails, volatility skew, and regime changes.
+[para 50] TRADING / CRYPTO
+[para 52] TRADING - Ai trading Bot for CRYPTO -
+[para 53] The bot reportedly used automated arbitrage trading by scanning decentralized exchanges for small price differences and executing transactions faster than human traders could react manually. T
+[para 54] .......
+[para 55] The viral story in that reel is about a Chinese college student who turned $0.90 into $408,292 in just two days using a Solana DEX arbitrage bot — reportedly built from a single Claude prompt.
+[para 56] The Story
+[para 57] The bot didn't predict markets — it exploited latency and price discrepancies across Solana decentralized exchanges (Raydium, Orca, Meteora, Jupiter), executing hundreds of trades in milliseconds. It used circular arbitrage (e.g., WSOL → USDC → WSOL) and Jito MEV bundles for ultra-fast transaction execution on Solana. Notably, someone reportedly reverse-engineered the bot in 20 minutes using one Claude prompt.
+[para 58] GitHub Repos Matching This Bot
+[para 59] There are several open-source Solana arbitrage bots matching this exact arch itecture:
+[para 60] Repo	DEXs Supported	Tech Stack	Notable Feature
+[para 61] WSOL12/Solana-Arbitrage-Bot
+[para 62] pump.fun, Meteora, Raydium, Orca	JS	Jito bundling + gRPC
+[para 63] ChangeYourself0613/Solana-Arbitrage-Bot
+[para 64] Raydium, Orca, Meteora, Jupiter	Rust/Anchor	Jito-MEV integration
+[para 65] 0xNineteen/solana-arbitrage-bot
+[para 66] Multiple spot DEXs	JS	Lightweight, multi-DEX
+[para 67] ⚠️ Key Caveat
+[para 68] The $0.90 → $408K story is viral but unverified — the on-chain wallet activity was cited but the student's identity and exact code were never officially released. The repos above are the closest public implementations of the same strategy. The ChangeYourself0613 Rust-based repo is the most production-ready for actual MEV arbitrage on Solana
+[para 73] TRADING / POLYMARKET
+[para 76] 1. 🏆 Official: Polymarket/agents
+[para 77] 🔗 github.com/Polymarket/agents
+[para 78] The official Polymarket AI agent framework — MIT licensed, free, and built by Polymarket themselves. The foundational developer toolkit for building any Polymarket agent, including copy-trading strategies.
+[para 80] 2. Brunofancy/polymarket-copy-trading-agent
+[para 81] github.com/Brunofancy/polymarket-copy-trading-bot-agent
+[para 82] lets you watch trader activity, copy trades, monitor positions, and uses an AI agent to research markets before executing. Built March 2026.
+[para 84] 3. texsellix/polymarket-trading-bot (259 ⭐)
+[para 85] 🔗 github.com/texsellix/polymarket-trading-bot
+[para 86] CLI-only terminal bot. "Polybot" watches a target whale wallet via the Polymarket Data API and mirrors every entry/exit at a configurable size multiplier — no dashboard, no signup needed. Example:
+[para 88] 4. QuickNode Full Tutorial + Repo
+[para 89] github.com/quiknode-labs/qn-guide-examples  → /defi/polymarket-copy-bot
+[para 90] Step-by-step guide + production-ready code to build the bot from scratch — detects trades from a target wallet in real-time and mirrors buy orders with position tracking and risk caps.
+[para 92] 5. Curated Toolkit Index
+[para 93] github.com/harish-garg/Awesome-Polymarket-Tools
+[para 94] An aggregated list of every Polymarket copy-trading bot, analytics tool, and AI agent repo in one place.
+[para 98] Polymarket vs. Other ARBITRAGE
+[para 99] ***See if this can me automated with AI agents to find and trade on arbitrage oppportunities
+[para 100] https://www.instagram.com/reel/DYv9jIrSKSQ/?utm_source=ig_web_copy_link
+[para 101] oddpool.com => Arbitrage scanner in menu  (then see Kalshi, Polymarket, Opinion) => Buy/Sell DELTA Trade (both sides profit guaranteed)
+[para 103] Polymartket EVAL via AI  polynside.io
+[para 104] Screeenshot any Polymarket trade, then get buy/sell from polynside
+[para 105] => ANALYSE
+[para 107] ALL SKYGEN - alternaitve to Manus, etc.  +  CONNECTORS  + AI EMPLOYEES
+[para 108] https://skygen.ai/
+[para 109] See Use cases:
+[para 110] Arbitrage Sniper
+[para 111] I’ll scan marketplaces to find underpriced items you can buy low and resell for an immediate profit
+[para 112] Whale Tracker
+[para 113] I’ll monitor the top 1% of investors to see exactly which stocks and crypto they are buying for 2026
+[para 114] Free Money Radar
+[para 115] I’ll scan thousands of active grants and subsidies to find money you qualify for and never have to pay back
+[para 116] AI Researcher
+[para 117] Gathers information from many sources, compiles structured summaries, and delivers reports ready for review.
+[para 121] MISCELLANEOUS
+[para 125] ALL - ARGO vs.  MANUS $200 Open Source Alternative
+[para 126] ARGO open source in Github
+[para 128] API FREE - from all top models
+[para 129] https://www.apifree.ai/login?redirect=/explore
+[para 130] API FREE
+[para 131] Example https://www.apifree.ai/explore
+[para 133] ALL - free alternatives / Open source
+[para 134] alternativeto.net
+[para 140] RESOURCES FROM PROMPTS

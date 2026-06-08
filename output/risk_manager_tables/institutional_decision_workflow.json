@@ -1,0 +1,416 @@
+{
+  "workflow_id": "RMP-20260607-REBAL-001",
+  "workflow_status": "risk_review_conditions_pending",
+  "segregation_of_duties": {
+    "proposal_owner_role": "Portfolio Manager / Portfolio Construction",
+    "proposal_owner": "unassigned",
+    "independent_risk_reviewer_role": "Independent Risk Manager",
+    "independent_risk_reviewer": "unassigned",
+    "decision_authority_role": "Authorized Human Approver",
+    "decision_authority": "unassigned",
+    "execution_owner_role": "Trading / Operations",
+    "execution_owner": "unassigned",
+    "risk_manager_does_not_own_alpha_proposal": true
+  },
+  "stage_1_proposal": {
+    "proposal_id": "RMP-20260607-REBAL-001",
+    "status": "submitted_for_independent_risk_review",
+    "proposal_type": "multi_strategy_rebalance",
+    "submitted_at": "2026-06-07T16:30:00-04:00",
+    "proposal_owner": "unassigned",
+    "objective": "Improve portfolio risk-adjusted profile within configured limits.",
+    "investment_thesis": "Score-tilted portfolio construction proposal. Thesis requires PM documentation before approval.",
+    "trigger": [
+      {
+        "limit_id": "FACTOR_EQUITY_BETA",
+        "scope": "portfolio_factor",
+        "metric": "equity_beta",
+        "status": "breach"
+      },
+      {
+        "limit_id": "FACTOR_CREDIT_SPREAD",
+        "scope": "portfolio_factor",
+        "metric": "credit_spread",
+        "status": "breach"
+      },
+      {
+        "limit_id": "FACTOR_RATES_DURATION",
+        "scope": "portfolio_factor",
+        "metric": "rates_duration",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CORR_MAX_PAIR",
+        "scope": "portfolio_correlation",
+        "metric": "max_pairwise_positive_correlation",
+        "status": "warning"
+      },
+      {
+        "limit_id": "REBAL_TURNOVER",
+        "scope": "rebalance",
+        "metric": "turnover",
+        "status": "warning"
+      },
+      {
+        "limit_id": "PROTO_WQ_ALPHA_ETF_ROLLING_VOL",
+        "scope": "PROTO_WQ_ALPHA_ETF",
+        "metric": "latest_63d_rolling_volatility",
+        "status": "breach"
+      },
+      {
+        "limit_id": "CAND_EQUITY_MARKET_NEUTRAL_CURRENT_DD",
+        "scope": "CAND_EQUITY_MARKET_NEUTRAL",
+        "metric": "current_drawdown",
+        "status": "breach"
+      },
+      {
+        "limit_id": "CAND_EQUITY_MARKET_NEUTRAL_ROLLING_SHARPE",
+        "scope": "CAND_EQUITY_MARKET_NEUTRAL",
+        "metric": "latest_63d_rolling_sharpe",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CAND_CREDIT_CARRY_STRESS_GATE_ROLLING_SHARPE",
+        "scope": "CAND_CREDIT_CARRY_STRESS_GATE",
+        "metric": "latest_63d_rolling_sharpe",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CAND_TREASURY_CURVE_RV_CURRENT_DD",
+        "scope": "CAND_TREASURY_CURVE_RV",
+        "metric": "current_drawdown",
+        "status": "breach"
+      },
+      {
+        "limit_id": "CAND_VOL_CARRY_CRASH_FILTER_CURRENT_DD",
+        "scope": "CAND_VOL_CARRY_CRASH_FILTER",
+        "metric": "current_drawdown",
+        "status": "breach"
+      },
+      {
+        "limit_id": "CAND_TAIL_HEDGE_CRISIS_CURRENT_DD",
+        "scope": "CAND_TAIL_HEDGE_CRISIS",
+        "metric": "current_drawdown",
+        "status": "breach"
+      },
+      {
+        "limit_id": "CAND_TAIL_HEDGE_CRISIS_ROLLING_SHARPE",
+        "scope": "CAND_TAIL_HEDGE_CRISIS",
+        "metric": "latest_63d_rolling_sharpe",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CAND_COMMODITY_INFLATION_SHOCK_ROLLING_VOL",
+        "scope": "CAND_COMMODITY_INFLATION_SHOCK",
+        "metric": "latest_63d_rolling_volatility",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CAND_USD_MACRO_PRESSURE_ROLLING_SHARPE",
+        "scope": "CAND_USD_MACRO_PRESSURE",
+        "metric": "latest_63d_rolling_sharpe",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CAND_EM_MACRO_RISK_ROLLING_SHARPE",
+        "scope": "CAND_EM_MACRO_RISK",
+        "metric": "latest_63d_rolling_sharpe",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CAND_GLOBAL_VALUE_ROTATION_ROLLING_VOL",
+        "scope": "CAND_GLOBAL_VALUE_ROTATION",
+        "metric": "latest_63d_rolling_volatility",
+        "status": "warning"
+      },
+      {
+        "limit_id": "CAND_INDEX_ARBITRAGE_PROXY_CURRENT_DD",
+        "scope": "CAND_INDEX_ARBITRAGE_PROXY",
+        "metric": "current_drawdown",
+        "status": "breach"
+      },
+      {
+        "limit_id": "CAND_INDEX_ARBITRAGE_PROXY_ROLLING_SHARPE",
+        "scope": "CAND_INDEX_ARBITRAGE_PROXY",
+        "metric": "latest_63d_rolling_sharpe",
+        "status": "warning"
+      }
+    ],
+    "current_weights": {
+      "PROTO_WQ_ALPHA_ETF": 0.0,
+      "PROTO_HF_REPLICATION": 0.1,
+      "PROTO_BUSINESS_CYCLE": 0.1,
+      "PROTO_MARKOV_DEFENSIVE": 0.1,
+      "PROTO_MANAGED_FUTURES": 0.1,
+      "CAND_EQUITY_MARKET_NEUTRAL": 0.0,
+      "CAND_CREDIT_CARRY_STRESS_GATE": 0.1,
+      "CAND_RATES_DURATION_REGIME": 0.1,
+      "CAND_TREASURY_CURVE_RV": 0.0,
+      "CAND_VOL_CARRY_CRASH_FILTER": 0.0,
+      "CAND_TAIL_HEDGE_CRISIS": 0.0,
+      "CAND_MERGER_ARB_PROXY": 0.0,
+      "CAND_CONVERTIBLE_ARB_PROXY": 0.1,
+      "CAND_COMMODITY_INFLATION_SHOCK": 0.1,
+      "CAND_USD_MACRO_PRESSURE": 0.0,
+      "CAND_EM_MACRO_RISK": 0.1,
+      "CAND_RISK_PARITY_OVERLAY": 0.0,
+      "CAND_GLOBAL_VALUE_ROTATION": 0.0,
+      "CAND_INDEX_ARBITRAGE_PROXY": 0.0,
+      "CAND_EVENT_DRIVEN_SECTOR_PROXY": 0.1
+    },
+    "proposed_weights": {
+      "PROTO_WQ_ALPHA_ETF": 0.0,
+      "PROTO_HF_REPLICATION": 0.12370492136520418,
+      "PROTO_BUSINESS_CYCLE": 0.09257055871238294,
+      "PROTO_MARKOV_DEFENSIVE": 0.09592549218593306,
+      "PROTO_MANAGED_FUTURES": 0.08266561064137368,
+      "CAND_EQUITY_MARKET_NEUTRAL": 0.0,
+      "CAND_CREDIT_CARRY_STRESS_GATE": 0.10595645523822862,
+      "CAND_RATES_DURATION_REGIME": 0.12370492136520418,
+      "CAND_TREASURY_CURVE_RV": 0.0,
+      "CAND_VOL_CARRY_CRASH_FILTER": 0.0,
+      "CAND_TAIL_HEDGE_CRISIS": 0.0,
+      "CAND_MERGER_ARB_PROXY": 0.0,
+      "CAND_CONVERTIBLE_ARB_PROXY": 0.10663787421093789,
+      "CAND_COMMODITY_INFLATION_SHOCK": 0.07764253965992801,
+      "CAND_USD_MACRO_PRESSURE": 0.0,
+      "CAND_EM_MACRO_RISK": 0.11499582782042513,
+      "CAND_RISK_PARITY_OVERLAY": 0.0,
+      "CAND_GLOBAL_VALUE_ROTATION": 0.0,
+      "CAND_INDEX_ARBITRAGE_PROXY": 0.0,
+      "CAND_EVENT_DRIVEN_SECTOR_PROXY": 0.07619579880038233
+    },
+    "trade_count": 10,
+    "estimated_transaction_cost": 74.99999999999999,
+    "required_pm_inputs": [
+      "Document expected alpha source and investment thesis.",
+      "Explain why proposed increases are appropriate under current regime.",
+      "Confirm liquidity, capacity, and execution assumptions.",
+      "Identify proposal expiry and acceptable implementation window."
+    ]
+  },
+  "stage_2_independent_risk_review": {
+    "status": "completed_system_review_pending_human_risk_signoff",
+    "reviewer": "unassigned",
+    "review_due_date": "2026-06-08",
+    "system_conclusion": "Modify Then Human Review",
+    "system_approval_status": "pending_modification_and_human_review",
+    "blocking_objections": [],
+    "warnings_and_conditions": [
+      {
+        "gate": "cost_benefit_check",
+        "status": "warning",
+        "explanation": "Expected annual contribution benefit proxy should exceed one-time transaction cost.",
+        "details": {
+          "expected_benefit_proxy_dollars": -646.8622465983079,
+          "transaction_cost_dollars": 74.99999999999999
+        }
+      }
+    ],
+    "required_modifications": [
+      {
+        "scope": "CAND_CREDIT_CARRY_STRESS_GATE",
+        "required_change": "Hold increase at current weight unless human reviewer documents explicit justification.",
+        "reason": "Strategy is warning-status and should not receive an automatic allocation increase."
+      },
+      {
+        "scope": "CAND_EM_MACRO_RISK",
+        "required_change": "Hold increase at current weight unless human reviewer documents explicit justification.",
+        "reason": "Strategy is warning-status and should not receive an automatic allocation increase."
+      },
+      {
+        "scope": "portfolio",
+        "required_change": "Document why expected risk improvement is worth the estimated return/cost trade-off.",
+        "reason": "At least one portfolio double-check gate returned warning."
+      }
+    ],
+    "expected_impact": {
+      "method": "Historical net-return and risk proxy under proposed fixed strategy weights.",
+      "confidence": "low",
+      "risk_metric_changes": [
+        {
+          "metric": "portfolio_volatility",
+          "current": 0.04307906839702701,
+          "proposed": 0.04150751013337174,
+          "change": -0.001571558263655265,
+          "expected_outcome": "improved"
+        },
+        {
+          "metric": "portfolio_var_99",
+          "current": 0.007727144728009559,
+          "proposed": 0.007253808184210741,
+          "change": -0.000473336543798818,
+          "expected_outcome": "improved"
+        },
+        {
+          "metric": "portfolio_expected_shortfall_95",
+          "current": 0.006404449325593161,
+          "proposed": 0.006150158570864919,
+          "change": -0.0002542907547282425,
+          "expected_outcome": "improved"
+        },
+        {
+          "metric": "portfolio_max_drawdown",
+          "current": -0.08667187871367443,
+          "proposed": -0.0895039972125018,
+          "change": -0.002832118498827363,
+          "expected_outcome": "worsened"
+        },
+        {
+          "metric": "portfolio_sharpe",
+          "current": 1.0545134667011198,
+          "proposed": 1.0790803087647995,
+          "change": 0.02456684206367976,
+          "expected_outcome": "improved"
+        }
+      ],
+      "risk_metric_summary": {
+        "improved": 4,
+        "worsened": 1,
+        "unchanged": 0
+      },
+      "factor_exposure_changes": {
+        "cash": -0.031184255695401175,
+        "commodity_beta": 0.003207876098772322,
+        "convertible": 0.0014935216974610206,
+        "credit_spread": 0.00757629382373233,
+        "defensive_style": -0.0006519212502507105,
+        "emerging_market": 0.003673977816004155,
+        "equity_beta": -0.0006290094479659836,
+        "event_driven": -0.007498323377879569,
+        "gold": 0.006949985791619054,
+        "inflation_beta": 0.001924725659263396,
+        "rates_duration": 0.01314842939459998,
+        "safe_haven": 0.004169991474971432,
+        "usd_fx": 0.0025296402157234214
+      },
+      "factor_concentration_change": {
+        "current": {
+          "top_factor": "cash",
+          "top_abs_exposure": 0.39,
+          "gross_factor_exposure": 0.9805,
+          "herfindahl_abs_exposure": 0.21504508462933605
+        },
+        "proposed": {
+          "top_factor": "cash",
+          "top_abs_exposure": 0.35881574430459884,
+          "gross_factor_exposure": 0.9852109322006497,
+          "herfindahl_abs_exposure": 0.19473620028328664
+        }
+      },
+      "gross_expected_annual_benefit_proxy_return": -0.000571862246598308,
+      "gross_expected_annual_benefit_proxy_dollars": -571.8622465983079,
+      "transaction_cost_dollars": 74.99999999999999,
+      "net_expected_annual_benefit_proxy_dollars": -646.8622465983079,
+      "expectation_horizon": "annualized historical proxy with one-time rebalance cost",
+      "not_a_forecast": true
+    },
+    "limitations": [
+      "Expected impact is a historical proxy estimate, not a forecast or guaranteed outcome.",
+      "ETF proxy factor exposures are not a licensed Barra model.",
+      "Correlation and risk estimates can change after the rebalance.",
+      "All real allocation changes require human approval."
+    ],
+    "risk_questions_for_human_reviewer": [
+      "Does the proposal solve the original risk problem?",
+      "Does it introduce a new concentration, liquidity, or tail-risk problem?",
+      "Are the expected benefits material relative to uncertainty and cost?",
+      "Should any warning-status strategy receive additional capital?",
+      "Are stress and correlation assumptions credible under current market conditions?"
+    ]
+  },
+  "stage_3_decision_authority": {
+    "status": "pending_human_decision",
+    "authority": "unassigned",
+    "allowed_outcomes": [
+      "Approve",
+      "Approve with Conditions",
+      "Reject",
+      "Escalate"
+    ],
+    "system_recommended_outcome": "Approve with Conditions",
+    "decision_outcome": null,
+    "decision_timestamp": null,
+    "conditions": [],
+    "override_requested": false,
+    "override_reason": null,
+    "override_approver": null,
+    "decision_expiry_date": "2026-06-08",
+    "execution_authorized": false
+  },
+  "stage_4_execution_and_monitoring": {
+    "execution_status": "not_authorized_not_executed",
+    "execution_timestamp": null,
+    "executed_weights": null,
+    "realized_transaction_cost": null,
+    "expectation_snapshot": {
+      "expected_risk_direction": "Core risk metrics should improve or remain stable after approved changes.",
+      "expected_cost": 74.99999999999999,
+      "expected_net_benefit_proxy_dollars": -646.8622465983079,
+      "confidence": "low"
+    },
+    "monitoring_checkpoints": [
+      {
+        "horizon": "T+1",
+        "checks": [
+          "executed transaction cost versus estimate",
+          "position and weight reconciliation",
+          "unexpected factor exposure change"
+        ],
+        "status": "pending_execution",
+        "observed_values": null,
+        "reviewer_note": null,
+        "outcome": null
+      },
+      {
+        "horizon": "21 trading days",
+        "checks": [
+          "realized volatility versus expected direction",
+          "current drawdown",
+          "rolling Sharpe",
+          "limit breaches"
+        ],
+        "status": "pending_execution",
+        "observed_values": null,
+        "reviewer_note": null,
+        "outcome": null
+      },
+      {
+        "horizon": "63 trading days",
+        "checks": [
+          "risk-adjusted performance",
+          "correlation changes",
+          "factor concentration",
+          "decision benefit versus transaction cost"
+        ],
+        "status": "pending_execution",
+        "observed_values": null,
+        "reviewer_note": null,
+        "outcome": null
+      }
+    ],
+    "invalidation_criteria": [
+      "Any new portfolio or strategy breach caused by the allocation change.",
+      "Realized transaction cost materially exceeds estimate.",
+      "Portfolio volatility, VaR, ES, and drawdown worsen instead of the expected improvement.",
+      "A strategy receiving additional capital develops a correlation or evidence blocker.",
+      "Expected benefit remains negative after the review horizon."
+    ],
+    "realized_outcome_status": "awaiting_authorized_execution",
+    "expectation_vs_realized": null
+  },
+  "audit_trail": [
+    {
+      "timestamp": "2026-06-07T16:30:00-04:00",
+      "actor": "system",
+      "event": "proposal_generated",
+      "note": "Portfolio construction proposal generated for independent risk review."
+    },
+    {
+      "timestamp": "2026-06-07T16:31:00-04:00",
+      "actor": "system_risk_review",
+      "event": "independent_system_review_completed",
+      "note": "Modify Then Human Review"
+    }
+  ]
+}

@@ -1,0 +1,1010 @@
+{
+  "candidate_decision": "Review proposed rebalance",
+  "final_decision": "Modify Then Human Review",
+  "approval_status": "pending_modification_and_human_review",
+  "auto_execution_allowed": false,
+  "double_check_summary": {
+    "pass": 5,
+    "warning": 1,
+    "fail": 0
+  },
+  "double_check_gates": [
+    {
+      "gate": "blocked_strategy_buy_check",
+      "status": "pass",
+      "explanation": "Proposed rebalance must not increase breached, duplicate, or evidence-incomplete strategies.",
+      "details": []
+    },
+    {
+      "gate": "rebalance_limit_check",
+      "status": "pass",
+      "explanation": "Proposed rebalance must remain within turnover and transaction-cost limits.",
+      "details": []
+    },
+    {
+      "gate": "weight_sum_check",
+      "status": "pass",
+      "explanation": "Proposed strategy weights must sum to 100%.",
+      "details": {
+        "proposed_weight_sum": 1.0
+      }
+    },
+    {
+      "gate": "risk_improvement_check",
+      "status": "pass",
+      "explanation": "Proposed allocation should improve at least as many core risk metrics as it worsens.",
+      "details": {
+        "improved": 4,
+        "worsened": 1,
+        "unchanged": 0
+      }
+    },
+    {
+      "gate": "cost_benefit_check",
+      "status": "warning",
+      "explanation": "Expected annual contribution benefit proxy should exceed one-time transaction cost.",
+      "details": {
+        "expected_benefit_proxy_dollars": -646.8622465983079,
+        "transaction_cost_dollars": 74.99999999999999
+      }
+    },
+    {
+      "gate": "human_approval_check",
+      "status": "pass",
+      "explanation": "Real allocation changes remain blocked until a human approves, rejects, or modifies the proposal.",
+      "details": {
+        "human_approval_required": true,
+        "auto_execution_allowed": false
+      }
+    }
+  ],
+  "expected_impact": {
+    "method": "Historical net-return and risk proxy under proposed fixed strategy weights.",
+    "confidence": "low",
+    "risk_metric_changes": [
+      {
+        "metric": "portfolio_volatility",
+        "current": 0.04307906839702701,
+        "proposed": 0.04150751013337174,
+        "change": -0.001571558263655265,
+        "expected_outcome": "improved"
+      },
+      {
+        "metric": "portfolio_var_99",
+        "current": 0.007727144728009559,
+        "proposed": 0.007253808184210741,
+        "change": -0.000473336543798818,
+        "expected_outcome": "improved"
+      },
+      {
+        "metric": "portfolio_expected_shortfall_95",
+        "current": 0.006404449325593161,
+        "proposed": 0.006150158570864919,
+        "change": -0.0002542907547282425,
+        "expected_outcome": "improved"
+      },
+      {
+        "metric": "portfolio_max_drawdown",
+        "current": -0.08667187871367443,
+        "proposed": -0.0895039972125018,
+        "change": -0.002832118498827363,
+        "expected_outcome": "worsened"
+      },
+      {
+        "metric": "portfolio_sharpe",
+        "current": 1.0545134667011198,
+        "proposed": 1.0790803087647995,
+        "change": 0.02456684206367976,
+        "expected_outcome": "improved"
+      }
+    ],
+    "risk_metric_summary": {
+      "improved": 4,
+      "worsened": 1,
+      "unchanged": 0
+    },
+    "factor_exposure_changes": {
+      "cash": -0.031184255695401175,
+      "commodity_beta": 0.003207876098772322,
+      "convertible": 0.0014935216974610206,
+      "credit_spread": 0.00757629382373233,
+      "defensive_style": -0.0006519212502507105,
+      "emerging_market": 0.003673977816004155,
+      "equity_beta": -0.0006290094479659836,
+      "event_driven": -0.007498323377879569,
+      "gold": 0.006949985791619054,
+      "inflation_beta": 0.001924725659263396,
+      "rates_duration": 0.01314842939459998,
+      "safe_haven": 0.004169991474971432,
+      "usd_fx": 0.0025296402157234214
+    },
+    "factor_concentration_change": {
+      "current": {
+        "top_factor": "cash",
+        "top_abs_exposure": 0.39,
+        "gross_factor_exposure": 0.9805,
+        "herfindahl_abs_exposure": 0.21504508462933605
+      },
+      "proposed": {
+        "top_factor": "cash",
+        "top_abs_exposure": 0.35881574430459884,
+        "gross_factor_exposure": 0.9852109322006497,
+        "herfindahl_abs_exposure": 0.19473620028328664
+      }
+    },
+    "gross_expected_annual_benefit_proxy_return": -0.000571862246598308,
+    "gross_expected_annual_benefit_proxy_dollars": -571.8622465983079,
+    "transaction_cost_dollars": 74.99999999999999,
+    "net_expected_annual_benefit_proxy_dollars": -646.8622465983079,
+    "expectation_horizon": "annualized historical proxy with one-time rebalance cost",
+    "not_a_forecast": true
+  },
+  "required_modifications": [
+    {
+      "scope": "CAND_CREDIT_CARRY_STRESS_GATE",
+      "required_change": "Hold increase at current weight unless human reviewer documents explicit justification.",
+      "reason": "Strategy is warning-status and should not receive an automatic allocation increase."
+    },
+    {
+      "scope": "CAND_EM_MACRO_RISK",
+      "required_change": "Hold increase at current weight unless human reviewer documents explicit justification.",
+      "reason": "Strategy is warning-status and should not receive an automatic allocation increase."
+    },
+    {
+      "scope": "portfolio",
+      "required_change": "Document why expected risk improvement is worth the estimated return/cost trade-off.",
+      "reason": "At least one portfolio double-check gate returned warning."
+    }
+  ],
+  "post_decision_monitoring_plan": {
+    "decision_expectation": {
+      "expected_risk_direction": "Core risk metrics should improve or remain stable after approved changes.",
+      "expected_cost": 74.99999999999999,
+      "expected_net_benefit_proxy_dollars": -646.8622465983079,
+      "confidence": "low"
+    },
+    "checkpoints": [
+      {
+        "horizon": "T+1",
+        "checks": [
+          "executed transaction cost versus estimate",
+          "position and weight reconciliation",
+          "unexpected factor exposure change"
+        ]
+      },
+      {
+        "horizon": "21 trading days",
+        "checks": [
+          "realized volatility versus expected direction",
+          "current drawdown",
+          "rolling Sharpe",
+          "limit breaches"
+        ]
+      },
+      {
+        "horizon": "63 trading days",
+        "checks": [
+          "risk-adjusted performance",
+          "correlation changes",
+          "factor concentration",
+          "decision benefit versus transaction cost"
+        ]
+      }
+    ],
+    "invalidation_criteria": [
+      "Any new portfolio or strategy breach caused by the allocation change.",
+      "Realized transaction cost materially exceeds estimate.",
+      "Portfolio volatility, VaR, ES, and drawdown worsen instead of the expected improvement.",
+      "A strategy receiving additional capital develops a correlation or evidence blocker.",
+      "Expected benefit remains negative after the review horizon."
+    ]
+  },
+  "strategy_decision_reviews": [
+    {
+      "strategy_id": "PROTO_WQ_ALPHA_ETF",
+      "strategy": "WorldQuant-Inspired ETF Alpha Basket",
+      "candidate_action": "Merge / Redesign",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Merge / Redesign",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "fail",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": 0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "PROTO_HF_REPLICATION",
+      "strategy": "Liquid Alternative Factor Premia Clone",
+      "candidate_action": "Keep",
+      "trade_side": "BUY",
+      "final_action_after_double_check": "Increase Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.023704921365204176,
+        "annual_return_contribution_change_proxy": 0.0009351216313147214,
+        "annual_volatility_budget_change_proxy": 0.0011802093590798798,
+        "estimated_transaction_cost": 11.85246068260209
+      }
+    },
+    {
+      "strategy_id": "PROTO_BUSINESS_CYCLE",
+      "strategy": "Business-Cycle Regime Allocation",
+      "candidate_action": "Keep",
+      "trade_side": "SELL",
+      "final_action_after_double_check": "Reduction Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": -0.007429441287617064,
+        "annual_return_contribution_change_proxy": -0.00030462799212959806,
+        "annual_volatility_budget_change_proxy": -0.00046693496359540113,
+        "estimated_transaction_cost": 3.714720643808532
+      }
+    },
+    {
+      "strategy_id": "PROTO_MARKOV_DEFENSIVE",
+      "strategy": "High-Volatility Regime Defensive Switch",
+      "candidate_action": "Keep",
+      "trade_side": "SELL",
+      "final_action_after_double_check": "Reduction Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": -0.004074507814066944,
+        "annual_return_contribution_change_proxy": -0.00019000995124863787,
+        "annual_volatility_budget_change_proxy": -0.0002467628656206138,
+        "estimated_transaction_cost": 2.0372539070334716
+      }
+    },
+    {
+      "strategy_id": "PROTO_MANAGED_FUTURES",
+      "strategy": "Managed Futures Trend Proxy",
+      "candidate_action": "Keep",
+      "trade_side": "SELL",
+      "final_action_after_double_check": "Reduction Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": -0.01733438935862633,
+        "annual_return_contribution_change_proxy": -0.0011082852173420427,
+        "annual_volatility_budget_change_proxy": -0.0018314931500686188,
+        "estimated_transaction_cost": 8.667194679313164
+      }
+    },
+    {
+      "strategy_id": "CAND_EQUITY_MARKET_NEUTRAL",
+      "strategy": "Equity Market-Neutral Style Spread",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": -0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_CREDIT_CARRY_STRESS_GATE",
+      "strategy": "Credit Carry With Stress Gate",
+      "candidate_action": "Reduce or Hedge",
+      "trade_side": "BUY",
+      "final_action_after_double_check": "Hold Increase, Human Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "warning",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.005956455238228617,
+        "annual_return_contribution_change_proxy": 0.00010450954948185526,
+        "annual_volatility_budget_change_proxy": 0.0001885020309784705,
+        "estimated_transaction_cost": 2.9782276191143082
+      }
+    },
+    {
+      "strategy_id": "CAND_RATES_DURATION_REGIME",
+      "strategy": "Rates Duration Regime",
+      "candidate_action": "Keep",
+      "trade_side": "BUY",
+      "final_action_after_double_check": "Increase Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.023704921365204176,
+        "annual_return_contribution_change_proxy": 0.0005196663409445021,
+        "annual_volatility_budget_change_proxy": 0.0009559172808268157,
+        "estimated_transaction_cost": 11.85246068260209
+      }
+    },
+    {
+      "strategy_id": "CAND_TREASURY_CURVE_RV",
+      "strategy": "Treasury Curve Relative Value Proxy",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": -0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_VOL_CARRY_CRASH_FILTER",
+      "strategy": "Volatility Carry With Crash Filter",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": 0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_TAIL_HEDGE_CRISIS",
+      "strategy": "Tail Hedge Crisis Sleeve",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": 0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_MERGER_ARB_PROXY",
+      "strategy": "Merger Arbitrage Proxy",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": -0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_CONVERTIBLE_ARB_PROXY",
+      "strategy": "Convertible Arbitrage Proxy",
+      "candidate_action": "Keep",
+      "trade_side": "BUY",
+      "final_action_after_double_check": "Increase Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.00663787421093788,
+        "annual_return_contribution_change_proxy": 0.0002141895802440751,
+        "annual_volatility_budget_change_proxy": 0.000268400528657999,
+        "estimated_transaction_cost": 3.31893710546894
+      }
+    },
+    {
+      "strategy_id": "CAND_COMMODITY_INFLATION_SHOCK",
+      "strategy": "Commodity Inflation Shock Sleeve",
+      "candidate_action": "Reduce or Hedge",
+      "trade_side": "SELL",
+      "final_action_after_double_check": "Reduction Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": -0.022357460340071994,
+        "annual_return_contribution_change_proxy": -0.0009515869993392642,
+        "annual_volatility_budget_change_proxy": -0.0022403296470959178,
+        "estimated_transaction_cost": 11.178730170035998
+      }
+    },
+    {
+      "strategy_id": "CAND_USD_MACRO_PRESSURE",
+      "strategy": "USD Macro Pressure Sleeve",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": 0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_EM_MACRO_RISK",
+      "strategy": "Emerging Markets Macro Risk Sleeve",
+      "candidate_action": "Reduce or Hedge",
+      "trade_side": "BUY",
+      "final_action_after_double_check": "Hold Increase, Human Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "warning",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.01499582782042512,
+        "annual_return_contribution_change_proxy": 0.0004456214559371071,
+        "annual_volatility_budget_change_proxy": 0.0008681216148176392,
+        "estimated_transaction_cost": 7.49791391021256
+      }
+    },
+    {
+      "strategy_id": "CAND_RISK_PARITY_OVERLAY",
+      "strategy": "Risk Parity ETF Overlay",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": 0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_GLOBAL_VALUE_ROTATION",
+      "strategy": "Global Value Rotation",
+      "candidate_action": "Merge / Redesign",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Merge / Redesign",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "fail",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": 0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_INDEX_ARBITRAGE_PROXY",
+      "strategy": "Index Arbitrage Proxy",
+      "candidate_action": "Research Hold / Retire Review",
+      "trade_side": "HOLD",
+      "final_action_after_double_check": "Research Hold / Retire Review",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "fail",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": 0.0,
+        "annual_return_contribution_change_proxy": -0.0,
+        "annual_volatility_budget_change_proxy": 0.0,
+        "estimated_transaction_cost": 0.0
+      }
+    },
+    {
+      "strategy_id": "CAND_EVENT_DRIVEN_SECTOR_PROXY",
+      "strategy": "Event-Driven Sector Risk Proxy",
+      "candidate_action": "Keep",
+      "trade_side": "SELL",
+      "final_action_after_double_check": "Reduction Review, Human Approval Required",
+      "allocation_blocked": false,
+      "checks": [
+        {
+          "gate": "evidence_gate",
+          "status": "pass",
+          "explanation": "Allocation increase requires complete evidence and research-quality eligibility.",
+          "details": null
+        },
+        {
+          "gate": "correlation_gate",
+          "status": "pass",
+          "explanation": "Allocation increase must not add duplicate strategy exposure.",
+          "details": null
+        },
+        {
+          "gate": "risk_direction_gate",
+          "status": "pass",
+          "explanation": "Do not increase a strategy with breached risk limits.",
+          "details": null
+        },
+        {
+          "gate": "warning_increase_review",
+          "status": "pass",
+          "explanation": "Increasing a warning-status strategy requires modification or explicit human justification.",
+          "details": null
+        }
+      ],
+      "expected_change": {
+        "weight_change": -0.02380420119961768,
+        "annual_return_contribution_change_proxy": -0.0002364606444610262,
+        "annual_volatility_budget_change_proxy": -0.0009877426342997792,
+        "estimated_transaction_cost": 11.90210059980884
+      }
+    }
+  ],
+  "decision_limitations": [
+    "Expected impact is a historical proxy estimate, not a forecast or guaranteed outcome.",
+    "ETF proxy factor exposures are not a licensed Barra model.",
+    "Correlation and risk estimates can change after the rebalance.",
+    "All real allocation changes require human approval."
+  ]
+}

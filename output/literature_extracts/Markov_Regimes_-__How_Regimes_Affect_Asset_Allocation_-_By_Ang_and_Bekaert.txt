@@ -1,0 +1,1195 @@
+
+
+===== PAGE 1 =====
+CFA Institute
+ 
+ 
+How Regimes Affect Asset Allocation
+Author(s): Andrew Ang and  Geert Bekaert
+Source: Financial Analysts Journal, Vol. 60, No. 2 (Mar. - Apr., 2004), pp. 86-99
+Published by: CFA Institute
+Stable URL: http://www.jstor.org/stable/4480559
+Accessed: 13-07-2017 12:08 UTC
+ 
+JSTOR is a not-for-profit service that helps scholars, researchers, and students discover, use, and build upon a wide range of content in a trusted
+digital archive. We use information technology and tools to increase productivity and facilitate new forms of scholarship. For more information about
+JSTOR, please contact support@jstor.org.
+ 
+Your use of the JSTOR archive indicates your acceptance of the Terms & Conditions of Use, available at
+http://about.jstor.org/terms
+ 
+CFA Institute is collaborating with JSTOR to digitize, preserve and extend access to Financial Analysts
+Journal
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 2 =====
+ How Regimes Affect Asset Allocation 
+ Andrew Ang and Geert Bekaert 
+ International equity returns are characterized by episodes of high volatility 
+ and unusually high correlations coinciding with bear markets. This article 
+ provides models of asset returns that match these patterns and illustrates 
+ their use in asset allocation. The presence of regimes with different 
+ correlations and expected returns is difficult to exploit within aframework 
+ focused on global equities. Nevertheless,for global all-equity portfolios, the 
+ regime-switching strategy dominated static strategies in an out-of-sample 
+ test. In addition, substantial value was added when an investor switched 
+ between domestic cash, bonds, and equity investments. In a persistent 
+ high-volatility market, the model told the investor to switch primarily to 
+ cash. Large market-timing benefits are possible because high-volatility 
+ regimes tend to coincide with periods of relatively high interest rates. 
+ I nternational equity returns are more highly 
+ correlated with each other in bear markets 
+ than in normal times. Longin and Solnik 
+ (2001) have shown that this asymmetric correlation 
+ is statistically significant, and we have shown pre- 
+ viously (Ang and Bekaert 2002a) that regime- 
+ switching (RS) models replicate well the degree of 
+ asymmetric correlations observed in the data.1 
+ RS models build on the seminal work of Hamil- 
+ ton (1989). In its simplest form, an RS model allows 
+ the data to be drawn from two or more possible 
+ distributions (regimes). At each point of time, there 
+ is a certain probability that the process will remain 
+ in the same regime or that it will transition to 
+ another regime for the next period. We previously 
+ found (Ang and Bekaert 2002a) that international 
+ equity returns can be characterized by two 
+ regimes-a normal regime and a bear market 
+ regime when returns are, on average, lower and 
+ much more volatile than in normal times. In the 
+ bear market, the correlations between various 
+ returns are higher than in the normal regime. 
+ RS strategies need not be restricted to equity 
+ returns: There is strong evidence that regimes exist 
+ in U.S. and international short-term interest rates.2 
+ Short-term rates are characterized by high persis- 
+ tence and low volatility at low interest rate levels 
+ but lower persistence and much higher volatility at 
+ higher interest rate levels. Again, RS models per- 
+ fectly capture these features of the data. The 
+ regimes in interest rates and equity returns are 
+ correlated and related to the business cycle. 
+ Surprisingly, quantitative asset allocation 
+ research usually ignores these salient features of 
+ international equity returns and interest rate data. 
+ The presence of asymmetric correlations in equity 
+ returns has so far primarily raised doubts about the 
+ benefits of international diversification, in that 
+ these benefits may not be forthcoming when an 
+ investor needs them the most. The presence of 
+ regimes should be exploitable, however, in an 
+ active asset allocation program. The optimal equity 
+ portfolio in a high-volatility regime is likely to be 
+ very different (for example, more home biased) 
+ than the optimal portfolio in a normal regime. Opti- 
+ mal regime-switching asset allocation may require 
+ shifting assets into bonds or cash when a bear 
+ market is expected. In this article, we illustrate how 
+ the presence of regimes can be incorporated in a 
+ global asset allocation setting (with six equity mar- 
+ kets and potential cash) and a market-timing set- 
+ ting for U.S. cash, bonds, and equity. 
+ In previous work, Clarke and de Silva (1998) 
+ showed how the existence of two regimes ("states" 
+ in their terminology) affects mean-variance asset 
+ allocation, but they did not consider how the return 
+ characteristics in the two states may be extracted 
+ from the data. Ramchand and Susmel (1998) esti- 
+ mated a number of RS models from international 
+ equity return data but did not explore how the 
+ regimes affect portfolio composition. Das and Uppal 
+ (2001) used a continuous-time jump model and 
+ investigated the implications of their findings for 
+ asset allocation. The jumps in their model are only 
+ transitory, however, and cannot fully capture the 
+ Andrew Ang is associate professor offinance and econom- 
+ ics at Columbia Business School, New York City. Geert 
+ Bekaert is Leon G. Cooperman Professor of Finance and 
+ Economics at Columbia Business School, New York City. 
+ 86 ?4 2004" AIMR? 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 3 =====
+ How Regimes Affect Asset Allocation 
+ persistent nature of bear markets. Guidolin and Tim- 
+ mermann (2002) also considered the asset allocation 
+ implications of an RS model, but they restricted their 
+ attention to allocating wealth between a risk-free 
+ asset and domestic equity. The work reported here 
+ builds on a framework we developed while investi- 
+ gating optimal asset allocation when returns follow 
+ various RS processes (Ang and Bekaert 2002a). Our 
+ previous work was limited, however, to returns 
+ from U.S., U.K., and German assets; the current 
+ article greatly expands the list of markets and assets 
+ and illustrates the market-timing benefits of regime 
+ switching in a practical setup. 
+ Data 
+ Our first application involves a universe of devel- 
+ oped equity markets and a U.S.-based investor. In 
+ addition to North America (Canada and the United 
+ States), we considered the United Kingdom and 
+ Japan, Europe (which we split into large markets 
+ and small markets), and the Pacific ex Japan region. 
+ Exhibit 1 lists the countries. All data are from Mor- 
+ gan Stanley Capital International, and the sample 
+ period is February 1975 through the end of 2000. 
+ We measured all returns as simple net returns 
+ expressed in U.S. dollars. 
+ Exhibit 1. Composition of International Universe 
+ Europe: Small Countries Europe: Large Countries Pacific ex Japan 
+ Austria France Australia 
+ Belgium Germany New Zealand 
+ Denmark Italy Singapore 
+ Finland 
+ Ireland North America United Kingdom 
+ Netherlands Canada 
+ Norway United States Japan 
+ Spain
+ Sweden 
+ Switzerland 
+ In our second application, we focused on U.S. 
+ returns. We allowed a U.S. investor to implement a 
+ strategy of switching between cash (one-month U.S. 
+ T-bills), 10-year bonds (the Ibbotson Associates 
+ constant-maturity series), and the U.S. stock market 
+ (proxied by the S&P 500 Index). In this application, 
+ we used a longer sample period-January 1952 to 
+ the end of 2000. 
+ RS Model for Equity Portfolios 
+ In this section, we describe the RS model for the 
+ universe of developed equity markets and show how 
+ it can be estimated and applied to asset allocation. 
+ The Model. To build a quantitative model for 
+ the six international asset classes, we started with 
+ the familiar capital asset pricing model (CAPM). 
+ We denoted the world market return at time t mea- 
+ sured in excess of the T-bill rate by yt' and assumed 
+ yt = pW+ CT (1) 
+ where pW is the world market expected excess 
+ return and cyw is the conditional volatility. For mod- 
+ eling purposes, we assumed that the unexpected 
+ return, or shock, Fw, is drawn from a standard 
+ normal distribution. 
+ The world CAPM implies a linear security 
+ market line: The expected excess return on any 
+ security is linear in its beta with respect to the world 
+ market. Let individual excess returns for security j 
+ be denoted y1; then, 
+ yi = (1 _ )) + )w + p CT W + CT (2) 
+ = [t + ](Vw_ - Z) + ]6p CT 6X?}t 
+ where pZ is the zero-beta excess return. The unex- 
+ pected return on security or portfolio j is now deter- 
+ mined by the security's sensitivity to the world 
+ market return and by an idiosyncratic term, which 
+ has volatility c&]. 
+ The term (1 - fj)11z does not appear in the 
+ standard CAPM. The constant pZ allows a flatter 
+ security market line, for which there is strong 
+ empirical evidence.3 The model in Equation 2 is a 
+ version of Black's (1972) zero-beta CAPM, which 
+ can theoretically be motivated by the presence of 
+ differential borrowing and lending rates. 
+ Regime switching in the world market. From 
+ an asset allocation perspective, nothing could be 
+ more boring than a CAPM that prescribes simply 
+ holding the market portfolio. By making one criti- 
+ cal change in the setup of Equations 1 and 2, how- 
+ ever, we can create a model that not only fits the 
+ empirical patterns in international equity returns 
+ but also makes quantitative asset allocation poten- 
+ tially fruitful. 
+ Suppose the world expected return and condi- 
+ tional volatility can take on two values, which 
+ depend on the realization of a regime variable that 
+ reflects the world market regime. An economic 
+ mechanism behind world market regimes is the 
+ world business cycle (expansions or recessions). 
+ Denote the world conditional expected return and 
+ volatility, which depend on regime i, as, respec- 
+ tively, iw(i) and cW(i). Then, stock markets will be 
+ characterized by larger uncertainty and lower 
+ returns when a global recession is anticipated, as 
+ was the case in 2001. 
+ March/April 2004 87 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 4 =====
+ Financial Analysts Journal 
+ Assume that the portfolio manager knows 
+ which regime is being realized at each point of time 
+ but does not know which regime will be realized 
+ next month. (Later, we discuss how the identity of 
+ the regime can be determined in practice.) So, if the 
+ current state is Regime 1, the probability of remain- 
+ ing in that regime is P (and the probability of tran- 
+ sitioning to the other regime is 1 - P). Similarly, if 
+ the current state is Regime 2, Q denotes the proba- 
+ bility of staying in the second regime. Technically, 
+ the regime variable follows a Markov process with 
+ constant transition probabilities P and Q. Figure 1 
+ depicts the regime probabilities and the conditional 
+ expected return and variance expressions for 
+ Regime 1 and Regime 2. Figure 1 shows three dates, 
+ and although at each point of time either regime 
+ could be realized, we assumed for illustration that 
+ the sequence is Regime 1, Regime 2, and then 
+ Regime 2 again. 
+ With this change in the model, expected 
+ returns and variances now vary through time. Con- 
+ sider the situation today at time t in Figure 1. The 
+ portfolio manager knows that today the world mar- 
+ ket is in Regime 1. The expected return for next 
+ period depends on the manager's expectations for 
+ the regime realization at time t + 1; consequently, 
+ the manager weights the two possible realizations 
+ of pt with their relevant probabilities. The expected 
+ excess return in Regime 1 is denoted eW(l). When- 
+ ever Regime 1 is realized, the portfolio manager 
+ assesses the expected return to be eW(1). When the 
+ portfolio manager finds the world market in 
+ Regime 2, as is the case at time t + 1, the manager 
+ uses eW(2) as the expected return. To compute this 
+ expected return, the manager now uses the 1 - Q 
+ and Q probabilities (rather than the 1 - P and P 
+ probabilities) to weight jjW(1) and ptW(2). Note that 
+ if P = 1 - Q, then the regime structure is inconse- 
+ quential for the expected returns because they are 
+ the same across regimes. Empirical estimations of 
+ RS models, such as those of Gray (1996) and Ang 
+ and Bekaert (2002b, 2002c), found that both P and 
+ Q are well over 50 percent, indicating that regimes 
+ are persistent. 
+ Like the conditional mean, the conditional 
+ variance also depends on the regime. When the 
+ portfolio manager is in Regime 1, as at time t in 
+ Figure 1, the manager anticipates that the first 
+ regime will continue with probability P and that the 
+ volatility of world market shocks will be cyW(1) and 
+ assigns a probability 1 - P of transitioning to the, 
+ perhaps more volatile, second regime with volatil- 
+ ity cYW(2). Not surprisingly, the conditional variance 
+ is a weighted average of the conditional variances 
+ in the two regimes. The conditional variance has an 
+ additional jump component, however, that arises 
+ Figure 1. A Regime-Switching Model for the World Market 
+ time t time t + 1 time t + 2 
+ .........,.gX, 
+ E xpecte Regime egime 
+ R egim 2...................../ > 
+ ..If - -.p f 
+ Return 
+ ew(1) ew(2) ew(2) 
+ Conditional P[GW(1)]2 + (1 - P)[GW(2)]2 (1 - Q)6()2+ Q[nw(2)V (1 _ Q)1oW(1)]F + [(2] 
+ Variance + P(1 - P)[kW(l) - gtw(2)]2 + Q(1 - Q)j!tw(1) - F.() + Q(1 - Q)[liw(1) _ Rtw(2)]2 
+ Note: Regime realizations are shaded for illustration. 
+ 88 ?2004, AIM R? 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 5 =====
+ How Regimes Affect Asset Allocation 
+ because the conditional mean is also different in the 
+ two regimes. The conditional variances in Figure 1 
+ are denoted SW(1) and SW(2) for, respectively, 
+ Regimes 1 and 2. 
+ X Country expected returns and volatilities. For 
+ the individual assets, the model in Equation 2 is 
+ maintained except that the world market parame- 
+ ters, VW(i) and cyW(i), now vary across regimes. 
+ Because the mean of the world excess return 
+ switches between regimes, the expected excess 
+ return of country j is given by (1 - pi) + fIeW(i) for 
+ the current regime, i, where the eW(i) are given in 
+ Figure 1. Expected returns of individual equity 
+ markets differ only through their different betas 
+ with respect to the world market. 
+ The conditional variance for the individual 
+ assets is complex. Intuitively, the conditional vari- 
+ ance depends on three components. First, as in a 
+ standard CAPM, an asset's conditional variance 
+ depends on the asset's exposure to systematic risk 
+ through the asset's beta. In the world CAPM, how- 
+ ever, the world market return switches regimes, so 
+ the market conditional variance now also depends 
+ on the regime prevailing at time t. Second, also as 
+ in a standard CAPM, each asset has an idiosyn- 
+ cratic volatility term unrelated to its systematic 
+ (beta) exposure. Finally, the variance of an individ- 
+ ual asset depends not only on the realization of the 
+ current regime but also on the jump component, 
+ which arises because the conditional means differ 
+ across regimes.4 
+ Although the model structure is parsimonious, 
+ the model generates rich patterns of stochastic vol- 
+ atility and time-varying correlations. In particular, 
+ the model captures the asymmetric correlation 
+ structure in international equity returns that moti- 
+ vated our analysis. In any factor model, correla- 
+ tions are higher when factor volatility is higher. 
+ Hence, if one regime is more volatile than the other 
+ regime, the correlation between the different asset 
+ returns increases in the more volatile regime. 
+ Model Estimation and Results. This model 
+ requires only the estimation of P and Q, the world 
+ market return process, the fZ parameter, and a beta 
+ and idiosyncratic volatility term for each country. 
+ Because the regime is not observable, the estima- 
+ tion involves inferring from the data which regime 
+ prevails at each point in time.5 
+ Table 1 contains the estimation results for the 
+ RS equity model. Panel B indicates that the first 
+ regime is a normal, quiet regime, where world 
+ excess returns are expected to yield 0.90 percent a 
+ month, with volatility 2.81 percent a month. The 
+ other regime is a volatile regime, with standard 
+ deviation 5.04 percent a month and with a lower but 
+ imprecisely estimated mean of 0.13 percent a month. 
+ The estimate of pZ is larger than the expected excess 
+ equity return in the low-volatility regime. The coun- 
+ try betas in Panel C were estimated precisely, and 
+ their magnitudes seem economically appealing. The 
+ Table 1. RS Equity Model Parameter Estimates, 1975-2000 
+ A. Transition probabilities and L,y 
+ Measure P Q pz 
+ Estimate 0.8917 0.8692 0.74 
+ Standard error 0.0741 0.1330 0.68 
+ B. World market 
+ Measure p0) t(2) n(1) cy(2) 
+ Estimate 0.90 0.13 2.81 5.04 
+ Standard error 0.32 0.62 0.44 0.55 
+ C. Country betas, D 
+ North United Europe: Europe: Pacific ex 
+ Measure America Kingdom Japan Large Small Japan 
+ Estimate 0.88 1.03 1.21 0.90 0.89 0.92 
+ Standard error 0.03 0.06 0.07 0.05 0.04 0.07 
+ D. Idiosyncratic volatilities, cs 
+ North United Europe: Europe: Pacific ex 
+ Measure America Kingdom Japan Large Small Japan 
+ Estimate 2.40 4.50 4.62 3.87 2.72 4.99 
+ Standard error 0.09 0.18 0.19 0.16 0.11 0.20 
+ Notes: All parameters are monthly; the mean, t, and standard deviation, c, parameters are expressed 
+ in percentages. 
+ March/April 2004 89 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 6 =====
+ Financial Analysts Journal 
+ only surprise is that Japan, which has a low average 
+ return in the data, has been assigned a high beta. 
+ This is because Japan had the highest volatility of all 
+ the equity returns we considered, which the model 
+ fits through a high beta and high idiosyncratic vol- 
+ atility (the highest idiosyncratic volatility of all the 
+ markets). 
+ Panel A of Table 2 reports the implied expected 
+ excess returns for the six markets. Because the betas 
+ are close to 1, expected returns are close to each 
+ other in the normal regime. In the bear market, 
+ Regime 2, expected excess returns are dramatically 
+ lower and more dispersed, with the United King- 
+ dom and Japan having the lowest expected excess 
+ returns. In this regime, as Table 1 indicates, the 
+ zero-beta excess return, pZ, is higher than the excess 
+ return of the world market, which causes the high- 
+ beta countries to have lower expected returns from 
+ Equation 2. In fact, the expected return for Japan 
+ implied by the model is the highest of all markets 
+ in the normal regime but by far the lowest in the 
+ bear market. North America and the small coun- 
+ tries of Europe have the lowest idiosyncratic vola- 
+ tility implied by the model. In the data, these two 
+ groups also had the lowest overall volatility. 
+ Panel B of Table 2 shows the covasriance and 
+ correlation matrix in each regime. Given that 
+ Regime 2 is a high-volatility regime, we expected 
+ the model to generate asymmetric correlations, 
+ with correlations higher in the second regime. This 
+ is indeed the case: The correlations in Regime 2 
+ are, on average, some 20 percent higher than those 
+ in Regime 1. 
+ The estimation procedure also yielded infer- 
+ ences about classifying the prevailing regime in 
+ each month. Figure 2 shows the cumulative (total) 
+ returns of the six markets over the sample period in 
+ Panel A and, in Panel B, the ex ante and smoothed 
+ regime probabilities. The ex ante probability is the 
+ probability, given current information, that the 
+ regime next month will be the low-volatility world 
+ market regime; the smoothed probability is the 
+ probability, given all of the information present in 
+ the data sample, that the regime next month will be 
+ the low-volatility regime. High-volatility bear mar- 
+ kets are notable in the early 1980s, the period right 
+ Table 2. RS Equity Model Estimation Results, 1975-2000 
+ North United Europe: Europe: Pacific ex 
+ Regime America Kingdom Japan Large Small Japan 
+ A. Regime-dependent excess returns 
+ Regime 1 9.64 9.76 9.90 9.65 9.65 9.67 
+ Regime 2 3.47 2.54 1.42 3.36 3.39 3.22 
+ B. Regime-dependent covariances and correlations 
+ Regime 1 
+ North America 1.35 .... . 
+ United Kingdom 0908 
+ Japan 1.06 1.25 3 
+ Europe: Large 0.79 0.92 10 3 
+ Europe: Small 0.78 0.91 1.07 0.80 15 
+ Pacific ex Japan 0.81 0.94 1.11 0.82 0.82 3.33 
+ Regime 2 
+ North America 2.37..... 
+ United Kingdom 2.10 44 
+ Japan 2.47 2.89 55 
+ Europe: Large 1.83 2.14 2.52 3.36 
+ Europe: Small 1.82 2.13 2.50 1.85 
+ Pacific ex Japan 1.88 2.20 2.58 1.91 1.90 4.45 
+ C. Tangency portfolio weights 
+ Regime 1 0.42 0.06 -0.01 0.15 0.31 0.08 
+ Regime 2 0.79 -0.14 -0.55 0.25 0.54 0.10 
+ Unconditional 0.52 0.04 -0.16 0.18 0.37 0.09 
+ Average market cap 0.50 0.09 0.22 0.08 0.08 0.02 
+ Notes: All numbers are annualized. Correlations in Panel B are shaded. Variances and covariances are 
+ in percentages and correspond to annual volatility numbers. For Panel C, we computed the portfolio 
+ weights by using an interest rate of 7.67 percent, which is the average one-month T-bill rate over the 
+ sample period. The "Average market cap" is the monthly market cap averaged across the sample. 
+ 90 ?2004, AIMR@R 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 7 =====
+ How Regimes Affect Asset Allocation
+ Figure 2. Cumulated Historical Returns and Ex Ante and Smoothed 
+ Probabilities of the International Equities Model, 1975-2000 
+ A. Cumulated Returns of $1.00 Invested January 1975 
+ Return ($) 
+ 102
+ 101
+ 100
+ 75 80 85 90 95 01 
+ United Kingdom . North America Europe Small 
+ ---- Europe Large - - - - Japan - -- - -- - Pacific ex Japan 
+ B. Ex Ante and Smoothed Probabilities of Being in (the Normal) Regime 1 
+ Probability 
+ 0.9 
+ 0.8- 
+ 0.7
+ 0.6
+ 0.5
+ 0.4
+ 0.3
+ 0.2
+ 75 80 85 90 95 01 
+ Ex Ante Probability.Smoothed Probability 
+ March/April 2004 91 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 8 =====
+ Financial Analysts Journal 
+ after the October 1987 crash, the early 1990s, and a 
+ period in 1999. Overall, the stable (or unconditional) 
+ probability of the normal regime is 53 percent. 
+ A s s e t A I I o c a t i o n. This section describes 
+ mean-variance asset allocation that takes into 
+ account regime switching and illustrates how to 
+ implement an RS model in practice for the devel- 
+ oped equity markets. 
+ 0 Mean-variance optimization under regime 
+ switching. To implement an asset allocation strategy, 
+ we used mean-variance optimization with monthly 
+ rebalancing, which is consistent with the data fre- 
+ quency.6 The standard optimal mean-variance 
+ portfolio vector in regime i, w(i), is given by 
+ w (i) = 1 (i)l le(i), (3) 
+ where 
+ y = investor's risk aversion 
+ Z(i) = covariance matrix associated with 
+ regime i 
+ e(i) = vector of conditional means for 
+ regime i 
+ We can implement mean-variance optimiza- 
+ tion in a number of ways. The first issue is to specify 
+ the risk-free rate. In this application, for each 
+ month, we took the one-month T-bill rate to be the 
+ risk-free rate. Hence, the risk-free rate varied over 
+ time as we implemented the asset allocation pro- 
+ gram. Our RS model provides two optimal tan- 
+ gency (all-equity) portfolios the investor would 
+ choose, one for each regime. (An extension of this 
+ framework is to add state dependence by using 
+ predictor variables for equity returns. The second 
+ application in this article illustrates this possibil- 
+ ity.) In the results we report, we focus on these all- 
+ equity portfolios, which did not depend on the risk- 
+ free rate or risk aversion. 
+ The second issue is that mean-variance portfo- 
+ lios based on historical data may be quite unbal- 
+ anced, as Green and Hollifield (1992) and Black and 
+ Litterman (1992) emphasized. Practical asset allo- 
+ cation programs, therefore, impose constraints 
+ (short-sale constraints, for example) or keep asset 
+ allocations close to market-capitalization weights. 
+ Although constraints can be imposed in our appli- 
+ cation, we chose not to do so but to show how the 
+ performance of our RS model compares with the 
+ performance of a mean-variance asset allocation 
+ program based on historical moments in an out-of- 
+ sample exercise. 
+ Panel C of Table 2 shows the tangency portfo- 
+ lios in Regime 1 and Regime 2 based on the returns, 
+ volatilities, and covariances /correlations in Panels 
+ A and B. In the normal Regime 1, the model tells 
+ the investor to place 42 percent of portfolio wealth 
+ in North American assets, which is not far from the 
+ average relative market cap for the sample period. 
+ The European and Pacific indexes are over- 
+ weighted relative to their market caps, but the U.K. 
+ and Japanese markets are underweighted because 
+ of the implied high volatility of these markets. (The 
+ allocation even calls for a small short position in the 
+ Japanese market in Regime 1.) In Regime 2, the 
+ investor following our model resolutely switches 
+ toward the less-volatile markets, which include 
+ North America. The portfolio is not home biased 
+ for a U.S. investor, however, because the investor 
+ also invests heavily in the European markets, allo- 
+ cating more than 50 percent of wealth to the small 
+ countries of Europe. The short position in Japan is 
+ now substantial, exceeding 50 percent. 
+ Figure 3 shows the essence of the implications 
+ of RS for asset allocation. The dark solid line repre- 
+ sents the mean-standard deviation frontier when 
+ the unconditional moments are used and regime 
+ switches are ignored. The other frontiers are the 
+ ones applicable in the two regimes. The frontier 
+ near the top of Figure 3 is for the normal regime, 
+ Regime 1. The risk-return trade-off is generally 
+ better in the normal regime than for the uncondi- 
+ tional frontier because the investor is taking into 
+ account that, because the regime is persistent, the 
+ likelihood of a bear market with high volatility in 
+ the next period is small. The Sharpe ratio available 
+ along the capital allocation line (the line that would 
+ emanate from the risk-free rate on the vertical axis 
+ tangent to the Regime 1 frontier) is 0.871. In the bear 
+ market, the risk-return trade-off (represented by 
+ the shaded line) deteriorates, so the investor selects 
+ a very different portfolio that has a Sharpe ratio of 
+ only 0.268. When the moments in the two regimes 
+ are averaged, the result is the unconditional fron- 
+ tier implied from the RS model (the dark solid line). 
+ The best possible Sharpe ratio for this frontier is 
+ 0.505. Note that the world market portfolio (based 
+ on average market-cap weights) is inefficient; it is 
+ inside the unconditional frontier. 
+ Theoretically, the presence of two regimes and 
+ two frontiers means that the RS investment oppor- 
+ tunity set dominates the investment opportunity 
+ set offered by a single unconditional frontier. In 
+ particular, in Regime 1, the unconditional tangency 
+ portfolio yields a Sharpe ratio of 0.619. The investor 
+ could improve this trade-off to 0.871 by holding the 
+ optimal tangency portfolio for this low-variance 
+ regime. In Regime 2, the unconditional tangency 
+ portfolio yields a Sharpe ratio of only 0.129, which 
+ could be improved to 0.268 by holding the optimal 
+ tangency portfolio for the high-variance regime. 
+ 92 ?2004, AIMR? 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 9 =====
+ How Regimes Affect Asset Allocation 
+ Figure 3. Mean-Standard Deviation Frontiers, 1975-2000 Data 
+ Expected Return 
+ 0.18 
+ Regime 1 Frontier 
+ 0.16 
+ = ^zA~~~~~nconditional 
+ 0.14 - Mean-Standard 
+ 0.12 - 
+ 0.10 . 
+ Regime 2 Frontier 
+ 0.08 - 
+ 0.06 
+ 0.04 -
+ 0.02
+ 0
+ 0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 
+ Standard Deviation 
+ * World Market Portfolio * MVE Regime 1 (Sharpe ratio = 0.871) 
+ A MVE Unconditional (Sharpe ratio = 0.505) 
+ * MVE Regime 2 (Sharpe ratio = 0.268) 
+ Note: Mean and standard deviation annualized. 
+ * Practical implementation. We carried out an 
+ out-of-sample demonstration of asset allocation 
+ based on the RS model. The RS model was esti- 
+ mated up to time t, and the RS-dependent weights 
+ were computed from information available only up 
+ to time t. The test started with a $1.00 investment in 
+ 1985. The model was reestimated every month. For 
+ comparison with a standard mean-variance opti- 
+ mization, we investigated a non-regime-dependent 
+ strategy that incorporated means and covariances 
+ estimated from data up to time t. The performance 
+ criterion was the ex post Sharpe ratio realized by the 
+ various strategies. 
+ The RS strategy required the risk-free rate and 
+ the realization of the regime. For the risk-free rate, 
+ we simply used the available one-month T-bill rate. 
+ To infer the regime, we had the investor compute 
+ the regime probability from current information, 
+ which is a by-product of estimating the RS model. 
+ If the regime probability was larger than 1/2 for 
+ Regime 1, the investor classified the regime as 1, 
+ otherwise it was classified as 2. This calculation did 
+ not require any further data input. 
+ Table 3 reports the portfolio results. Over the 
+ out-of-sample period, the RS portfolio's Sharpe 
+ ratio was more than double the Sharpe ratio for the 
+ out-of-sample world market portfolio and also 
+ higher than the Sharpe ratio for the non-regime- 
+ dependent portfolio. The RS strategy did so well 
+ because in this sample period, the U.S. market 
+ recorded huge returns. In fact, U.S. equity's Sharpe 
+ ratio for the period was 0.65! At the same time, 
+ Japan performed poorly, and the world market 
+ portfolio featured a relatively large Japanese equity 
+ Table 3. Out-of-Sample Performance of All-Equity Portfolios, 1985-2000 
+ Regime- Non-Regime- 
+ World North Dependent Dependent 
+ Measure Market America Performance Performance 
+ Mean return (%) 13.73 15.84 21.46 20.04 
+ Standard deviation (%) 14.86 15.21 14.51 15.67 
+ Sharpe ratio 0.52 0.65 1.07 0.90 
+ Note: Returns and standard deviations are annualized. 
+ March/April 2004 93 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 10 =====
+ Financial Analysts Journal 
+ allocation. In the normal regime, the all-equity 
+ portfolio for the RS model had a large weight in 
+ North American equity (see Panel C of Table 2). In 
+ the bear market, the RS strategy had a large short 
+ position in Japanese equities. 
+ Figure 4 shows how wealth accumulated over 
+ time in these strategies. The large North American 
+ and the short Japanese positions led both the RS 
+ strategy and the non-regime-dependent strategy to 
+ outperform the world market and the North Amer- 
+ ican market consistently. The outperformance is 
+ particularly striking for the last five years. It is also 
+ over the last five years that the RS strategy outper- 
+ formed the non-regime-dependent strategy partic- 
+ ularly successfully. 
+ Given that our results in this example may be 
+ intimately linked to a (perhaps special) historical 
+ period, we do not want to claim that the success of 
+ the RS strategy shown here is necessarily a good 
+ indicator of future success. For example, not all 
+ investors would feel comfortable with the rela- 
+ tively large short positions implied by the model. 
+ The important conclusion is that RS strategies have 
+ the potential to outperform because they set up a 
+ defensive portfolio in a bear market that hedges 
+ against high correlations and low returns. This con- 
+ clusion remains valid in the presence of short-sale 
+ constraints because this portfolio essentially tilts 
+ the allocations toward the lowest-volatility assets. 
+ Moreover, the RS portfolio need not be completely 
+ home biased; in our example, it still involved sub- 
+ stantial net international positions. In any practical 
+ implementation of an RS model, which would rely 
+ less on historical moments or be based on a differ- 
+ ent sample period, the optimal portfolios are likely 
+ to be even more internationally diversified. This 
+ was the case in our earlier study (see Ang and 
+ Bekaert 2002a). 
+ RS Market-Timing Model 
+ When a volatile bear market is expected, the opti- 
+ mal asset allocation may be to switch to a safe asset 
+ or a bond. The model we explore in this section 
+ considers asset allocation among three assets- 
+ cash, a 10-year (constant-maturity) bond, and an 
+ equity index (all for the United States). We formu- 
+ late the model in excess returns. We use rt to denote 
+ the risk-free rate (the nominal T-bill rate), rb to 
+ denote the excess bond return, and rte to denote the 
+ excess return on U.S. equity. 
+ The market-timing model is 
+ rt = ,r(i) + p(i) rti, + F; (4a) 
+ rb = b + ?2 (4b) 
+ rt =J+? (4tc 
+ re = e 3 (c 
+ Figure 4. Out-of-Sample Wealth for Various Markets or Strategies, 1985-2000 
+ Wealth ($) 
+ 22
+ 20-
+ 18-
+ 16
+ 14
+ 12
+ 10
+ 8
+ 6
+ 4
+ 85 90 95 00 
+ RS Strategy .....Non-Regime-Dependent Strategy 
+ - - -- World Market North American Market 
+ Note: Accumulation of $1.00 invested on 1 January 1985. 
+ 94 ?2004, AIMR< 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 11 =====
+ How Regimes Affect Asset Allocation
+ This model allows the short rate to exhibit different 
+ behavior during each regime i. The error terms, -t = 
+ (?1 ?, are drawn from a normal distribution 
+ with zero mean but with a covariance that switches 
+ between the regimes, so the conditional volatility of 
+ all assets is regime dependent. 
+ The short rate follows an autoregressive pro- 
+ cess, but the constant term, Jr(i), and the autore- 
+ gressive parameter, p(i), depend on the regime. 
+ Many articles (such as Ang and Bekaert 2002b) have 
+ demonstrated that the data support such a model, 
+ in which interest rates are highly persistent [p(l) is 
+ close to 1] and not very variable in a normal regime 
+ and another regime captures times of higher, vola- 
+ tile interest rates that revert quickly to lower rates 
+ [p(2) < p(l)]. 
+ In the RS equity model described in the section 
+ "RS Model for Equity Portfolios," the transition 
+ probabilities between the regimes, P and Q, were 
+ constant. In our market-timing model, we allow the 
+ interest rate to influence the transition probabili- 
+ ties. Hence, Pt and Qt are now time varying.7 This 
+ means that the probability of staying in the "nor- 
+ mal" or "bad" regime may be different when inter- 
+ est rates are high from when interest rates are low. 
+ Consequently, the short rate predicts transitions in 
+ the regime, and hence, it implies time variation in 
+ expected returns. The predictive power of nominal 
+ interest rates for equity premiums has a long tradi- 
+ tion in finance-going back at least to Fama and 
+ Schwert (1977): When short-term interest rates are 
+ low, subsequent equity returns tend to be high. 
+ Most studies, however, allow only linear predict- 
+ ability, entering through the conditional mean. If 
+ we allow the conditional means of excess bond and 
+ equity returns to become regime dependent and 
+ also allow the lagged short rate to enter the condi- 
+ tional mean, these coefficients are estimated with 
+ little precision. We cannot reject our model relative 
+ to this more intricate specification. 
+ Estimation Results. The first regime is a 
+ normal regime in which the short rate is nearly a 
+ random walk [p(l) is approximately 0.99], shocks 
+ to the interest rate are not very variable (standard 
+ deviation of 0.02 percent a month), and shocks to 
+ excess bond and equity returns have little volatility 
+ (standard deviations of, respectively, 1.75 percent 
+ and 3.41 percent a month). In the second regime, 
+ interest rates are high, rapidly mean reverting, and 
+ volatile. Here, the short rate is less persistent [p(2) 
+ of 0.94] and interest rates have a conditional vola- 
+ tility of 0.09 percent a month. Shocks to bond and 
+ equity returns are also much more volatile, with 
+ standard deviations of, respectively, 3.98 percent 
+ and 5.55 percent a month. The mean for the excess 
+ bond return is 0.07 percent a month, and the mnean 
+ excess equity return is 0.68 percent a month. 
+ Figure 5 graphs the transition probability func- 
+ tions as a function of the annualized risk-free rate. 
+ Keep in mind that P is the probability, given that 
+ the markets are currently in Regime 1, of staying in 
+ Regime 1. As interest rates rise, the probability of 
+ transitioning into the high-volatility market 
+ increases. The other probability, Q, is the probabil- 
+ ity, given that one is currently in Regime 2, of 
+ remaining in Regime 2. In the high-volatility 
+ regime, as interest rates move higher, the probabil- 
+ ity of staying in this regime increases. A con- 
+ strained model in which P and Q are constant is 
+ strongly statistically rejected. Hence, nonlinear 
+ predictability is an important feature of the data. 
+ The long-run probability of the normal regime 
+ implied by the model is 0.7014. 
+ Figure 5. Transition Probabilities of the Market- 
+ Timing Model 
+ Transition Probability 
+ 1.0
+ 0.9
+ 0.8 - 
+ 0.7 - 
+ 0.6
+ 0.5 . . Q(rt) P(rt) 
+ . \ 
+ 0.4
+ 0.3
+ 0.2
+ 0.1
+ 0
+ 0 0.02 0.04 0.06 0.08 0.10 0.12 0.14 0.16 0.18 
+ Annualized Risk-Free Rate, rt 
+ Mean-Variance Market Timing. In this part 
+ of the implementation, we follow the same mean- 
+ variance strategy as for RS asset allocation among 
+ international equities, except that the optimal asset 
+ allocation vector is now a function of the expected 
+ excess returns on the two risky assets, bonds and 
+ equity, and their covariance.8 
+ To obtain intuition on the asset allocation 
+ weights for this model, Figure 6 graphs the optimal 
+ asset allocations to bonds and stocks (which add to 1 
+ minus the weight assigned to the risk-free asset) as a 
+ function of the short-term rate at the estimated 
+ parameters. We set the risk aversion level, y, to 5. In 
+ Regime 1, if interest rates are low enough, the 
+ March/April 2004 95 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 12 =====
+ Financial Analysts Journal 
+ Figure 6. Asset Allocation of the Market-Timing Model as a Function of the 
+ Short Rate 
+ Portfolio Weight 
+ 1.2
+ 1.0 - Stocks in Regime 1 
+ 0.8- 
+ -..Stocks in Regime 2 \ 
+ 0.4 
+ 0.2 
+ Bonds in Regime 1 
+ O .......... .. ............ .. ... . ... . . d.............. 
+ Bonds in Regime 2 
+ -0.2 '' '''' 
+ 1 2 4 6 8 10 12 14 15 
+ Short-Term Rate (%) 
+ Note: Risk aversion = 5. 
+ investor borrows at the risk-free rate and invests a 
+ small fraction of the portfolio in bonds and more than 
+ 100 percent in equities. As interest rates rise, equities 
+ become less attractive as the probability of switching 
+ to the high-variance regime increases. Bonds also 
+ become less attractive, and because the bond pre- 
+ mium is small, it quickly becomes optimal to short 
+ bonds. In the second regime, the investor always 
+ shorts bonds but the investment in equities is never 
+ higher than 80 percent. The main hedge for volatility 
+ is clearly the risk-free asset, not a bond investment. 
+ Because the interest rate is so important in this 
+ model, the optimal asset allocation varies over time 
+ with different realizations of the interest rate. Figure 
+ 7 shows optimal asset allocation weights, under the 
+ assumption that the investor uses the moments 
+ implied by the full sample estimation for all three 
+ assets across time for 1952-2000. Note that during 
+ the 1987 crash, the investor would have been heavily 
+ invested in equity. After the crash, the investor 
+ would have shifted this equity portion into risk-free 
+ holdings. Importantly, the model-recommended 
+ weights show only infrequent large changes in asset 
+ allocation. These changes coincide with regime 
+ changes. Because interest rates are relatively smooth 
+ and persistent, the month-to-month changes in asset 
+ allocation are generally modest. 
+ Out-of-Sample Model Performance. In this 
+ implementation of the market-timing model, as in 
+ the out-of-sample test of the model's performance 
+ in international equity allocation, the investor 
+ begins with $1.00 in 1985. We show the mean return, 
+ volatility, and Sharpe ratio that result from follow- 
+ ing the optimal RS strategies for the market-timing 
+ model and compare them with a strategy that sim- 
+ ply uses unconditional moments. The results are 
+ reported in Table 4. The market-timing model's 
+ strategy is more volatile but delivers higher average 
+ returns than a non-regime-dependent strategy. The 
+ market-timing model is the best performing model 
+ in terms of Sharpe ratios, but Sharpe ratios are quite 
+ low for the highly risk averse investors. 
+ Figure 8 shows that the superior performance 
+ is not because of a few isolated months in the sam- 
+ ple but that the last five years did play an important 
+ role in giving the RS strategies an edge. During 
+ these years, the market-timing model allocated 
+ more money than the non-regime-dependent strat- 
+ egy to equity and benefited handsomely from the 
+ U.S. bull market. The RS strategy's positions were 
+ more leveraged, however, and although they had 
+ higher returns, they also had higher volatility. 
+ 96 ?2004, AIMR? 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 13 =====
+ How Regimes Affect Asset Allocation
+ Figure 7. Asset Allocation of the Market-Timing Model over Time, 1952-2000 
+ Portfolio Weight 
+ 1.2
+ 1.0 5 
+ 0.8- 
+ 0.6
+ 0.4 
+ 0.2
+ 0
+ 52 55 60 65 70 75 80 85 90 95 01 
+ Stock Position Risk-Free Position - Bond Position 
+ Table 4. Out-of-Sample Portfolio Allocations and Performance of Market- 
+ Timing Example, 1985-2000 
+ Risk Aversion, y 
+ Measure 2 3 4 5 10 
+ A. Regime-dependent allocations 
+ Mean return (%) 25.29 17.69 13.89 11.61 7.05 
+ Standard deviation (%) 34.53 23.02 17.27 13.82 6.91 
+ Sharpe ratio 0.58 0.54 0.50 0.47 0.27 
+ B. Non-regime-dependent allocations 
+ Mean return (%) 17.65 12.60 10.07 8.55 5.52 
+ Standard deviation (%) 26.25 17.50 13.13 10.50 5.26 
+ Sharpe ratio 0.48 0.42 0.37 0.32 0.07 
+ Note: All returns are annualized. 
+ Conclusion 
+ The academic literature contains much evidence 
+ that expected returns and volatility vary through 
+ time. Moreover, in high-volatility environments 
+ across the world, not only do equity returns per- 
+ form poorly but they also become more highly 
+ correlated. Therefore, active portfolio managers 
+ should be able to exploit these changes between 
+ low- and high-volatility regimes to add value. 
+ We showed how such exploitation can be for- 
+ mally accomplished through a regime-switching 
+ model. Our results are meant to be illustrative. On 
+ the one hand, we exaggerated the performance of 
+ the models because we did not take transaction costs 
+ into account. Of course, the RS strategies are rela- 
+ tively robust to transaction costs because they are 
+ designed to exploit low-frequency changes in 
+ expected returns and volatilities. Because the 
+ March/April 2004 97 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 14 =====
+ Financial Analysts Journal 
+ Figure 8. Out-of-Sample Wealth for the Market- 
+ Timing Model, 1985-2000 
+ Wealth ($) 
+ 5.5 
+ 5.0 
+ 4.5-
+ Market-Timing 
+ 4.0 Model 
+ 3.5- 
+ 3.0
+ 2.5
+ 2.0 /. Non-Regime- 
+ 1.5 Dependent 
+ l 5 g * Strategy 
+ 1.0
+ 85 90 95 00 
+ Notes: Accumulation of $1.00 invested on 1 January 1985. Risk 
+ aversion = 5. 
+ probability of staying within the same regime is 
+ relatively high, portfolio turnover is low. On the 
+ other hand, we greatly undersold the potential of RS 
+ models because we did not try to estimate the best 
+ possible model, do an extensive model search, or 
+ incorporate performance-enhancing constraints. 
+ Our current results point to two robust conclu- 
+ sions. First, a global manager can add value in all- 
+ equity portfolios; the presence of a bear market (a 
+ high-correlation regime) does not negate the bene- 
+ fits of international diversification. Although rec- 
+ ommended portfolios in that regime are more 
+ home biased, they still involve significant interna- 
+ tional exposure. Second, RS models are very valu- 
+ able in tactical asset allocation programs that allow 
+ switching to a risk-free asset. 
+ A long list of extensions that are likely to 
+ improve performance can be accommodated in this 
+ framework. First, managers of equity portfolios are 
+ typically compensated on the basis of tracking error 
+ relative to an index. Therefore, active managers 
+ often start from a benchmark, as in Black and Lit- 
+ terman, and deviate from the benchmark alloca- 
+ tions toward the predictions of a proprietary model. 
+ Instead of expected returns reverse-engineered 
+ from an index, we used only historical data. 
+ Second, in international asset allocation, man- 
+ agers often hedge equity benchmarks against cur- 
+ rency risk. We have shown (Ang and Bekaert 
+ 2002a) that the RS equity model can be extended to 
+ allow both currency-hedged and nonhedged 
+ returns. The asset allocation model yields the opti- 
+ mal currency hedge ratio. 
+ Third, we used only one regime variable, but 
+ it would be interesting to accommodate country- 
+ specific regimes and imperfectly correlated 
+ regimes in short-term rates and equity returns. 
+ Finally, in the optimization here, we focused on 
+ only first and second moments (expected returns 
+ and standard deviations), but many investors prefer 
+ positive skewness and dislike kurtosis. RS models 
+ have nontrivial higher-order moments (the model 
+ can be interpreted as a mixture of normal models 
+ with time-varying weights). So, for investors with 
+ preferences involving higher-order moments of 
+ returns, RS models are a viable alternative. 
+ We thank Cam Harvey for providing data and Theo 
+ Nijman and seminar participants at a joint INQUIRE 
+ Europe-INQUIRE U.K. meeting and the Conference 
+ on Dynamic Strategies in Asset Allocation and Risk 
+ Management at EIASM in Bruissels for useful coml- 
+ ments. This research was fuinded by a grant from 
+ INQUIRE Europe. A more technical version of this 
+ article is available at www.columbia.edu/-aa610 or 
+ www.columbia.edu/-gb241. 
+ Notes 
+ 1. See also Erb, Harvey, and Viskanta (1994); Campbell, 
+ Koedijk, and Kofman (2002). 
+ 2. See Gray (1996); Bekaert, Hodrick, and Marshall (2001); Ang 
+ and Bekaert (2002b, 2002c). 
+ 3. See Black, Jensen, and Scholes (1972) for an early example. 
+ 4. The expected return for asset j with beta Pi in regime i is ei(i) 
+ = (1 - jP)p Z + f3iez"(i). There are two possible variance 
+ matrixes for unexpected returns next period; they are given 
+ by QJ(i) = (13])2[nW(i)]2 + [-j]2 for i = 1, 2. The conditional 
+ variance of asset j in Regime 1 is then [oj(1)]2 = PQ](1) + (1 - 
+ P)[QJ(2)] + P(1 - P)[e](2) - ei(1)]2, and the conditional vari- 
+ ance of assetj in Regime 2 is [C}(2)] 2 = (1 - Q)QI(1) + Q[Qj(2)] 
+ + Q(1 - Q)[eJ(2) - eI(1)]2. 
+ 5. See Hamilton (1994) and Gray (1996) for estimation methods 
+ for RS models that use maximum-likelihood techniques. 
+ 6. Because the first and second moments of our model vary 
+ through time, investors with different horizons might hold 
+ different portfolios. Brandt (1999) and Ang and Bekaert 
+ (2002a) showed, however, that the differences among these 
+ portfolios are not large, so we have ignored them here. 
+ 7. Specifically, we set Pt equal to [exp(a1 + birt)]/[1 + exp(a1 + 
+ bIrt)] and Qt equal to [exp(a2 + b2rt)]/[1 + exp(a2 + b2rt)I. 
+ 8. The determination of conditional expected returns and 
+ variances is similar to the procedure in the section that 
+ describes the RS model for international equities, except 
+ that the transition probabilities now vary over time. 
+ 98 ?2004, AIMR? 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms
+
+
+===== PAGE 15 =====
+ How Regimes Affect Asset Allocation 
+ References 
+ Ang, A., and G. Bekaert. 2002a. "International Asset Allocation 
+ with Regime Shifts." Review of Financial Studies, vol. 15, no. 4 
+ (Fall):1137-87. 
+ . 2002b. "Regime Switches in Interest Rates." Journal of 
+ Business and Economic Statistics, vol. 20, no. 2 (April):163-182. 
+ 2002c. "Short Rate Nonlinearities and Regime Switches." 
+ Journal of Economic Dynamics and Control, vol. 26, nos. 7-8 
+ (July):1243-74. 
+ Bekaert, G., R.J. Hodrick, and D. Marshall. 2001. "Peso Problem 
+ Explanations for Term Structure Anomalies." Journal of 
+ Monetary Economics, vol. 48, no. 2 (October):241-270. 
+ Black, F. 1972. "Capital Market Equilibrium with Restricted 
+ Borrowing." Journal of Business, vol. 45, no. 3 (July):444- 454. 
+ Black, F., and R. Litterman. 1992. "Global Portfolio 
+ Optimization." Financial Analysts Journal, vol. 48, no. 5 
+ (September/October):28-43. 
+ Black, F., M. Jensen, and M. Scholes. 1972. "The Capital Asset 
+ Pricing Model: Some Empirical Tests." In Studies in the Theory of 
+ Capital Markets. Edited by M. Jensen. New York: Praeger. 
+ Brandt, M.W. 1999. "Estimating Portfolio and Consumption 
+ Choice: A Conditional Euler Equations Approach." Journal of 
+ Finance, vol. 54, no. 5 (October):1609-46. 
+ Campbell, R., K. Koedijk, and P. Kofman. 2002. "Increased 
+ Correlation in Bear Markets." Financial Analysts Journal, vol. 58, 
+ no. 1 (January/February):87-94. 
+ Clarke, R.G., and H. de Silva. 1998. "State-Dependent Asset 
+ Allocation." Journal of Portfolio Management, vol. 24, no. 2 
+ (Winter):57-64. 
+ Das, S.R., and R. Uppal. 2001. "Systemic Risk and Portfolio 
+ Choice." Working paper, London Business School. 
+ Erb, C.B., C.R. Harvey, and T.E. Viskanta. 1994. "Forecasting 
+ International Equity Correlations." Financial Analysts Journal, 
+ vol. 50, no. 6 (November/December):32-45. 
+ Fama, E., and G.W. Schwert. 1977. "Asset Returns and 
+ Inflation." Journal of Financial Economics, vol. 5, no. 2 
+ (November):115-146. 
+ Gray, S.F. 1996. "Modeling the Conditional Distribution of 
+ Interest Rates as a Regime-Switching Process." Journal of 
+ Financial Economics, vol. 42, no. 1 (September):27-62. 
+ Green, R., and B. Hollifield. 1992. "When Will Mean-Variance 
+ Efficient Portfolios Be Well Diversified?" Journal of Finance, 
+ vol. 47, no. 5 (December):1785-1809. 
+ Guidolin, M., and A. Timmermann. 2002. "Optimal Portfolio 
+ Choice under Regime Switching, Skew and Kurtosis 
+ Preferences." Working paper, University of California at San 
+ Diego. 
+ Hamilton, J.D. 1989. "A New Approach to the Economic 
+ Analysis of Nonstationary Time Series and the Business Cycle." 
+ Economietrica, vol. 57, no. 2 (March):357-384. 
+ . 1994. Time Series Analysis. Princeton, NJ: Princeton 
+ University Press. 
+ Longin, F., and B. Solnik. 2001. "Correlation Structure of 
+ International Equity Markets during Extremely Volatile 
+ Periods." Journal of Finance, vol. 56, no. 2 (April):649-676. 
+ Ramchand, L., and R. Susmel. 1998. "Cross Correlations across 
+ Major International Markets." Journal of Empirical Finance, vol.5, 
+ no. 4 (October):397-416. 
+ TRADING AND EXCHANGES THE ANALYSIS OF 
+ -Market Microstructure for - STRUCTURED SECURITIES 
+ Practitioners Precise Risk Measurement and Capital 
+ Larry Harris, University of Southern California Allocation 
+ j~. | | tThis book is about trading, the people Sylvain Raynes, and Ann Rutledge, both at 
+ who trade securities and contracts, the R&R Consulting 
+ marketplaces where they trade, and the This book rigorously critiques the 
+ rules that govern it. use of corporate credit analytic 
+ (Financial Management Associationi Sur-vey methods in structured finance, and 
+ and Synthesis Series) proposes an alternative, cashflow-based 
+ 2002 656 pp.; 24 line illus portfolio approach grounded in financial theory and 
+ 0-19-514470-8 $95.00 statistical mechanics. 
+ THE OXFORlD GuIDE TO 2003 464 pp.; 90 line illus 
+ 0-19515273-5 $129.95 
+ FiNANCIAL MODELING 
+ Applications for Capital Markets, - BEYOND THE RANDOM 
+ Corporate Finance, Risk Management WALK 
+ _ s and Financial Institutions : . . >--* v A Guide to Stock Market Anomalies 
+ Thomas S. Y. Ho, The Thomas Ho Company and Low-Risk Investing 
+ - C and Sang Bin Lee, Hanyang University | .> 0 > :-. < | Vijay Singal, Pamplin College of Business,
+ This book discusses the theory and Virginia Tech 
+ applications of more than 122 financial , - This book carefully examines the 
+ models currently in use and includes . , meaning, basis, and implications of 
+ the financial models of stock and bond options, exotic :. . m 
+ options, investment grade and high-yield bonds, convertible market ef en how m ispricings 
+ can occur even when markets are 
+ bonds, mortgage-backed securities, liabilities of financial generally efficient. 
+ nstitutions' business models and corporate models. (Financial Management Association Survey and Synthesis Series) 
+ 2004 768 pp.; 188 line illus. 2003 368 pp.; 2 halftones, 10 line illus. 
+ 0-19-51 i962-x $135.00 0-19-515867-9 $32.00 
+ -- - :1:; --Si 6S *|' , S" I- S: :S S,.6S?.,; 6 6Z S. 
+ March/April 2004i99 
+ March/April 2004 99 
+This content downloaded from 128.59.172.213 on Thu, 13 Jul 2017 12:08:39 UTC
+All use subject to http://about.jstor.org/terms

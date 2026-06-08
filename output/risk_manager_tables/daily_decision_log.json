@@ -1,0 +1,209 @@
+[
+  {
+    "strategy_id": "PROTO_WQ_ALPHA_ETF",
+    "strategy": "WorldQuant-Inspired ETF Alpha Basket",
+    "recommended_action": "Merge / Redesign",
+    "trade_decision": "Do not add capital",
+    "risk_status": "breach",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Full-history drawdown fails the research-quality gate; this is not a live breach."
+  },
+  {
+    "strategy_id": "PROTO_HF_REPLICATION",
+    "strategy": "Liquid Alternative Factor Premia Clone",
+    "recommended_action": "Keep",
+    "trade_decision": "Review increase",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "PROTO_BUSINESS_CYCLE",
+    "strategy": "Business-Cycle Regime Allocation",
+    "recommended_action": "Keep",
+    "trade_decision": "Review reduction",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "PROTO_MARKOV_DEFENSIVE",
+    "strategy": "High-Volatility Regime Defensive Switch",
+    "recommended_action": "Keep",
+    "trade_decision": "Review reduction",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "PROTO_MANAGED_FUTURES",
+    "strategy": "Managed Futures Trend Proxy",
+    "recommended_action": "Keep",
+    "trade_decision": "Review reduction",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "CAND_EQUITY_MARKET_NEUTRAL",
+    "strategy": "Equity Market-Neutral Style Spread",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "breach",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Risk-adjusted return is below minimum review threshold."
+  },
+  {
+    "strategy_id": "CAND_CREDIT_CARRY_STRESS_GATE",
+    "strategy": "Credit Carry With Stress Gate",
+    "recommended_action": "Reduce or Hedge",
+    "trade_decision": "Review increase",
+    "risk_status": "warning",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "CAND_RATES_DURATION_REGIME",
+    "strategy": "Rates Duration Regime",
+    "recommended_action": "Keep",
+    "trade_decision": "Review increase",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "CAND_TREASURY_CURVE_RV",
+    "strategy": "Treasury Curve Relative Value Proxy",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "breach",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Risk-adjusted return is below minimum review threshold."
+  },
+  {
+    "strategy_id": "CAND_VOL_CARRY_CRASH_FILTER",
+    "strategy": "Volatility Carry With Crash Filter",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "breach",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Risk-adjusted return is below minimum review threshold."
+  },
+  {
+    "strategy_id": "CAND_TAIL_HEDGE_CRISIS",
+    "strategy": "Tail Hedge Crisis Sleeve",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "breach",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Full-history drawdown fails the research-quality gate; this is not a live breach."
+  },
+  {
+    "strategy_id": "CAND_MERGER_ARB_PROXY",
+    "strategy": "Merger Arbitrage Proxy",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "watch",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Risk-adjusted return is below minimum review threshold."
+  },
+  {
+    "strategy_id": "CAND_CONVERTIBLE_ARB_PROXY",
+    "strategy": "Convertible Arbitrage Proxy",
+    "recommended_action": "Keep",
+    "trade_decision": "Review increase",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "CAND_COMMODITY_INFLATION_SHOCK",
+    "strategy": "Commodity Inflation Shock Sleeve",
+    "recommended_action": "Reduce or Hedge",
+    "trade_decision": "Review reduction",
+    "risk_status": "warning",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "CAND_USD_MACRO_PRESSURE",
+    "strategy": "USD Macro Pressure Sleeve",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "warning",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "CAND_EM_MACRO_RISK",
+    "strategy": "Emerging Markets Macro Risk Sleeve",
+    "recommended_action": "Reduce or Hedge",
+    "trade_decision": "Review increase",
+    "risk_status": "warning",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "strategy_id": "CAND_RISK_PARITY_OVERLAY",
+    "strategy": "Risk Parity ETF Overlay",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Full-history drawdown fails the research-quality gate; this is not a live breach."
+  },
+  {
+    "strategy_id": "CAND_GLOBAL_VALUE_ROTATION",
+    "strategy": "Global Value Rotation",
+    "recommended_action": "Merge / Redesign",
+    "trade_decision": "Do not add capital",
+    "risk_status": "warning",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Full-history drawdown fails the research-quality gate; this is not a live breach."
+  },
+  {
+    "strategy_id": "CAND_INDEX_ARBITRAGE_PROXY",
+    "strategy": "Index Arbitrage Proxy",
+    "recommended_action": "Research Hold / Retire Review",
+    "trade_decision": "Keep current weight",
+    "risk_status": "breach",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Full-history drawdown fails the research-quality gate; this is not a live breach."
+  },
+  {
+    "strategy_id": "CAND_EVENT_DRIVEN_SECTOR_PROXY",
+    "strategy": "Event-Driven Sector Risk Proxy",
+    "recommended_action": "Keep",
+    "trade_decision": "Review reduction",
+    "risk_status": "ok",
+    "evidence_status": "evidence_attached",
+    "requires_human_approval": true,
+    "note": "Continue research and add WFO/regime/factor diagnostics."
+  },
+  {
+    "scope": "portfolio",
+    "recommended_action": "Human review required",
+    "estimated_transaction_cost": 74.99999999999999,
+    "requires_human_approval": true,
+    "note": "System can recommend allocation changes, but real capital changes require human approval."
+  }
+]
