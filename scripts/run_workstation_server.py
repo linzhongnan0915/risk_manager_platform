@@ -114,6 +114,12 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             compress=True,
         )
 
+    def _send_redirect(self, location: str, *, status: int = 302) -> None:
+        self.send_response(status)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _send_safe_error(self, exc: Exception, *, status: int = 500, context: str = "request") -> None:
         logger.exception("%s failed", context)
         self._send_json({"ok": False, "error": "Internal server error"}, status=status)
@@ -192,8 +198,6 @@ class WorkstationHandler(BaseHTTPRequestHandler):
 
     def _resolve_static_path(self, raw_path: str) -> Path | None:
         decoded = unquote(raw_path.split("?", 1)[0])
-        if decoded in {"", "/"}:
-            decoded = "/dashboard/index.html"
         relative = decoded.lstrip("/").replace("\\", "/")
         if not relative or ".." in relative.split("/"):
             return None
@@ -252,6 +256,9 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return
         if parsed.path in {"/api/refresh/cadence", "/api/refresh/cadence/"}:
             self.send_error(405, "Method not allowed")
+            return
+        if parsed.path in {"", "/"}:
+            self._send_redirect("/dashboard/index.html")
             return
         self._serve_static(parsed.path)
 
