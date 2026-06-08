@@ -1,0 +1,27 @@
+﻿# Test & verification results — feature/strategy-expansion-v1 @ c04abb4
+# Recorded: 2026-06-08
+# Branch: feature/strategy-expansion-v1
+# Commit: c04abb4be22db50cbd192d8393fc04cb1a941402
+
+## python -m pytest -q
+Result: PASSED
+Total: 122 passed
+Duration: ~160s
+
+## python scripts/validate_deployment_artifact.py
+Result: PASSED
+Message: Deployment artifact validation passed.
+
+## python scripts/audit_dashboard_data_contract.py
+Result: COMPLETED (informational)
+Coverage: 98.5%
+Priority gap: Allocation & Rebalance — missing buy_sell_direction, dollar_amount
+
+## python scripts/verify_dashboard_logic_semantics.py
+Result: PASSED (pass: true, no_console_errors: true)
+
+## python scripts/verify_dashboard_browser.py --no-screenshots
+Result: PASSED (exit 0, Console errors: 0)
+
+## Simulate Portfolio
+POST /api/simulate sandbox-style edit: HTTP 200 (fixed in c04abb4)

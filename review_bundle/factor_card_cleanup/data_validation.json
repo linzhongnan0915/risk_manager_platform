@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-06-08",
+  "main_sha": "85723848ffb4615a2b2021953e52fd83c579780b",
+  "feature_final_sha": "c04abb4be22db50cbd192d8393fc04cb1a941402",
+  "main_artifact": {
+    "strategy_count": 20,
+    "allocation_source": "system_generated_research_eligible_equal_weight",
+    "factor_checks": {
+      "volatility": {
+        "limit_id": "FACTOR_VOLATILITY",
+        "scope": "portfolio_factor",
+        "metric": "volatility",
+        "current_value": 0.0,
+        "watch_threshold": 0.048,
+        "warning_threshold": 0.064,
+        "breach_threshold": 0.08,
+        "utilization": 0.0,
+        "status": "ok",
+        "action": "Keep",
+        "explanation": "Portfolio volatility proxy exposure versus configured factor budget."
+      },
+      "short_vol": {
+        "limit_id": "FACTOR_SHORT_VOL",
+        "scope": "portfolio_factor",
+        "metric": "short_vol",
+        "current_value": 0.0,
+        "watch_threshold": 0.024,
+        "warning_threshold": 0.032,
+        "breach_threshold": 0.04,
+        "utilization": 0.0,
+        "status": "ok",
+        "action": "Keep",
+        "explanation": "Portfolio short_vol proxy exposure versus configured factor budget."
+      },
+      "equity_beta": {
+        "current_value": 0.15425000000000003,
+        "status": "breach",
+        "utilization": 1.0283333333333335,
+        "breach_threshold": 0.15
+      }
+    }
+  },
+  "c04abb4_artifact": {
+    "strategy_count": 20,
+    "allocation_source": "governed_baseline_preserved_pre_phase3_main",
+    "factor_checks": {
+      "volatility": {
+        "limit_id": "FACTOR_VOLATILITY",
+        "scope": "portfolio_factor",
+        "metric": "volatility",
+        "current_value": null,
+        "watch_threshold": null,
+        "warning_threshold": null,
+        "breach_threshold": 0.08,
+        "utilization": null,
+        "status": "not_modeled",
+        "action": "Keep",
+        "explanation": "Portfolio volatility proxy loading is absent from the current weighted proxy model; not treated as zero exposure."
+      },
+      "short_vol": {
+        "limit_id": "FACTOR_SHORT_VOL",
+        "scope": "portfolio_factor",
+        "metric": "short_vol",
+        "current_value": null,
+        "watch_threshold": null,
+        "warning_threshold": null,
+        "breach_threshold": 0.04,
+        "utilization": null,
+        "status": "not_modeled",
+        "action": "Keep",
+        "explanation": "Portfolio short_vol proxy loading is absent from the current weighted proxy model; not treated as zero exposure."
+      },
+      "equity_beta": {
+        "current_value": 0.15425000000000003,
+        "status": "breach",
+        "utilization": 1.0283333333333335,
+        "breach_threshold": 0.15
+      }
+    }
+  },
+  "cherry_pick_artifact_conflict": true,
+  "note": "Cherry-picking c04abb4 onto main conflicts on output/dashboard_artifact.json; regenerate artifact on main after applying code-only changes."
+}

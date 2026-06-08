@@ -1,0 +1,11 @@
+﻿dashboard/app.js
+dashboard/components.js
+dashboard/index.html
+dashboard/styles.css
+docs/dashboard_data_contract_audit.md
+output/dashboard_artifact.json
+scripts/verify_dashboard_browser.py
+src/allocation/rebalance_simulation.py
+src/risk/limits.py
+src/risk/risk_status_summary.py
+tests/test_risk_limits.py
