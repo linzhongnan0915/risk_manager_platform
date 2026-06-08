@@ -592,7 +592,8 @@ function formatMonitoringState(artifact = activeArtifact) {
   }
 
   const demoSchedulerLabel =
-    status.scheduler_label
+    status.scheduler_display
+    || status.scheduler_label
     || (status.demo_hosting && status.scheduler_enabled === false
       ? "Manual refresh only while service is running"
       : status.demo_hosting

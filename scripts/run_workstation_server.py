@@ -31,6 +31,7 @@ from src.market.intraday_refresh_service import (
     set_refresh_cadence,
 )
 from src.market.live_refresh import write_live_overlay
+from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_refresh_request
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
 from src.risk.limits import load_risk_limits
@@ -265,24 +266,34 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path in {"/api/refresh", "/api/refresh/", "/api/refresh-data", "/api/refresh-data/"}:
-            allowed, retry_after = self._reserve_manual_refresh()
-            if not allowed:
-                self._send_json(
-                    {
-                        "ok": False,
-                        "error": "Manual refresh cooldown active",
-                        "retry_after_seconds": retry_after,
-                    },
-                    status=429,
-                )
+            mode, authorized = classify_refresh_request(self.headers.get("Authorization"))
+            if not authorized:
+                self._send_json({"ok": False, "error": "Unauthorized refresh token"}, status=401)
                 return
+            if mode == "manual":
+                allowed, retry_after = self._reserve_manual_refresh()
+                if not allowed:
+                    self._send_json(
+                        {
+                            "ok": False,
+                            "error": "Manual refresh cooldown active",
+                            "retry_after_seconds": retry_after,
+                        },
+                        status=429,
+                    )
+                    return
             try:
                 length = int(self.headers.get("Content-Length", "0"))
                 raw = self.rfile.read(length) if length else b"{}"
                 body = json.loads(raw.decode("utf-8") or "{}")
                 interval = body.get("interval_minutes")
+                if mode == "external":
+                    interval = int(interval) if interval is not None else EXTERNAL_REFRESH_INTERVAL_MINUTES
+                    force_refresh = False
+                else:
+                    force_refresh = True
                 result = run_intraday_refresh(
-                    force=True,
+                    force=force_refresh,
                     interval_minutes=int(interval) if interval is not None else None,
                     artifact_path=self.server_root / "output" / "dashboard_artifact.json",
                     config=self._intraday_config(),

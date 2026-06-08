@@ -327,11 +327,12 @@ function renderIntradayRefreshStrip(artifact) {
   const nextRefresh = status.next_scheduled_refresh_at;
   const schedulerState = status.scheduler_state || status.refresh_state || monitoring.schedulerLabel || "idle";
   const freshness = status.data_freshness || status.canonical_data_state || monitoring.stripDataState;
+  const schedulerDisplay = status.scheduler_display || status.scheduler_label || monitoring.schedulerLabel || schedulerState;
   strip.innerHTML = `
     <span>Market <strong>${monitoring.headerMarket}</strong></span>
     <span>Monitoring <strong class="${monitoring.tone || ""}">${monitoring.stripMonitoring}</strong></span>
     <span>Cadence <strong>${cadence}m</strong></span>
-    <span>Scheduler <strong>${escapeHtml(String(schedulerState))}</strong></span>
+    <span>Scheduler <strong>${escapeHtml(String(schedulerDisplay))}</strong></span>
     <span>Freshness <strong class="${monitoring.tone || ""}">${escapeHtml(String(freshness))}</strong></span>
     <span>Last refresh <strong>${formatTimestamp(lastRefresh)}</strong></span>
     <span>Latest bar <strong>${formatTimestamp(latestBar)}</strong></span>

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.market.demo_hosting import demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
+from src.market.refresh_auth import refresh_api_token_configured
 from src.market.intraday_config import (
     bar_interval_for_refresh,
     load_intraday_config,
@@ -125,12 +126,19 @@ def build_refresh_status_payload(
         last_error=status.get("last_error"),
     )
     demo = is_demo_hosting()
+    external_scheduler = refresh_api_token_configured()
     scheduler_enabled = intraday_scheduler_enabled(
         config_enabled=bool(cfg.get("enabled", True)),
         force_start=None,
         force_disable=False,
     )
-    scheduler_label = demo_scheduler_label(scheduler_enabled)
+    demo_label = demo_scheduler_label(scheduler_enabled)
+    if external_scheduler:
+        scheduler_label = "External active"
+        scheduler_display = "External active"
+    else:
+        scheduler_label = demo_label
+        scheduler_display = demo_label or ("Scheduler active" if scheduler_enabled else "idle")
     return {
         "ok": True,
         "enabled": bool(cfg.get("enabled", True)),
@@ -146,8 +154,11 @@ def build_refresh_status_payload(
         "latest_market_observation_at": latest_observation,
         "latest_completed_market_bar_at": latest_completed_bar,
         "data_freshness": freshness if snapshot else status.get("data_freshness"),
-        "scheduler_state": state,
-        "scheduler_enabled": scheduler_enabled,
+        "scheduler_state": "external_active" if external_scheduler else state,
+        "scheduler_enabled": scheduler_enabled or external_scheduler,
+        "external_scheduler_active": external_scheduler,
+        "scheduler_label": scheduler_label,
+        "scheduler_display": scheduler_display,
         "canonical_data_state": canonical_data_state,
         "snapshot_id": snapshot_id,
         "previous_valid_snapshot_id": snapshot.get("previous_valid_snapshot_id") if snapshot else None,
