@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Risk Manager Platform</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <div>
+            <strong>Hedge Fund Risk Workstation</strong>
+            <span>Multi-Strategy Portfolio Risk Management</span>
+          </div>
+        </div>
+        <div class="topbar-metrics">
+          <span>Date: <strong id="asOfDate">Loading</strong></span>
+          <span>Capital: <strong id="capital">$1,000,000</strong></span>
+          <span>Monitoring: <strong id="strategyCount">20+</strong> Strategies</span>
+          <span>Regime: <strong class="info" id="headerRegime">Model pending</strong></span>
+          <span>Data: <strong id="headerDataState">Loading</strong></span>
+          <span class="truth-disclosure" id="truthDisclosure">Prototype model portfolio · ETF proxy research data · Not live positions or fills</span>
+          <span class="build-trace" id="buildTrace">Build pending</span>
+          <button type="button" class="ghost-button" id="toggleRiskDrawer" title="Toggle risk status drawer">Risk Status</button>
+          <button type="button" class="ghost-button" id="refreshLiveData" title="Refresh yfinance market proxy and news overlay">Refresh Market Proxy Data</button>
+        </div>
+      </header>
+
+      <nav class="tabbar" id="tabbar"></nav>
+
+      <main class="workspace">
+        <section class="main-stage">
+          <div class="global-status-bar" id="globalStatusBar"></div>
+
+        <section class="tab-panel active" data-tab-panel="Portfolio Command Center">
+          <section class="kpi-grid" id="portfolioKpis"></section>
+          <section class="historical-research-context" id="historicalResearchContext"></section>
+          <section class="workstation-grid command-grid">
+            <article class="panel panel-span-3">
+              <div class="panel-title"><span class="panel-index">1</span> Current Allocation By Strategy</div>
+              <div class="allocation-donut-wrap">
+                <canvas id="allocationDonutCanvas" width="180" height="180"></canvas>
+                <table class="compact-table allocation-legend" id="allocationTable"></table>
+              </div>
+            </article>
+            <article class="panel panel-span-3">
+              <div class="panel-title"><span class="panel-index">2</span> Top Contributors & Detractors</div>
+              <div class="split compact-split">
+                <div>
+                  <h4>Contributors</h4>
+                  <div id="contributors"></div>
+                </div>
+                <div>
+                  <h4>Detractors</h4>
+                  <div id="detractors"></div>
+                </div>
+              </div>
+            </article>
+            <article class="panel chart-panel panel-span-6">
+              <div class="panel-title"><span class="panel-index">3</span> Portfolio P&amp;L &amp; Drawdown <small id="pnlChartCaption">Since investment start</small></div>
+              <canvas id="pnlCanvas" width="720" height="220"></canvas>
+            </article>
+            <article class="panel panel-span-12 scroll-panel">
+              <div class="panel-title"><span class="panel-index">4</span> All 20 Strategies — Daily Change &amp; Recommended Action</div>
+              <table class="data-table dense sticky-head" id="strategyTable"></table>
+            </article>
+            <article class="panel panel-span-8 scroll-panel">
+              <div class="panel-title"><span class="panel-index">5</span> Rebalance Decision Center <button type="button" class="ghost-button" id="openRebalanceTab">Open Full Rebalance</button></div>
+              <table class="data-table dense" id="rebalancePreviewTable"></table>
+              <div class="ai-risk-summary" id="commandAiSummary"></div>
+            </article>
+            <article class="panel panel-span-4">
+              <div class="panel-title"><span class="panel-index">6</span> Portfolio Factor Exposure</div>
+              <p class="factor-note" id="portfolioFactorNote"></p>
+              <div id="portfolioFactorBars" class="factor-bars"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title"><span class="panel-index">7</span> Human Review Alerts</div>
+              <div class="alert-list" id="alertList"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title"><span class="panel-index">8</span> Risk Recommendations</div>
+              <div class="alert-list" id="recommendationList"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title"><span class="panel-index">9</span> Daily Risk Explanation</div>
+              <div id="dailyExplanation" class="daily-explanation compact-explanation"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title"><span class="panel-index">10</span> Risk Limits &amp; Utilization</div>
+              <table class="data-table dense" id="commandRiskLimitsTable"></table>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title"><span class="panel-index">11</span> Top Correlation Pairs</div>
+              <div class="matrix mini-matrix" id="commandCorrelationMini"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title"><span class="panel-index">12</span> Market &amp; Regime Monitor</div>
+              <table class="data-table dense" id="commandMarketMini"></table>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Strategy Monitor">
+          <section class="kpi-grid monitor-kpi-grid" id="monitorKpiGrid"></section>
+          <section class="monitor-layout">
+            <article class="panel strategy-monitor-table">
+              <div class="monitor-heading">
+                <div class="panel-title">Strategy Monitor</div>
+                <div class="monitor-controls">
+                  <input id="strategySearch" type="search" placeholder="Search strategy, type, position" />
+                  <select id="strategyAllocationFilter" aria-label="Allocation status">
+                    <option value="all">All strategies</option>
+                    <option value="active">Allocated</option>
+                    <option value="research">Research only</option>
+                  </select>
+                  <select id="strategyRiskFilter" aria-label="Allocated model risk status">
+                    <option value="all">All model risk</option>
+                    <option value="breach">Model breach</option>
+                    <option value="warning">Warning</option>
+                    <option value="watch">Watch</option>
+                    <option value="ok">Within limits</option>
+                  </select>
+                </div>
+              </div>
+              <div class="monitor-summary" id="monitorSummary"></div>
+              <table class="data-table dense" id="monitorTable"></table>
+            </article>
+            <article class="panel detail-drawer">
+              <div class="drawer-heading">
+                <div>
+                  <h2 id="selectedStrategyName">Selected Strategy</h2>
+                  <span id="selectedStrategyType">Type</span>
+                </div>
+                <span class="badge warning">Review</span>
+              </div>
+              <div class="drawer-kpis">
+                <div><span>Cur. Alloc.</span><strong id="drawerAlloc">5.0%</strong></div>
+                <div><span>Prop. Alloc.</span><strong id="drawerProposed">5.0%</strong></div>
+                <div><span>Status</span><strong class="success">Active</strong></div>
+              </div>
+              <canvas id="strategyCanvas" width="420" height="160"></canvas>
+              <div class="drawer-weight-controls" id="drawerWeightControls">
+                <label>Adjust simulated weight
+                  <input type="number" id="drawerWeightInput" step="0.005" min="0" max="0.25" />
+                </label>
+                <div class="drawer-weight-actions">
+                  <button type="button" class="ghost-button" id="drawerWeightDown">−1%</button>
+                  <button type="button" class="ghost-button" id="drawerWeightUp">+1%</button>
+                  <button type="button" class="modify" id="drawerApplyWeight">Apply &amp; Simulate</button>
+                  <button type="button" class="ghost-button" id="drawerGoAllocation">Open Allocation</button>
+                </div>
+              </div>
+              <button class="modify drawer-open" id="openStrategyReview">Open Strategy Review</button>
+              <div class="drawer-tabs" id="drawerTabs">
+                <button class="active" data-drawer-view="overview">Overview</button>
+                <button data-drawer-view="evidence">Evidence</button>
+                <button data-drawer-view="limits">Limits</button>
+                <button data-drawer-view="positions">Positions</button>
+                <button data-drawer-view="decision">Decision</button>
+              </div>
+              <div class="drawer-detail-content" id="drawerDetailContent"></div>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Allocation & Rebalance">
+          <section class="compare-kpi-grid" id="allocationKpis"></section>
+          <section class="approval-status-bar" id="approvalStatusBar"></section>
+          <section class="simulation-toolbar">
+            <div>
+              <strong>Allocation &amp; Rebalance Decision Center</strong>
+              <span>Edit proposed weights, simulate portfolio risk before/after, and record human approval. No auto-execution.</span>
+            </div>
+            <div class="toolbar-actions">
+              <button class="modify" id="useSystemProposal">Use System Proposal</button>
+              <button class="modify" id="resetWeights">Reset Current</button>
+              <button class="approve" id="simulateWeights">Simulate Portfolio</button>
+            </div>
+          </section>
+          <section class="allocation-workstation-grid">
+            <article class="panel panel-span-8 scroll-panel">
+              <div class="panel-title">Rebalance Recommendation Matrix <span id="weightTotalState"></span></div>
+              <table class="data-table dense sticky-head" id="allocationEditorTable"></table>
+            </article>
+            <article class="panel panel-span-4 stack-panel">
+              <div class="panel-title">Factor Concentration Before / After</div>
+              <div id="factorConcentrationCompare"></div>
+              <div class="panel-title sub-title">Risk Budget Usage</div>
+              <div id="riskBudgetUsage"></div>
+              <div class="panel-title sub-title">Warnings &amp; Requires Review</div>
+              <div class="alert-list" id="allocationWarnings"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title">Simulated Risk Before / After</div>
+              <div class="risk-before-after" id="riskBeforeAfter"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title">Simulation Checks</div>
+              <div class="alert-list" id="simulationChecks"></div>
+            </article>
+            <article class="panel panel-span-4 scroll-panel">
+              <div class="panel-title">Rebalance Trade List</div>
+              <table class="data-table dense" id="rebalanceTradeList"></table>
+            </article>
+            <article class="panel panel-span-8">
+              <div class="panel-title">AI Risk Summary &amp; Expected Impact</div>
+              <div class="ai-risk-summary" id="aiRiskSummary"></div>
+            </article>
+            <article class="panel action-center panel-span-4">
+              <div class="panel-title">Human Decision Action Center</div>
+              <label>Reviewer<input id="decisionReviewer" placeholder="Name or role" /></label>
+              <label>Decision note<textarea id="decisionNote" placeholder="Document rationale, conditions, and monitoring requirements"></textarea></label>
+              <div class="decision-buttons">
+                <button class="approve" id="approveDecision">Approve For Execution Review</button>
+                <button class="modify" id="modifyDecision">Request Modification</button>
+                <button class="reject" id="rejectDecision">Reject Proposal</button>
+              </div>
+              <p id="decisionAuthorityStatus">A recorded human decision updates the local audit log. Execution remains separate and disabled.</p>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Risk Factors & Exposure">
+          <section class="kpi-grid factor-kpi-grid" id="factorKpiGrid"></section>
+          <section class="factor-grid">
+            <article class="panel">
+              <div class="panel-title">Portfolio Factor Exposure (Current Weights)</div>
+              <p class="factor-note" id="riskFactorNote"></p>
+              <div id="riskFactorBars" class="factor-bars"></div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Strategy-By-Factor Exposure Matrix</div>
+              <div class="matrix-scroll">
+                <div class="matrix" id="factorMatrix"></div>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="panel-title">Factor Contribution To Risk</div>
+              <div id="riskContribution"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title">Risk Limits Breached</div>
+              <div class="alert-list" id="factorLimitAlerts"></div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Scenario Shock Table</div>
+              <table class="data-table dense" id="scenarioTable"></table>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Correlation & Diversification">
+          <section class="correlation-layout">
+            <article class="panel">
+              <div class="panel-title">Diversification Summary</div>
+              <div id="correlationSummary" class="drawer-section-grid"></div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Highest Absolute Correlation Pairs</div>
+              <table class="data-table dense" id="correlationPairs"></table>
+            </article>
+            <article class="panel full wide">
+              <div class="panel-title">20-Strategy Correlation Matrix</div>
+              <div class="matrix-scroll">
+                <div class="matrix large" id="correlationMatrix"></div>
+              </div>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Market & Macro Monitor">
+          <section class="market-grid">
+            <article class="panel wide">
+              <div class="panel-title">Market & Macro Monitor</div>
+              <table class="data-table" id="marketTable"></table>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">News / Event Risk Feed</div>
+              <div id="newsRiskSummary" class="news-risk-summary"></div>
+              <table class="data-table" id="newsTable"></table>
+            </article>
+            <article class="panel">
+              <div class="panel-title">Current Macro Regime</div>
+              <h2 class="info" id="macroRegimeLabel">Model pending</h2>
+              <p id="macroRegimeNote">Regime classification requires validated macro and market inputs.</p>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Backtesting & Research Lab">
+          <section class="research-grid">
+            <article class="panel wide">
+              <div class="panel-title">Selected Strategy Backtest, Gross Vs Net After Costs</div>
+              <p id="researchLabCaption" class="research-caption">Select a literature prototype below to update gross vs net, walk-forward, and evidence panels.</p>
+              <canvas id="backtestCanvas" width="800" height="280"></canvas>
+            </article>
+            <article class="panel">
+              <div class="panel-title">No-Look-Ahead Checklist</div>
+              <div class="checklist">
+                <p><span class="badge ok">Pass</span> Signals shifted one trading day before returns.</p>
+                <p><span class="badge ok">Complete</span> 504-day train / 126-day OOS walk-forward windows.</p>
+                <p><span class="badge ok">Included</span> 5 bps buy / 5 bps sell turnover costs.</p>
+                <p><span class="badge warning">Limitation</span> Current ETF universe is not survivorship-free point-in-time data.</p>
+              </div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Walk-Forward Results</div>
+              <table class="data-table dense" id="walkForwardTable"></table>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Literature Strategy Prototypes, Backtest And Action</div>
+              <table class="data-table dense" id="literatureStrategyTable"></table>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">ETF Strategy Candidate Shelf From Boss Papers</div>
+              <table class="data-table dense" id="candidateStrategyTable"></table>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Boss Literature Deployment Modules</div>
+              <table class="data-table dense" id="literatureModuleTable"></table>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Hedge Fund Replication Clone, Factor Explanation</div>
+              <div class="replication-layout">
+                <table class="data-table dense" id="replicationSummaryTable"></table>
+                <div class="factor-review" id="replicationBetas"></div>
+              </div>
+            </article>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Strategy Library & Workflow">
+          <article class="panel full">
+            <div class="panel-title">Strategy Library & Workflow</div>
+            <div class="workflow">
+              <span>Boss Strategy</span><span>Hypothesis</span><span>Data Source</span><span>Signal</span><span>Backtest</span><span>Walk-Forward</span><span>Risk Limits</span><span>Registry</span><span>Live Monitor</span><span>Human Approval</span>
+            </div>
+            <table class="data-table dense" id="workflowTable"></table>
+          </article>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="Daily Risk Report / Decision Log">
+          <section class="report-grid">
+            <article class="panel memo">
+              <div class="panel-title">Daily Risk Memo</div>
+              <div id="dailyRiskMemo"></div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Institutional Decision Workflow</div>
+              <div class="governance-flow" id="governanceFlow"></div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Decision Outcome Log</div>
+              <table class="data-table dense" id="decisionLog"></table>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Generated Daily Risk Report</div>
+              <div id="generatedReport" class="generated-report">Generate a report to create the current decision-ready memo.</div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">Live Recommendation Snapshot</div>
+              <div class="alert-list" id="reportRecommendationList"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title">Report Actions</div>
+              <button class="modify" id="generateReport">Generate Report</button>
+              <button class="modify" id="printReport">Print / Save PDF</button>
+              <button class="modify" id="exportJson">Export Decision JSON</button>
+              <button class="modify" id="exportCsv">Export Allocation CSV</button>
+            </article>
+          </section>
+        </section>
+        </section>
+
+        <aside class="sidebar collapsed" id="riskDrawer" aria-label="Risk status drawer">
+          <div class="sidebar-section">
+            <h3>Current Model Risk View</h3>
+            <div class="sidebar-decision" id="sidebarDecision">Loading independent review</div>
+          </div>
+          <div class="risk-summary">
+            <h3>Portfolio + Allocated Model Limits</h3>
+            <p><span class="ok-dot"></span> Within Limits <strong id="limitOkCount">0</strong></p>
+            <p><span class="warn-dot"></span> Watch / Warning <strong id="limitWarningCount">0</strong></p>
+            <p><span class="bad-dot"></span> Breaches <strong id="limitBreachCount">0</strong></p>
+            <div class="limit-state" id="portfolioLimitState">Loading limits</div>
+          </div>
+          <div class="sidebar-section">
+            <h3>Governance</h3>
+            <div class="sidebar-facts" id="sidebarGovernance"></div>
+          </div>
+          <div class="sidebar-section">
+            <h3>Data &amp; Evidence</h3>
+            <div class="sidebar-facts" id="sidebarDataQuality"></div>
+          </div>
+        </aside>
+      </main>
+    </div>
+    <dialog class="strategy-dialog" id="strategyDialog">
+      <div class="dialog-shell">
+        <header class="dialog-header">
+          <div>
+            <span class="dialog-label" id="dialogStrategyId">STRAT</span>
+            <h2 id="dialogStrategyName">Strategy Review</h2>
+            <p id="dialogStrategyMeta">Type / status / evidence</p>
+          </div>
+          <div class="dialog-actions">
+            <span class="badge warning" id="dialogDecisionBadge">Review</span>
+            <button class="icon-button" id="closeStrategyReview" aria-label="Close strategy review">x</button>
+          </div>
+        </header>
+
+        <section class="review-kpi-grid" id="reviewKpis"></section>
+
+        <section class="review-grid">
+          <article class="panel review-panel">
+            <div class="panel-title">Return Distribution</div>
+            <canvas id="distributionCanvas" width="520" height="220"></canvas>
+          </article>
+          <article class="panel review-panel">
+            <div class="panel-title">Cumulative Return & Drawdown</div>
+            <canvas id="detailReturnCanvas" width="520" height="220"></canvas>
+          </article>
+          <article class="panel review-panel">
+            <div class="panel-title">Tail Risk</div>
+            <div class="tail-risk" id="tailRiskPanel"></div>
+          </article>
+          <article class="panel review-panel">
+            <div class="panel-title">Rolling Stability</div>
+            <canvas id="rollingCanvas" width="520" height="220"></canvas>
+          </article>
+          <article class="panel review-panel">
+            <div class="panel-title">Factor Exposure & Portfolio Role</div>
+            <div class="factor-review" id="factorReviewPanel"></div>
+          </article>
+          <article class="panel review-panel">
+            <div class="panel-title">Risk Manager Decision Packet</div>
+            <div class="decision-packet" id="decisionPacket"></div>
+          </article>
+          <article class="panel review-panel full-review">
+            <div class="panel-title">Detailed Metric Packet</div>
+            <table class="data-table dense" id="literatureDetailSummary"></table>
+          </article>
+          <article class="panel review-panel">
+            <div class="panel-title">Regime Breakdown</div>
+            <table class="data-table dense" id="literatureRegimeBreakdown"></table>
+          </article>
+          <article class="panel review-panel">
+            <div class="panel-title">Benchmark Comparison</div>
+            <table class="data-table dense" id="literatureBenchmarkComparison"></table>
+          </article>
+          <article class="panel review-panel full-review">
+            <div class="panel-title">Worst Tail Days</div>
+            <table class="data-table dense" id="literatureWorstDays"></table>
+          </article>
+          <article class="panel review-panel full-review">
+            <div class="panel-title">Risk Analyst Checklist</div>
+            <div class="risk-checklist" id="riskChecklist"></div>
+          </article>
+        </section>
+      </div>
+    </dialog>
+    <script src="app.js"></script>
+  </body>
+</html>
