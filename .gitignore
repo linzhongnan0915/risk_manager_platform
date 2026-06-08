@@ -21,6 +21,7 @@ output/intraday_latest.json
 output/intraday_refresh_status.json
 output/intraday_refresh.lock
 output/intraday_snapshots/
+output/.yfinance_cache/
 
 .env
 .env.*

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from src.market.demo_hosting import demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
 from src.market.intraday_config import (
     bar_interval_for_refresh,
     load_intraday_config,
@@ -123,6 +124,13 @@ def build_refresh_status_payload(
         refresh_state=state,
         last_error=status.get("last_error"),
     )
+    demo = is_demo_hosting()
+    scheduler_enabled = intraday_scheduler_enabled(
+        config_enabled=bool(cfg.get("enabled", True)),
+        force_start=None,
+        force_disable=False,
+    )
+    scheduler_label = demo_scheduler_label(scheduler_enabled)
     return {
         "ok": True,
         "enabled": bool(cfg.get("enabled", True)),
@@ -139,6 +147,7 @@ def build_refresh_status_payload(
         "latest_completed_market_bar_at": latest_completed_bar,
         "data_freshness": freshness if snapshot else status.get("data_freshness"),
         "scheduler_state": state,
+        "scheduler_enabled": scheduler_enabled,
         "canonical_data_state": canonical_data_state,
         "snapshot_id": snapshot_id,
         "previous_valid_snapshot_id": snapshot.get("previous_valid_snapshot_id") if snapshot else None,
@@ -147,13 +156,14 @@ def build_refresh_status_payload(
         "last_error": status.get("last_error"),
         "retry_count": status.get("retry_count"),
         "provider": cfg.get("provider", "yfinance"),
-        "disclosure": "Research market proxy refresh; not live portfolio or exchange data.",
-        "demo_hosting": bool(os.environ.get("PUBLIC_DEMO") or os.environ.get("RENDER")),
-        "scheduler_label": (
-            "Scheduler active while service is running"
-            if os.environ.get("PUBLIC_DEMO") or os.environ.get("RENDER")
-            else None
+        "disclosure": (
+            "Research market proxy refresh; not live portfolio or exchange data. "
+            "Shared demo hosts may rate-limit yfinance; baseline artifact remains available."
+            if demo
+            else "Research market proxy refresh; not live portfolio or exchange data."
         ),
+        "demo_hosting": demo,
+        "scheduler_label": scheduler_label,
     }
 
 

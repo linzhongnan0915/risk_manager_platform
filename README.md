@@ -51,7 +51,22 @@ python scripts/validate_deployment_artifact.py
 
 ### Free-hosting / refresh limitation
 
-On Render free tier the service sleeps when idle. Intraday scheduler and manual refresh only run **while the service is running**. The UI labels this as **“Scheduler active while service is running”** and does not imply guaranteed 24×7 30-minute monitoring.
+On Render free tier the service sleeps when idle. Intraday scheduler is **disabled by default** on demo hosting to avoid yfinance rate limits; use **Refresh Now** for optional manual proxy refresh while the service is running. Set `ENABLE_INTRADAY_SCHEDULER=1` only if you accept shared-IP rate-limit risk.
+
+Recommended Render environment variables:
+
+| Variable | Value |
+|----------|-------|
+| `PUBLIC_DEMO` | `1` |
+| `PYTHON_VERSION` | `3.12.3` |
+
+Start command (unchanged):
+
+```bash
+python scripts/run_workstation_server.py --host 0.0.0.0 --port $PORT
+```
+
+The UI labels demo hosting as **“Manual refresh only while service is running”** when the scheduler is off, and does not imply guaranteed 24×7 monitoring.
 
 When no valid intraday snapshot exists, the dashboard continues using the validated baseline artifact.
 

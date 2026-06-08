@@ -57,7 +57,9 @@ def _fetch(url: str, *, headers: dict[str, str] | None = None, method: str = "GE
         return exc.code, response_headers, body
 
 
-def test_resolve_server_bind_defaults():
+def test_resolve_server_bind_defaults(monkeypatch):
+    monkeypatch.delenv("HOST", raising=False)
+    monkeypatch.delenv("PORT", raising=False)
     host, port = resolve_server_bind()
     assert host == "127.0.0.1"
     assert port == 8765
@@ -186,11 +188,13 @@ def test_manual_refresh_cooldown():
 
 def test_refresh_status_includes_demo_scheduler_label(monkeypatch):
     monkeypatch.setenv("PUBLIC_DEMO", "1")
+    monkeypatch.delenv("ENABLE_INTRADAY_SCHEDULER", raising=False)
     from src.market.intraday_refresh_service import build_refresh_status_payload
 
     payload = build_refresh_status_payload()
     assert payload["demo_hosting"] is True
-    assert payload["scheduler_label"] == "Scheduler active while service is running"
+    assert payload["scheduler_enabled"] is False
+    assert payload["scheduler_label"] == "Manual refresh only while service is running"
 
 
 def test_invalid_artifact_rejected(tmp_path: Path):

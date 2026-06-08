@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -10,7 +11,16 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import yfinance as yf
 
+from src.market.demo_hosting import is_demo_hosting
 from src.market.intraday_config import load_intraday_config, stale_after_minutes_for
+
+logger = logging.getLogger(__name__)
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    name = type(exc).__name__.lower()
+    message = str(exc).lower()
+    return "ratelimit" in name or "too many requests" in message or "rate limited" in message
 
 
 def bar_duration_minutes(bar_interval: str) -> int:
@@ -86,6 +96,7 @@ def fetch_intraday_bars(
 
     last_error: Exception | None = None
     raw = pd.DataFrame()
+    use_threads = not is_demo_hosting()
     for attempt in range(retry_attempts):
         try:
             raw = yf.download(
@@ -95,7 +106,7 @@ def fetch_intraday_bars(
                 auto_adjust=False,
                 progress=False,
                 group_by="ticker",
-                threads=True,
+                threads=use_threads,
                 timeout=timeout_seconds,
             )
             if raw.empty:
@@ -103,7 +114,13 @@ def fetch_intraday_bars(
             break
         except Exception as exc:  # pragma: no cover - retried in tests via monkeypatch
             last_error = exc
+            if _is_rate_limit_error(exc):
+                logger.warning("yfinance rate limited during intraday fetch; shared demo hosts may need manual retry")
             if attempt + 1 >= retry_attempts:
+                if last_error and _is_rate_limit_error(last_error):
+                    raise ValueError(
+                        "yfinance rate limited on shared demo host; using validated baseline artifact"
+                    ) from last_error
                 raise
             time.sleep(backoff_seconds[min(attempt, len(backoff_seconds) - 1)])
     if raw.empty:

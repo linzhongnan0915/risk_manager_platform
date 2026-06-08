@@ -22,6 +22,7 @@ import pandas as pd
 
 from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
+from src.market.demo_hosting import configure_yfinance_cache, demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
 from src.market.intraday_config import load_intraday_config, resolve_refresh_interval_minutes
 from src.market.intraday_refresh_service import (
     build_refresh_status_payload,
@@ -29,6 +30,7 @@ from src.market.intraday_refresh_service import (
     run_intraday_refresh,
     set_refresh_cadence,
 )
+from src.market.live_refresh import write_live_overlay
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
 from src.risk.limits import load_risk_limits
@@ -217,7 +219,13 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path in {"/api/health", "/api/health/"}:
-            self._send_json({"status": "ok", "service": "risk_manager_workstation"})
+            self._send_json(
+                {
+                    "status": "ok",
+                    "service": "risk_manager_workstation",
+                    "demo_hosting": is_demo_hosting(),
+                }
+            )
             return
         if parsed.path in {"/api/live-summary", "/api/live-summary/"}:
             try:
@@ -396,22 +404,32 @@ def main(
     no_intraday_scheduler: bool = False,
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    configure_yfinance_cache(PROJECT_ROOT)
     artifact = ensure_deployment_artifact()
     WorkstationHandler.deployment_artifact = artifact
 
     bind_host, bind_port = resolve_server_bind(host, port)
-    if refresh_on_start:
+    if refresh_on_start and not is_demo_hosting():
         _startup_refresh()
+    elif refresh_on_start:
+        print("Startup live refresh skipped on demo hosting to avoid yfinance rate limits.")
     cfg = load_intraday_config(PROJECT_ROOT / "data/config/intraday_refresh.yaml")
-    start_scheduler = intraday_scheduler
-    if start_scheduler is None:
-        start_scheduler = bool(cfg.get("enabled", True)) and not no_intraday_scheduler
+    start_scheduler = intraday_scheduler_enabled(
+        config_enabled=bool(cfg.get("enabled", True)),
+        force_start=intraday_scheduler,
+        force_disable=no_intraday_scheduler,
+    )
     if start_scheduler:
         scheduler_thread = threading.Thread(target=_intraday_scheduler_loop, args=(PROJECT_ROOT,), daemon=True)
         scheduler_thread.start()
-        print("Intraday proxy scheduler thread started (enabled in intraday_refresh.yaml).")
+        print("Intraday proxy scheduler thread started.")
+    elif is_demo_hosting():
+        print("Intraday scheduler disabled on demo hosting (manual refresh only). Set ENABLE_INTRADAY_SCHEDULER=1 to override.")
     elif no_intraday_scheduler:
         print("Intraday proxy scheduler disabled via --no-intraday-scheduler.")
+    demo_label = demo_scheduler_label(start_scheduler)
+    if demo_label:
+        print(f"Demo hosting mode: {demo_label}")
     server = ThreadingHTTPServer((bind_host, bind_port), WorkstationHandler)
     print(f"Risk Manager workstation server running at http://{bind_host}:{bind_port}/dashboard/index.html")
     print(

@@ -501,7 +501,13 @@ function formatMonitoringState(artifact = activeArtifact) {
     };
   }
 
-  const demoSchedulerLabel = status.scheduler_label || (status.demo_hosting ? "Scheduler active while service is running" : null);
+  const demoSchedulerLabel =
+    status.scheduler_label
+    || (status.demo_hosting && status.scheduler_enabled === false
+      ? "Manual refresh only while service is running"
+      : status.demo_hosting
+        ? "Scheduler active while service is running"
+        : null);
 
   if (marketOpen) {
     return {
