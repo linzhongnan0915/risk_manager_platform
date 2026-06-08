@@ -232,6 +232,152 @@ const CURRENT_MODEL_SCOPES = new Set(["portfolio_live", "allocated_strategy_live
 const CURRENT_PORTFOLIO_SCOPES = new Set(["portfolio_live", "allocated_strategy_live", "factor", "scenario", "correlation"]);
 const RESEARCH_QUALITY_SCOPES = new Set(["research_quality"]);
 const DATA_QUALITY_SCOPES = new Set(["data_quality"]);
+const MIN_LIMIT_METRICS = new Set(["latest_63d_rolling_sharpe"]);
+
+function isMinLimitMetric(check) {
+  return MIN_LIMIT_METRICS.has(String(check?.metric || ""));
+}
+
+function isScenarioRiskActionCheck(check) {
+  const scope = String(check?.scope || "");
+  return scope === "scenario" || scope === "portfolio_scenario";
+}
+
+function computeRiskActionUtilization(check) {
+  if (isFactorExposureNotModeled(check) || isMinLimitMetric(check)) return null;
+  const current = Number(check?.current_value);
+  const threshold = Number(check?.breach_threshold);
+  if (!Number.isFinite(current) || !Number.isFinite(threshold) || threshold === 0) {
+    return Number.isFinite(check?.utilization) ? Number(check.utilization) : null;
+  }
+  return Math.abs(current) / Math.abs(threshold);
+}
+
+function statusFromRiskActionUtilization(utilization) {
+  if (utilization > 1.0) return "breach";
+  if (utilization >= 0.90) return "warning";
+  if (utilization >= 0.80) return "watch";
+  return "ok";
+}
+
+function computeRiskActionDisplayStatus(check) {
+  if (isFactorExposureNotModeled(check) || String(check?.status || "").toLowerCase() === "not_modeled") {
+    return "not_modeled";
+  }
+  if (isMinLimitMetric(check)) {
+    const status = String(check?.status || "ok").toLowerCase();
+    return status === "breach" ? "warning" : status;
+  }
+  const utilization = computeRiskActionUtilization(check);
+  if (utilization != null) return statusFromRiskActionUtilization(utilization);
+  return String(check?.status || "ok").toLowerCase();
+}
+
+function computeRiskActionGap(check) {
+  if (!isMinLimitMetric(check) || isFactorExposureNotModeled(check)) return null;
+  const current = Number(check?.current_value);
+  const threshold = Number(check?.breach_threshold);
+  if (!Number.isFinite(current) || !Number.isFinite(threshold)) return null;
+  return current - threshold;
+}
+
+function formatRiskActionStatusLabel(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "ok") return "Normal";
+  if (normalized === "watch") return "Watch";
+  if (normalized === "warning") return "Warning";
+  if (normalized === "breach") return "Breach";
+  if (normalized === "not_modeled") return "Not modeled";
+  return humanize(status);
+}
+
+function formatRiskActionCurrentValue(check) {
+  if (isFactorExposureNotModeled(check) || String(check?.status || "").toLowerCase() === "not_modeled") {
+    return "N/A";
+  }
+  if (typeof check?.current_value === "number") return num(check.current_value, 3);
+  return humanize(check.current_value);
+}
+
+function formatRiskActionAction(check) {
+  const status = computeRiskActionDisplayStatus(check);
+  if (status === "not_modeled") return "Review model coverage";
+  const action = String(check?.required_action || check?.action || "").trim();
+  if (status === "ok" || action === "Keep" || !action) return "—";
+  return action;
+}
+
+function formatRiskActionThresholdCell(check) {
+  const value = typeof check?.breach_threshold === "number"
+    ? num(check.breach_threshold, 3)
+    : humanize(check.breach_threshold);
+  if (isMinLimitMetric(check)) return `${value} <span class="status-muted">Minimum</span>`;
+  return value;
+}
+
+function formatRiskActionUtilCell(check) {
+  const gap = computeRiskActionGap(check);
+  if (gap != null) return `<span title="Gap (current − minimum)">${escapeHtml(num(gap, 3))}</span>`;
+  const utilization = computeRiskActionUtilization(check);
+  if (utilization != null) {
+    return utilizationBar(utilization, computeRiskActionDisplayStatus(check));
+  }
+  return "—";
+}
+
+function riskActionStatusBadge(check) {
+  const status = computeRiskActionDisplayStatus(check);
+  const label = formatRiskActionStatusLabel(status);
+  const tone = status === "breach"
+    ? "breach"
+    : status === "not_modeled"
+      ? "neutral"
+      : status === "ok"
+        ? "ok"
+        : status === "watch"
+          ? "watch"
+          : "warning";
+  return `<span class="badge ${tone}">${escapeHtml(label)}</span>`;
+}
+
+function includeInRiskActionCurrentModel(check) {
+  const status = computeRiskActionDisplayStatus(check);
+  if (status === "breach" || status === "warning" || status === "not_modeled") return true;
+  if (status === "watch") {
+    const utilization = computeRiskActionUtilization(check);
+    return utilization != null && utilization >= 0.80;
+  }
+  return false;
+}
+
+function collectRiskActionCenterChecks(artifact = activeArtifact, filter = "current_model") {
+  const scopes = artifact?.risk_status_summary?.scopes || {};
+  const rows = [];
+  Object.entries(scopes).forEach(([scopeName, scope]) => {
+    (scope.checks || []).forEach((check) => {
+      if (String(check?.status || "") === "not_evaluated") return;
+      rows.push({ ...check, scope: check.scope || scopeName });
+    });
+  });
+  let scoped = rows;
+  if (filter === "current_model") {
+    scoped = rows.filter((check) => CURRENT_MODEL_SCOPES.has(check.scope));
+    scoped = scoped.filter(includeInRiskActionCurrentModel);
+  } else if (filter === "research") {
+    scoped = rows.filter((check) => RESEARCH_QUALITY_SCOPES.has(check.scope) && computeRiskActionDisplayStatus(check) !== "ok");
+  } else if (filter === "data") {
+    scoped = rows.filter((check) => DATA_QUALITY_SCOPES.has(check.scope) && computeRiskActionDisplayStatus(check) !== "ok");
+  } else if (filter === "governance") {
+    scoped = rows.filter((check) => (check.scope === "rebalance" || check.allocation_relevance === "governance") && computeRiskActionDisplayStatus(check) !== "ok");
+  }
+  const seen = new Set();
+  return scoped.filter((check) => {
+    const key = canonicalIssueGroupKey(check);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 function resolveCheckSubject(check, artifact = activeArtifact) {
   const subjectId = check?.subject_id || "";

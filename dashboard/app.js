@@ -2320,17 +2320,17 @@ function renderContributorsDetractorsTables(artifact) {
 function renderRiskActionCenter(artifact) {
   const el = document.getElementById("riskActionTable");
   if (!el) return;
-  const checks = canonicalNonOkChecks(artifact, riskActionFilter);
-  el.innerHTML = `<tr><th>Subject</th><th>Scope</th><th>Issue</th><th>Current</th><th>Threshold</th><th>Util.</th><th>Action</th><th>Review</th></tr>` +
+  const checks = collectRiskActionCenterChecks(artifact, riskActionFilter);
+  el.innerHTML = `<tr><th>Subject</th><th>Scope</th><th>Issue</th><th>Current</th><th>Threshold</th><th>Util./Gap</th><th>Action</th><th>Status</th></tr>` +
     checks.slice(0, 16).map((check) => `<tr>
       <td class="wrap-cell">${escapeHtml(formatIssueSubjectLabel(check, artifact))}</td>
       <td>${humanize(check.scope)}</td>
       <td class="wrap-cell">${humanizeMetricLabel(check.metric, artifact)}</td>
-      <td class="col-num">${typeof check.current_value === "number" ? num(check.current_value, 3) : humanize(check.current_value)}</td>
-      <td class="col-num">${typeof check.breach_threshold === "number" ? num(check.breach_threshold, 3) : humanize(check.breach_threshold)}</td>
-      <td>${check.utilization != null ? utilizationBar(check.utilization, check.status) : "—"}</td>
-      <td class="wrap-cell">${escapeHtml(check.required_action || check.action || "Review")}</td>
-      <td class="col-status">${statusBadge(check.severity || check.status)}</td>
+      <td class="col-num">${escapeHtml(formatRiskActionCurrentValue(check))}</td>
+      <td class="col-num">${formatRiskActionThresholdCell(check)}</td>
+      <td>${formatRiskActionUtilCell(check)}</td>
+      <td class="wrap-cell">${escapeHtml(formatRiskActionAction(check))}</td>
+      <td class="col-status">${riskActionStatusBadge(check)}</td>
     </tr>`).join("") || `<tr><td colspan="8">No active issues in ${humanize(riskActionFilter)} view.</td></tr>`;
   document.querySelectorAll("#riskActionFilters [data-risk-filter]").forEach((button) => {
     button.classList.toggle("active", button.dataset.riskFilter === riskActionFilter);
