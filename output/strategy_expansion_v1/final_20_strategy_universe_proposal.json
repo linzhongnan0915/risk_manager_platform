@@ -1,0 +1,597 @@
+{
+  "phase": "strategy_expansion_phase2",
+  "data_provenance": {
+    "price_path": "D:\\Global_Ai\\risk_manager_platform\\data\\processed\\market_price_history.csv",
+    "data_snapshot_date": "2026-06-08",
+    "return_panel_first_date": "1990-01-03",
+    "return_panel_last_date": "2026-06-08",
+    "return_panel_observations": 9175,
+    "ticker_coverage": {
+      "required_count": 33,
+      "available_count": 33,
+      "missing_tickers": [],
+      "first_last_valid_dates": {
+        "BIL": {
+          "first_valid_date": "2007-05-30",
+          "last_valid_date": "2026-06-08"
+        },
+        "DBC": {
+          "first_valid_date": "2006-02-06",
+          "last_valid_date": "2026-06-08"
+        },
+        "EEM": {
+          "first_valid_date": "2003-04-14",
+          "last_valid_date": "2026-06-08"
+        },
+        "EFA": {
+          "first_valid_date": "2001-08-27",
+          "last_valid_date": "2026-06-08"
+        },
+        "GLD": {
+          "first_valid_date": "2004-11-18",
+          "last_valid_date": "2026-06-08"
+        },
+        "HYG": {
+          "first_valid_date": "2007-04-11",
+          "last_valid_date": "2026-06-08"
+        },
+        "IEF": {
+          "first_valid_date": "2002-07-30",
+          "last_valid_date": "2026-06-08"
+        },
+        "IVE": {
+          "first_valid_date": "2000-05-26",
+          "last_valid_date": "2026-06-08"
+        },
+        "IWM": {
+          "first_valid_date": "2000-05-26",
+          "last_valid_date": "2026-06-08"
+        },
+        "JNK": {
+          "first_valid_date": "2007-12-04",
+          "last_valid_date": "2026-06-08"
+        },
+        "LQD": {
+          "first_valid_date": "2002-07-30",
+          "last_valid_date": "2026-06-08"
+        },
+        "MDY": {
+          "first_valid_date": "1995-05-04",
+          "last_valid_date": "2026-06-08"
+        },
+        "MTUM": {
+          "first_valid_date": "2013-04-18",
+          "last_valid_date": "2026-06-08"
+        },
+        "QUAL": {
+          "first_valid_date": "2013-07-18",
+          "last_valid_date": "2026-06-08"
+        },
+        "SPY": {
+          "first_valid_date": "1993-01-29",
+          "last_valid_date": "2026-06-08"
+        },
+        "TIP": {
+          "first_valid_date": "2003-12-05",
+          "last_valid_date": "2026-06-08"
+        },
+        "TLT": {
+          "first_valid_date": "2002-07-30",
+          "last_valid_date": "2026-06-08"
+        },
+        "USMV": {
+          "first_valid_date": "2011-10-20",
+          "last_valid_date": "2026-06-08"
+        },
+        "USO": {
+          "first_valid_date": "2006-04-10",
+          "last_valid_date": "2026-06-08"
+        },
+        "UUP": {
+          "first_valid_date": "2007-03-01",
+          "last_valid_date": "2026-06-08"
+        },
+        "VIX": {
+          "first_valid_date": "1990-01-02",
+          "last_valid_date": "2026-06-08"
+        },
+        "VLUE": {
+          "first_valid_date": "2013-04-18",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLB": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLC": {
+          "first_valid_date": "2018-06-19",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLE": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLF": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLI": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLK": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLP": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLRE": {
+          "first_valid_date": "2015-10-08",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLU": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLV": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        },
+        "XLY": {
+          "first_valid_date": "1998-12-22",
+          "last_valid_date": "2026-06-08"
+        }
+      },
+      "missing_return_counts": {
+        "BIL": 4390,
+        "DBC": 4061,
+        "EEM": 3352,
+        "EFA": 2946,
+        "GLD": 3756,
+        "HYG": 4356,
+        "IEF": 3174,
+        "IVE": 2631,
+        "IWM": 2631,
+        "JNK": 4521,
+        "LQD": 3174,
+        "MDY": 1352,
+        "MTUM": 5872,
+        "QUAL": 5935,
+        "SPY": 781,
+        "TIP": 3516,
+        "TLT": 3174,
+        "USMV": 5499,
+        "USO": 4105,
+        "UUP": 4328,
+        "VIX": 0,
+        "VLUE": 5872,
+        "XLB": 2271,
+        "XLC": 7174,
+        "XLE": 2271,
+        "XLF": 2271,
+        "XLI": 2271,
+        "XLK": 2271,
+        "XLP": 2271,
+        "XLRE": 6496,
+        "XLU": 2271,
+        "XLV": 2271,
+        "XLY": 2271
+      }
+    }
+  },
+  "canonical_specifications": {
+    "EXP_EQUITY_BOND_CORR_REGIME": {
+      "strategy_id": "EXP_EQUITY_BOND_CORR_REGIME",
+      "selection_method": "economic_rationale_stability_cost_oos_not_max_sharpe",
+      "selection_score": 12.42771822732221,
+      "rebalance_days": 21,
+      "buy_bps": 5,
+      "sell_bps": 5,
+      "economic_rationale": "21-day rebalance chosen for regime persistence, turnover control, and OOS consistency rather than highest backtest Sharpe.",
+      "metrics": {
+        "rebalance_days": 21,
+        "buy_bps": 5,
+        "sell_bps": 5,
+        "gross_sharpe": 0.6648979821359031,
+        "net_sharpe": 0.648555737179116,
+        "annual_return": 0.03328560127010638,
+        "max_drawdown": -0.21067896265176778,
+        "annualized_turnover": 1.708567691301504,
+        "annualized_cost_drag": 0.0008542838456507521,
+        "average_oos_sharpe": 0.7622575464000816,
+        "positive_oos_windows": 0.5735294117647058
+      },
+      "max_abs_correlation": 0.6253128050804045,
+      "final_decision": "Promote to governed candidate (replace Index Arbitrage)",
+      "governed_gate_failures": []
+    },
+    "EXP_VOL_TARGET_EQUITY_TREND": {
+      "strategy_id": "EXP_VOL_TARGET_EQUITY_TREND",
+      "selection_method": "economic_rationale_stability_cost_oos_not_max_sharpe",
+      "selection_score": 12.72187606380961,
+      "rebalance_days": 10,
+      "buy_bps": 5,
+      "sell_bps": 5,
+      "economic_rationale": "10-day rebalance chosen for regime persistence, turnover control, and OOS consistency rather than highest backtest Sharpe.",
+      "metrics": {
+        "rebalance_days": 10,
+        "buy_bps": 5,
+        "sell_bps": 5,
+        "gross_sharpe": 0.7104672577049637,
+        "net_sharpe": 0.6701711049375525,
+        "annual_return": 0.0649963224392931,
+        "max_drawdown": -0.29433242462896403,
+        "annualized_turnover": 8.186553758171856,
+        "annualized_cost_drag": 0.004093276879085928,
+        "average_oos_sharpe": 0.6518840139016826,
+        "positive_oos_windows": 0.6774193548387096
+      },
+      "max_abs_correlation": 0.8362571068863427,
+      "final_decision": "Research Hold (duplicate exposure)",
+      "governed_gate_failures": [
+        "max_abs_correlation"
+      ]
+    },
+    "EXP_REAL_ASSET_INFLATION": {
+      "strategy_id": "EXP_REAL_ASSET_INFLATION",
+      "selection_method": "economic_rationale_stability_cost_oos_not_max_sharpe",
+      "selection_score": 9.409424030394643,
+      "rebalance_days": 21,
+      "buy_bps": 5,
+      "sell_bps": 5,
+      "economic_rationale": "21-day rebalance chosen for regime persistence, turnover control, and OOS consistency rather than highest backtest Sharpe.",
+      "metrics": {
+        "rebalance_days": 21,
+        "buy_bps": 5,
+        "sell_bps": 5,
+        "gross_sharpe": 0.4210879856910122,
+        "net_sharpe": 0.4049029765839546,
+        "annual_return": 0.037386654379377715,
+        "max_drawdown": -0.44321276615284066,
+        "annualized_turnover": 3.3621975147155005,
+        "annualized_cost_drag": 0.00168109875735775,
+        "average_oos_sharpe": 0.1916129009858394,
+        "positive_oos_windows": 0.36764705882352944
+      },
+      "max_abs_correlation": 0.7772968030268369,
+      "final_decision": "Research Hold (duplicate exposure)",
+      "governed_gate_failures": [
+        "net_sharpe",
+        "max_drawdown",
+        "positive_oos_windows",
+        "max_abs_correlation"
+      ]
+    }
+  },
+  "universe_proposal": {
+    "research_sandbox_universe": {
+      "count": 20,
+      "members": [
+        {
+          "strategy_id": "PROTO_WQ_ALPHA_ETF",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_HF_REPLICATION",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_BUSINESS_CYCLE",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_MARKOV_DEFENSIVE",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_MANAGED_FUTURES",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_EQUITY_MARKET_NEUTRAL",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_CREDIT_CARRY_STRESS_GATE",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_RATES_DURATION_REGIME",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_TREASURY_CURVE_RV",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_VOL_CARRY_CRASH_FILTER",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_TAIL_HEDGE_CRISIS",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_MERGER_ARB_PROXY",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_CONVERTIBLE_ARB_PROXY",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_COMMODITY_INFLATION_SHOCK",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_USD_MACRO_PRESSURE",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_EM_MACRO_RISK",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_RISK_PARITY_OVERLAY",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_GLOBAL_VALUE_ROTATION",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "CAND_EVENT_DRIVEN_SECTOR_PROXY",
+          "label": "legacy_dashboard",
+          "research_only": false,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": true
+        },
+        {
+          "strategy_id": "EXP_EQUITY_BOND_CORR_REGIME",
+          "label": "expansion_research_only",
+          "research_only": true,
+          "hypothetical_weights_allowed": true,
+          "governed_allocation_allowed": false
+        }
+      ],
+      "notes": [
+        "Exactly 20 non-archived strategies for what-if simulation.",
+        "Expansion sleeves remain research-only and cannot be committed to governed allocation in phase 2."
+      ]
+    },
+    "governed_allocation_universe": {
+      "count": 20,
+      "members": [
+        {
+          "strategy_id": "PROTO_WQ_ALPHA_ETF",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_HF_REPLICATION",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_BUSINESS_CYCLE",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_MARKOV_DEFENSIVE",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "PROTO_MANAGED_FUTURES",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_EQUITY_MARKET_NEUTRAL",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_CREDIT_CARRY_STRESS_GATE",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_RATES_DURATION_REGIME",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_TREASURY_CURVE_RV",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_VOL_CARRY_CRASH_FILTER",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_TAIL_HEDGE_CRISIS",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_MERGER_ARB_PROXY",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_CONVERTIBLE_ARB_PROXY",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_COMMODITY_INFLATION_SHOCK",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_USD_MACRO_PRESSURE",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_EM_MACRO_RISK",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_RISK_PARITY_OVERLAY",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_GLOBAL_VALUE_ROTATION",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "CAND_EVENT_DRIVEN_SECTOR_PROXY",
+          "label": "governed_legacy",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        },
+        {
+          "strategy_id": "EXP_EQUITY_BOND_CORR_REGIME",
+          "label": "governed_candidate_pending_manual_promotion",
+          "governed_allocation_allowed": true,
+          "new_positive_weight_allowed": true
+        }
+      ],
+      "blocked_or_reduce_only": [
+        {
+          "strategy_id": "CAND_INDEX_ARBITRAGE_PROXY",
+          "policy": "archived_historical_only_reduce_only_if_legacy_weight_exists"
+        }
+      ],
+      "index_arbitrage_replacement": {
+        "removed": "CAND_INDEX_ARBITRAGE_PROXY",
+        "candidate": "EXP_EQUITY_BOND_CORR_REGIME",
+        "accepted_into_governed_universe": true,
+        "governed_gate_failures": [],
+        "canonical_spec": {
+          "strategy_id": "EXP_EQUITY_BOND_CORR_REGIME",
+          "selection_method": "economic_rationale_stability_cost_oos_not_max_sharpe",
+          "selection_score": 12.42771822732221,
+          "rebalance_days": 21,
+          "buy_bps": 5,
+          "sell_bps": 5,
+          "economic_rationale": "21-day rebalance chosen for regime persistence, turnover control, and OOS consistency rather than highest backtest Sharpe.",
+          "metrics": {
+            "rebalance_days": 21,
+            "buy_bps": 5,
+            "sell_bps": 5,
+            "gross_sharpe": 0.6648979821359031,
+            "net_sharpe": 0.648555737179116,
+            "annual_return": 0.03328560127010638,
+            "max_drawdown": -0.21067896265176778,
+            "annualized_turnover": 1.708567691301504,
+            "annualized_cost_drag": 0.0008542838456507521,
+            "average_oos_sharpe": 0.7622575464000816,
+            "positive_oos_windows": 0.5735294117647058
+          },
+          "max_abs_correlation": 0.6253128050804045,
+          "final_decision": "Promote to governed candidate (replace Index Arbitrage)",
+          "governed_gate_failures": []
+        }
+      }
+    },
+    "excluded_from_sandbox_count_20": {
+      "archived": [
+        "CAND_INDEX_ARBITRAGE_PROXY"
+      ],
+      "research_only_not_in_core_twenty": [
+        "EXP_VOL_TARGET_EQUITY_TREND",
+        "EXP_REAL_ASSET_INFLATION",
+        "EXP_SECTOR_MOMENTUM_ROTATION",
+        "EXP_SECTOR_NEUTRAL_RESIDUAL_MOM",
+        "EXP_QUALITY_VALUE_COMPOSITE",
+        "EXP_SIZE_REGIME",
+        "EXP_US_INTL_RELATIVE_STRENGTH",
+        "EXP_CREDIT_QUALITY_ROTATION",
+        "EXP_CROSS_ASSET_REVERSAL"
+      ]
+    }
+  }
+}

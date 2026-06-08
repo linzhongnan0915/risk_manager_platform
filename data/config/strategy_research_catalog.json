@@ -206,13 +206,13 @@
         {
           "strategy_id": "CAND_INDEX_ARBITRAGE_PROXY",
           "name": "Index Arbitrage Proxy",
-          "current_status": "candidate",
+          "current_status": "archived",
           "etf_universe": ["SPY", "IVV", "VOO", "BIL"],
           "signal": "ETF basis, liquidity, and tracking-difference proxy",
           "rebalance": "daily research only",
           "data_readiness": "medium",
           "missing_data": ["intraday prices", "bid-ask spreads", "creation-redemption data"],
-          "risk_manager_use": "Low-edge strategy candidate, useful mainly for cost discipline and execution-risk demonstration"
+          "risk_manager_use": "Archived research sleeve; historical evidence preserved, not eligible for allocation"
         },
         {
           "strategy_id": "CAND_TREASURY_BASIS_PROXY",
@@ -276,6 +276,124 @@
           "data_readiness": "low",
           "missing_data": ["vol futures curve", "options surface", "borrow and product decay assumptions"],
           "risk_manager_use": "Tail-sensitive candidate, likely small allocation or research-only until vol data is robust"
+        }
+      ]
+    },
+    {
+      "family_id": "FAM_008",
+      "name": "Strategy Expansion V1 Daily ETF Candidates",
+      "source": "Risk Manager Platform strategy expansion phase 1",
+      "institutional_role": "Research-only daily ETF sleeves excluded from live allocation in this phase",
+      "candidate_strategies": [
+        {
+          "strategy_id": "EXP_SECTOR_MOMENTUM_ROTATION",
+          "name": "Sector Momentum Rotation",
+          "current_status": "expansion_research",
+          "etf_universe": ["XLE", "XLF", "XLK", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB", "XLRE", "XLC", "BIL"],
+          "signal": "126-day sector momentum; top three equal-weight with cash buffer",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["formal sector-neutral benchmark", "sector crowding metrics"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_SECTOR_NEUTRAL_RESIDUAL_MOM",
+          "name": "Sector-Neutral Residual Momentum",
+          "current_status": "expansion_research",
+          "etf_universe": ["XLE", "XLF", "XLK", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB", "XLRE", "XLC", "SPY", "BIL"],
+          "signal": "63-day sector residual momentum versus SPY with hedge sleeve",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["formal beta-neutral implementation", "short borrow assumptions"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_QUALITY_VALUE_COMPOSITE",
+          "name": "Quality-Value Composite Rotation",
+          "current_status": "expansion_research",
+          "etf_universe": ["QUAL", "VLUE", "IVE", "MTUM", "USMV", "BIL"],
+          "signal": "Blended style trend and short-term reversal composite",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["point-in-time style factor definitions"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_SIZE_REGIME",
+          "name": "Small-Cap vs Large-Cap Regime",
+          "current_status": "expansion_research",
+          "etf_universe": ["IWM", "SPY", "MDY", "USMV", "BIL"],
+          "signal": "IWM versus SPY 63-day relative strength regime switch",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["liquidity stress overlay for small caps"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_US_INTL_RELATIVE_STRENGTH",
+          "name": "US-International Relative Strength",
+          "current_status": "expansion_research",
+          "etf_universe": ["SPY", "EFA", "EEM", "UUP", "BIL"],
+          "signal": "126-day SPY versus EFA leadership with USD filter",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["FX-hedged regional benchmarks"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_VOL_TARGET_EQUITY_TREND",
+          "name": "Volatility-Targeted Equity Trend",
+          "current_status": "expansion_research",
+          "etf_universe": ["SPY", "USMV", "BIL"],
+          "signal": "Vol-scaled SPY trend sleeve with defensive fallback",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["leverage and margin assumptions"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_CREDIT_QUALITY_ROTATION",
+          "name": "Credit Quality Rotation",
+          "current_status": "expansion_research",
+          "etf_universe": ["HYG", "JNK", "LQD", "IEF", "BIL", "VIX"],
+          "signal": "Credit tier rotation gated by volatility stress",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["spread-level credit data"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_REAL_ASSET_INFLATION",
+          "name": "Real-Asset Inflation Rotation",
+          "current_status": "expansion_research",
+          "etf_universe": ["DBC", "GLD", "TIP", "USO", "UUP", "BIL"],
+          "signal": "Real-asset trend rotation when commodity inflation pressure is positive",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["breakeven inflation and roll-yield decomposition"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_EQUITY_BOND_CORR_REGIME",
+          "name": "Equity-Bond Correlation Regime",
+          "current_status": "expansion_research",
+          "etf_universe": ["SPY", "TLT", "IEF", "USMV", "BIL"],
+          "signal": "SPY/TLT risk parity when correlation negative; defensive when positive",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["regime persistence calibration"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
+        },
+        {
+          "strategy_id": "EXP_CROSS_ASSET_REVERSAL",
+          "name": "Cross-Asset Short-Term Reversal",
+          "current_status": "expansion_research",
+          "etf_universe": ["SPY", "TLT", "GLD", "HYG", "DBC", "BIL"],
+          "signal": "5-day cross-asset mean reversion with cash completion",
+          "rebalance": "daily",
+          "data_readiness": "high",
+          "missing_data": ["crisis continuation filters"],
+          "risk_manager_use": "Research-only; auto_eligible=False"
         }
       ]
     }

@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "schema": "manual_strategy_governance_audit",
+  "description": "Explicit human governance decisions. Eligibility and lifecycle must derive from these records, not silent backtest metrics.",
+  "promotions": [
+    {
+      "strategy_id": "EXP_EQUITY_BOND_CORR_REGIME",
+      "name": "Equity-Bond Correlation Regime",
+      "decision": "eligible_unallocated",
+      "decision_date": "2026-06-08",
+      "approved_by": "manual_governance_review",
+      "canonical_specification": {
+        "rebalance_days": 21,
+        "buy_bps": 5,
+        "sell_bps": 5,
+        "label": "21-trading-day rebalance, 5 bps per side"
+      },
+      "initial_allocation_policy": {
+        "current_weight": 0.0,
+        "proposed_weight": 0.0,
+        "auto_allocate": false
+      },
+      "rationale": "Phase 2 robustness selected 21-day rebalance for regime persistence, turnover control, and OOS consistency. Strategy replaces archived Index Arbitrage Proxy in the active 20-strategy universe while remaining unallocated pending manual governance.",
+      "evidence_paths": [
+        "output/strategy_expansion_v1/robustness_results.json",
+        "output/strategy_expansion_v1/final_strategy_review.md",
+        "output/strategy_expansion_v1/final_20_strategy_universe_proposal.json",
+        "output/strategy_expansion_v1/strategy_expansion_v1_backtests.json",
+        "data/config/governed_portfolio_baseline.json"
+      ],
+      "replaces_strategy_id": "CAND_INDEX_ARBITRAGE_PROXY"
+    }
+  ],
+  "archived_strategies": [
+    {
+      "strategy_id": "CAND_INDEX_ARBITRAGE_PROXY",
+      "name": "Index Arbitrage Proxy",
+      "decision": "archived",
+      "decision_date": "2026-06-08",
+      "approved_by": "manual_governance_review",
+      "rationale": "Daily ETF basis edge consumed by transaction costs; archived with full historical research evidence preserved.",
+      "evidence_paths": [
+        "output/strategy_expansion_v1/strategy_expansion_v1_backtests.json",
+        "output/literature_strategy_backtests.json"
+      ],
+      "active_universe_policy": "exclude_from_active_monitoring_and_allocation"
+    }
+  ]
+}

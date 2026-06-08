@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "description": "Pre-Phase-3 governed portfolio current weights from main branch dashboard_artifact.json. Active universe membership must not change these allocations.",
+  "source_branch": "main",
+  "source_artifact": "output/dashboard_artifact.json",
+  "captured_at": "2026-06-08",
+  "baseline_current_weights": {
+    "PROTO_WQ_ALPHA_ETF": 0.0,
+    "PROTO_HF_REPLICATION": 0.1,
+    "PROTO_BUSINESS_CYCLE": 0.1,
+    "PROTO_MARKOV_DEFENSIVE": 0.1,
+    "PROTO_MANAGED_FUTURES": 0.1,
+    "CAND_EQUITY_MARKET_NEUTRAL": 0.0,
+    "CAND_CREDIT_CARRY_STRESS_GATE": 0.1,
+    "CAND_RATES_DURATION_REGIME": 0.1,
+    "CAND_TREASURY_CURVE_RV": 0.0,
+    "CAND_VOL_CARRY_CRASH_FILTER": 0.0,
+    "CAND_TAIL_HEDGE_CRISIS": 0.0,
+    "CAND_MERGER_ARB_PROXY": 0.0,
+    "CAND_CONVERTIBLE_ARB_PROXY": 0.1,
+    "CAND_COMMODITY_INFLATION_SHOCK": 0.1,
+    "CAND_USD_MACRO_PRESSURE": 0.0,
+    "CAND_EM_MACRO_RISK": 0.1,
+    "CAND_RISK_PARITY_OVERLAY": 0.0,
+    "CAND_GLOBAL_VALUE_ROTATION": 0.0,
+    "CAND_EVENT_DRIVEN_SECTOR_PROXY": 0.1,
+    "EXP_EQUITY_BOND_CORR_REGIME": 0.0
+  },
+  "archived_strategy_weights": {
+    "CAND_INDEX_ARBITRAGE_PROXY": 0.0
+  }
+}

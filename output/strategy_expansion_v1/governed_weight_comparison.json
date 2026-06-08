@@ -1,0 +1,184 @@
+{
+  "comparison": [
+    {
+      "strategy_id": "CAND_COMMODITY_INFLATION_SHOCK",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "CAND_CONVERTIBLE_ARB_PROXY",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "CAND_CREDIT_CARRY_STRESS_GATE",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "CAND_EM_MACRO_RISK",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "CAND_EQUITY_MARKET_NEUTRAL",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "CAND_EVENT_DRIVEN_SECTOR_PROXY",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "CAND_GLOBAL_VALUE_ROTATION",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "CAND_INDEX_ARBITRAGE_PROXY",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": null,
+      "baseline": null,
+      "delta_vs_main": null
+    },
+    {
+      "strategy_id": "CAND_MERGER_ARB_PROXY",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "CAND_RATES_DURATION_REGIME",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "CAND_RISK_PARITY_OVERLAY",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "CAND_TAIL_HEDGE_CRISIS",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "CAND_TREASURY_CURVE_RV",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "CAND_USD_MACRO_PRESSURE",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "CAND_VOL_CARRY_CRASH_FILTER",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "EXP_EQUITY_BOND_CORR_REGIME",
+      "main_pre_phase3": null,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    },
+    {
+      "strategy_id": "PROTO_BUSINESS_CYCLE",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "PROTO_HF_REPLICATION",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "PROTO_MANAGED_FUTURES",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "PROTO_MARKOV_DEFENSIVE",
+      "main_pre_phase3": 0.1,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.1,
+      "baseline": 0.1,
+      "delta_vs_main": 0.0
+    },
+    {
+      "strategy_id": "PROTO_WQ_ALPHA_ETF",
+      "main_pre_phase3": 0.0,
+      "phase3_before_bug": null,
+      "phase3_corrected": 0.0,
+      "baseline": 0.0,
+      "delta_vs_main": 0
+    }
+  ],
+  "positive_weight_count_main": 10,
+  "positive_weight_count_corrected": 10,
+  "total_governed_weight": 1.0,
+  "lifecycle_summary": {
+    "allocated_existing": 8,
+    "existing_under_review": 2,
+    "eligible_unallocated": 1,
+    "research_only_blocked": 9,
+    "archived": 1,
+    "active_universe_total": 20
+  },
+  "allocation_rationale": "Governed portfolio baseline preserved from pre-Phase-3 main artifact; no rebalance proposed."
+}

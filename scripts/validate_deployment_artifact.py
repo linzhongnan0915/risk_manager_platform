@@ -9,6 +9,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ARTIFACT = PROJECT_ROOT / "output" / "dashboard_artifact.json"
 EXPECTED_STRATEGY_COUNT = 20
+ARCHIVED_STRATEGY_ID = "CAND_INDEX_ARBITRAGE_PROXY"
+REPLACEMENT_STRATEGY_ID = "EXP_EQUITY_BOND_CORR_REGIME"
 
 
 class DeploymentArtifactError(RuntimeError):
@@ -30,6 +32,24 @@ def validate_deployment_artifact(path: Path | str = DEFAULT_ARTIFACT) -> dict:
         raise DeploymentArtifactError(
             f"Expected {EXPECTED_STRATEGY_COUNT} strategies, found {len(strategies)}."
         )
+
+    strategy_ids = [strategy.get("strategy_id") for strategy in strategies]
+    if ARCHIVED_STRATEGY_ID in strategy_ids:
+        raise DeploymentArtifactError(f"Archived strategy must not appear in active artifact: {ARCHIVED_STRATEGY_ID}.")
+    if REPLACEMENT_STRATEGY_ID not in strategy_ids:
+        raise DeploymentArtifactError(f"Active universe missing governed replacement strategy: {REPLACEMENT_STRATEGY_ID}.")
+
+    replacement = next((row for row in strategies if row.get("strategy_id") == REPLACEMENT_STRATEGY_ID), None)
+    if replacement is None:
+        raise DeploymentArtifactError("Replacement strategy row missing from artifact.")
+    if float(replacement.get("current_weight", -1.0)) != 0.0:
+        raise DeploymentArtifactError("Replacement strategy must start with 0% current governed weight.")
+    if replacement.get("lifecycle_status") != "eligible_unallocated":
+        raise DeploymentArtifactError("Replacement strategy lifecycle must be eligible_unallocated.")
+
+    governance = artifact.get("governance_audit") or {}
+    if not governance.get("promotions"):
+        raise DeploymentArtifactError("governance_audit.promotions is required for phase 3 artifact.")
 
     literature = artifact.get("literature_strategy_backtests") or {}
     literature_results = literature.get("results") if isinstance(literature, dict) else literature

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -45,6 +46,20 @@ from src.risk.metric_availability import build_operating_period_risk, wrap_metri
 from src.risk.risk_status_summary import build_risk_status_summary, decorate_strategy_status_fields, enrich_check
 from src.risk.transaction_cost import TransactionCostModel
 from src.strategies.registry import load_strategy_registry
+from src.strategies.active_universe import (
+    ARCHIVED_STRATEGY_ID,
+    REPLACEMENT_STRATEGY_ID,
+    ACTIVE_STRATEGY_IDS,
+    build_active_literature_results,
+    GOVERNED_BASELINE_PATH,
+    governed_current_weights,
+    governance_audit_block,
+    is_governance_eligible_unallocated,
+    lifecycle_summary_counts,
+    load_governance_records,
+    load_governed_portfolio_baseline,
+    strategy_lifecycle_metadata,
+)
 
 ARTIFACT_SCHEMA_VERSION = "0.3.0"
 
@@ -355,8 +370,11 @@ def _research_quality_for_item(item: dict, config: dict | None = None) -> dict:
     }
     result = evaluate_research_quality_limits(row, config)
     status = worst_status(result["checks"])
+    eligible = status not in {"breach"}
+    if backtest.get("auto_eligible") is False or backtest.get("archived"):
+        eligible = False
     return {
-        "eligible": status not in {"breach"},
+        "eligible": eligible,
         "status": status,
         "checks": result["checks"],
         "summary": result["summary"],
@@ -410,6 +428,9 @@ def _literature_strategy_row(
         "rebalance": backtest.get("rebalance"),
         "signal_summary": backtest.get("signal_summary"),
         "failure_modes": backtest.get("failure_modes", []),
+        "rebalance_days": backtest.get("rebalance_days"),
+        "canonical_specification": backtest.get("canonical_specification"),
+        "governance_lifecycle": backtest.get("governance_lifecycle"),
         "backtest_evidence": backtest.get("backtest_evidence", {}),
         "walk_forward": wfo,
         "gross_metrics": backtest.get("gross_metrics", {}),
@@ -627,20 +648,80 @@ def _trade_decision(row: dict) -> dict:
     }
 
 
-def _generate_literature_dashboard_artifact(results: list[dict], output_path: str | Path, capital: float) -> dict:
+def _apply_governance_allocation_fields(row: dict, governance_records: dict | None) -> dict:
+    if not governance_records:
+        return row
+    prior_eligibility = row.get("allocation_eligibility", {})
+    lifecycle = strategy_lifecycle_metadata(
+        row["strategy_id"],
+        governance_records,
+        current_weight=float(row.get("current_weight", 0.0)),
+        research_status=str(row.get("research_status", "ok")),
+        research_eligible=bool(prior_eligibility.get("eligible", False)),
+        correlation_blocker=bool(row.get("correlation_gate", {}).get("allocation_blocker", False)),
+    )
+    row.update(lifecycle)
+    if lifecycle["lifecycle_status"] == "eligible_unallocated":
+        eligible = True
+        reason = "Manually approved eligible_unallocated; governed allocation remains 0% until manually increased."
+    elif lifecycle["lifecycle_status"] == "existing_allocation":
+        eligible = True
+        reason = "Existing governed allocation."
+    elif lifecycle["lifecycle_status"] == "existing_allocation_under_review":
+        eligible = False
+        reason = "Existing allocation under governance review; reduce-only, no increases permitted."
+    elif lifecycle["lifecycle_status"] == "research_only_blocked":
+        eligible = False
+        reason = "Research-only blocked; governed allocation must remain 0%."
+    else:
+        eligible = False
+        reason = prior_eligibility.get("reason", "Not eligible for governed allocation.")
+    row["allocation_eligibility"] = {
+        "eligible": eligible,
+        "status": "eligible" if eligible else "blocked",
+        "label": lifecycle["lifecycle_status"],
+        "reason": reason,
+        "governance_decision": lifecycle["lifecycle_status"],
+        "reduce_only": lifecycle.get("reduce_only", False),
+    }
+    return row
+
+
+def _generate_literature_dashboard_artifact(
+    results: list[dict],
+    output_path: str | Path,
+    capital: float,
+    governance_records: dict | None = None,
+    archived_evidence: list[dict] | None = None,
+) -> dict:
     risk_limit_config = load_risk_limits()
     strategy_ids = [item["backtest"]["strategy_id"] for item in results]
+    if governance_records and strategy_ids != ACTIVE_STRATEGY_IDS:
+        raise ValueError("Active universe integration requires exactly 20 governed active strategies.")
     eligibility_by_strategy = {
         item["backtest"]["strategy_id"]: _research_quality_for_item(item, risk_limit_config)
         for item in results
     }
-    eligible_ids = [
-        strategy_id
-        for strategy_id, quality in eligibility_by_strategy.items()
-        if quality["eligible"]
-    ]
-    eligible_weights = _equal_weights(eligible_ids)
-    weights = {strategy_id: eligible_weights.get(strategy_id, 0.0) for strategy_id in strategy_ids}
+    if governance_records:
+        weights = governed_current_weights(governance_records)
+        for strategy_id, promotion in {
+            item["strategy_id"]: item for item in governance_records.get("promotions", [])
+        }.items():
+            if promotion.get("decision") == "eligible_unallocated":
+                eligibility_by_strategy[strategy_id] = {
+                    "eligible": True,
+                    "status": "ok",
+                    "checks": [],
+                    "summary": {"pass": 1, "warning": 0, "breach": 0},
+                }
+    else:
+        eligible_ids = [
+            strategy_id
+            for strategy_id, quality in eligibility_by_strategy.items()
+            if quality["eligible"]
+        ]
+        eligible_weights = _equal_weights(eligible_ids)
+        weights = {strategy_id: eligible_weights.get(strategy_id, 0.0) for strategy_id in strategy_ids}
     aligned = _aligned_window_from_literature(results, weights)
     investment_start = _load_investment_start()
     aligned_live = slice_aligned_window(aligned, investment_start)
@@ -681,7 +762,13 @@ def _generate_literature_dashboard_artifact(results: list[dict], output_path: st
     )
     duplicate_exposure_map = correlation_report.get("duplicate_exposure_by_strategy", {})
     scores = {
-        item["backtest"]["strategy_id"]: _score_literature_strategy(item, duplicate_exposure_map.get(item["backtest"]["strategy_id"]))
+        item["backtest"]["strategy_id"]: (
+            0.0
+            if governance_records
+            and item["backtest"]["strategy_id"] == REPLACEMENT_STRATEGY_ID
+            and is_governance_eligible_unallocated(item["backtest"]["strategy_id"], governance_records)
+            else _score_literature_strategy(item, duplicate_exposure_map.get(item["backtest"]["strategy_id"]))
+        )
         for item in results
     }
     min_weights = {strategy_id: 0.0 for strategy_id in strategy_ids}
@@ -701,6 +788,15 @@ def _generate_literature_dashboard_artifact(results: list[dict], output_path: st
         capital,
         max_turnover=risk_limit_config["portfolio_limits"].get("max_turnover_per_rebalance", 0.15),
     )
+    if governance_records:
+        recommendation = replace(
+            recommendation,
+            current_weights=dict(weights),
+            proposed_weights=dict(weights),
+            estimated_transaction_cost=0.0,
+            approval_required=False,
+            rationale="Governed portfolio baseline preserved from pre-Phase-3 main artifact; no rebalance proposed.",
+        )
     proposed_risk_summary = portfolio_risk_summary(returns, recommendation.proposed_weights)
     proposed_portfolio_limit_status = evaluate_portfolio_limits(proposed_risk_summary, risk_limit_config)
     cost_model = TransactionCostModel()
@@ -732,6 +828,7 @@ def _generate_literature_dashboard_artifact(results: list[dict], output_path: st
             "estimated_cost": float(cost_model.cost_for_trade(abs(proposed - current) * capital, side)) if abs(proposed - current) > 1e-10 else 0.0,
             "cost_bps": 5.0 if abs(proposed - current) > 1e-10 else 0.0,
         }
+        row = _apply_governance_allocation_fields(row, governance_records)
         strategy_limit_checks.extend(row["risk_limit_checks"] if current > 0 else [])
         research_quality_checks.extend(row["research_quality_checks"])
         strategy_rows.append(row)
@@ -982,6 +1079,18 @@ def _generate_literature_dashboard_artifact(results: list[dict], output_path: st
         ],
         factor_exposure=factor_analytics.get("portfolio_factor_exposure_current", {}),
     )
+    literature_embed = _load_literature_strategy_backtests()
+    if governance_records:
+        literature_embed = dict(literature_embed)
+        literature_embed["results"] = results
+        literature_embed["archived_strategy_evidence"] = archived_evidence or []
+        data_classification["allocation_source"] = "governed_baseline_preserved_pre_phase3_main"
+        baseline = load_governed_portfolio_baseline()
+        literature_embed["governed_portfolio_baseline"] = {
+            "path": str(GOVERNED_BASELINE_PATH),
+            "source_branch": baseline.get("source_branch"),
+            "baseline_current_weights": baseline.get("baseline_current_weights"),
+        }
     artifact = {
         "platform": "Risk Manager Platform",
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
@@ -1070,7 +1179,31 @@ def _generate_literature_dashboard_artifact(results: list[dict], output_path: st
         "recommendations": risk_recommendations,
         "literature_modules": literature_modules,
         "replication_clone": replication_clone,
-        "literature_strategy_backtests": _load_literature_strategy_backtests(),
+        "literature_strategy_backtests": literature_embed,
+        "governance_audit": governance_audit_block(governance_records) if governance_records else {},
+        "archived_strategy_evidence": archived_evidence or [],
+        "strategy_universe": {
+            "active_strategy_ids": strategy_ids,
+            "archived_strategy_ids": [ARCHIVED_STRATEGY_ID] if governance_records else [],
+            "active_strategy_count": len(strategy_rows),
+            "lifecycle_summary": lifecycle_summary_counts(strategy_rows) if governance_records else {},
+        },
+        "allocation_modes": {
+            "governed_allocation": {
+                "mode_id": "governed_allocation",
+                "label": "Governed Allocation",
+                "description": "Eligible strategies may be increased, reduced, or set to zero under governance rules.",
+                "default": True,
+                "execution_authorization": False,
+            },
+            "research_sandbox": {
+                "mode_id": "research_sandbox",
+                "label": "Research Sandbox",
+                "description": "What-if research simulation only. Sandbox changes do not overwrite governed weights or Daily Report conclusions.",
+                "default": False,
+                "execution_authorization": False,
+            },
+        },
         "strategies": strategy_rows,
         "daily_decision_log": _daily_decision_log(strategy_rows, recommendation),
         "rebalance_simulation": build_simulation_context(
@@ -1381,7 +1514,19 @@ def generate_dashboard_artifact(
     literature_strategy_backtests = _load_literature_strategy_backtests()
     literature_results = _literature_result_rows(literature_strategy_backtests)
     if literature_results:
-        return _generate_literature_dashboard_artifact(literature_results, output_path, capital)
+        governance_records = None
+        archived_evidence: list[dict] = []
+        governance_path = Path("data/config/strategy_governance_records.json")
+        if governance_path.exists():
+            governance_records = load_governance_records(governance_path)
+            literature_results, archived_evidence = build_active_literature_results(literature_strategy_backtests)
+        return _generate_literature_dashboard_artifact(
+            literature_results,
+            output_path,
+            capital,
+            governance_records=governance_records,
+            archived_evidence=archived_evidence,
+        )
 
     strategies = load_strategy_registry(registry_path)
     weights = {record.strategy_id: record.target_weight for record in strategies}

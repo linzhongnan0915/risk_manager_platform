@@ -70,10 +70,41 @@ function emptyState(message) {
   return `<p class="empty-state">${escapeHtml(message)}</p>`;
 }
 
-function formatEligibilityDisplay(strategy) {
+function formatEligibilityDisplay(strategy, options = {}) {
+  const mode = options.mode || "governed_allocation";
   const elig = strategy.allocation_eligibility || {};
   const current = strategy.current_weight || 0;
   const proposed = strategy.proposed_weight || 0;
+  if (mode === "research_sandbox") {
+    return {
+      label: "Sandbox what-if",
+      status: "ok",
+      detail: "What-if research simulation only. Does not change governed allocation records.",
+    };
+  }
+  if (strategy.lifecycle_status === "eligible_unallocated") {
+    return {
+      label: "Eligible unallocated",
+      status: "ok",
+      detail: elig.reason || "Manually approved; governed allocation remains 0% until manually increased.",
+    };
+  }
+  if (strategy.lifecycle_status === "existing_allocation") {
+    return { label: "Existing allocation", status: "ok", detail: elig.reason || "Currently allocated in governed portfolio." };
+  }
+  if (strategy.lifecycle_status === "existing_allocation_under_review") {
+    return {
+      label: "Existing allocation under review",
+      status: "warning",
+      detail: elig.reason || "Reduce-only; no increases permitted.",
+    };
+  }
+  if (strategy.lifecycle_status === "research_only_blocked") {
+    return { label: "Research-only blocked", status: "breach", detail: elig.reason || "Governed allocation must remain 0%." };
+  }
+  if (strategy.lifecycle_status === "archived") {
+    return { label: "Archived", status: "breach", detail: "Archived strategy excluded from active allocation." };
+  }
   if (current <= 0 && !elig.eligible) {
     if (elig.status === "blocked" || String(elig.label || "").toLowerCase().includes("block")) {
       return { label: "Research-only blocked", status: "breach", detail: elig.reason || "Not eligible for new allocation." };

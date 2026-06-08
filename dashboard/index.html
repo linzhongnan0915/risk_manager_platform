@@ -131,6 +131,14 @@
 
           <section class="tab-panel" data-tab-panel="Allocation & Rebalance">
             <div id="allocationBeforeAfterStrip"></div>
+            <section class="allocation-mode-bar compact-toolbar" id="allocationModeBar">
+              <label for="allocationModeSelect"><strong>Allocation mode</strong></label>
+              <select id="allocationModeSelect" aria-label="Allocation mode">
+                <option value="governed_allocation">Governed Allocation</option>
+                <option value="research_sandbox">Research Sandbox</option>
+              </select>
+              <span id="allocationModeNotice" class="allocation-mode-notice"></span>
+            </section>
             <section class="approval-status-bar v2-approval-bar" id="approvalStatusBar"></section>
             <section class="allocation-persistent-checks" id="allocationPersistentChecks"></section>
             <section class="simulation-toolbar compact-toolbar">

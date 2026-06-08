@@ -497,26 +497,105 @@ let reportFrozenAt = null;
 let intradayMonitoringOffline = false;
 let activeArtifact = null;
 let activeDrawerView = "overview";
-const proposalSession = {
-  weights: {},
-  simulation: null,
-  source: "current",
-};
+let allocationMode = "governed_allocation";
+const governedProposalSession = { weights: {}, simulation: null, source: "current" };
+const sandboxProposalSession = { weights: {}, simulation: null, source: "current" };
+let proposalSession = governedProposalSession;
+
+function syncProposalSessionPointer() {
+  proposalSession = allocationMode === "research_sandbox" ? sandboxProposalSession : governedProposalSession;
+}
+
+function isSandboxAllocationMode() {
+  return allocationMode === "research_sandbox";
+}
+
+function allocationEditorRules(strategy) {
+  if (isSandboxAllocationMode()) {
+    return { disabled: false, reduceOnly: false, maxWeight: 1.0, sandbox: true };
+  }
+  const current = strategy.current_weight || 0;
+  if (strategy.lifecycle_status === "archived" || strategy.active_universe_member === false) {
+    return { disabled: true, reduceOnly: false, maxWeight: 0, sandbox: false };
+  }
+  if (strategy.lifecycle_status === "research_only_blocked" || strategy.research_only) {
+    return { disabled: true, reduceOnly: false, maxWeight: 0, sandbox: false };
+  }
+  if (strategy.lifecycle_status === "eligible_unallocated") {
+    return { disabled: false, reduceOnly: false, maxWeight: 0.25, sandbox: false };
+  }
+  if (strategy.lifecycle_status === "existing_allocation_under_review" || strategy.reduce_only || strategy.allocation_eligibility?.reduce_only) {
+    return { disabled: false, reduceOnly: true, maxWeight: current || 0, sandbox: false };
+  }
+  if (strategy.lifecycle_status === "existing_allocation") {
+    return { disabled: false, reduceOnly: false, maxWeight: 0.25, sandbox: false };
+  }
+  if (strategy.governed_allocation_allowed === false) {
+    return { disabled: current === 0, reduceOnly: current > 0, maxWeight: current || 0, sandbox: false };
+  }
+  const elig = strategy.allocation_eligibility || {};
+  if (!elig.eligible && current === 0) {
+    return { disabled: true, reduceOnly: false, maxWeight: 0, sandbox: false };
+  }
+  if (!elig.eligible && current > 0) {
+    return { disabled: false, reduceOnly: true, maxWeight: current, sandbox: false };
+  }
+  if (strategy.new_positive_weight_allowed === false && current === 0) {
+    return { disabled: true, reduceOnly: false, maxWeight: 0, sandbox: false };
+  }
+  return { disabled: false, reduceOnly: false, maxWeight: 0.25, sandbox: false };
+}
+
+function renderAllocationModeNotice(artifact) {
+  const notice = document.getElementById("allocationModeNotice");
+  const select = document.getElementById("allocationModeSelect");
+  if (select) select.value = allocationMode;
+  if (!notice) return;
+  if (isSandboxAllocationMode()) {
+    notice.textContent = "What-if research simulation only. Sandbox changes do not overwrite governed weights, approval records, or the Daily Report governed conclusion.";
+    notice.className = "allocation-mode-notice warning";
+    return;
+  }
+  notice.textContent = "Governed allocation mode. Eligible strategies may be adjusted under governance rules. Execution authorization remains disabled.";
+  notice.className = "allocation-mode-notice ok";
+}
+
+function setAllocationMode(mode, artifact) {
+  allocationMode = mode;
+  syncProposalSessionPointer();
+  renderAllocationModeNotice(artifact);
+  refreshProposalStatusViews(artifact);
+}
 
 function initProposalSession(artifact) {
-  proposalSession.weights = Object.fromEntries(
+  const baseline = Object.fromEntries(
     (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.current_weight || 0]),
   );
-  proposalSession.simulation = null;
-  proposalSession.source = "current";
+  governedProposalSession.weights = { ...baseline };
+  governedProposalSession.simulation = null;
+  governedProposalSession.source = "current";
+  sandboxProposalSession.weights = { ...baseline };
+  sandboxProposalSession.simulation = null;
+  sandboxProposalSession.source = "current";
+  syncProposalSessionPointer();
 }
 
 function loadSystemProposalSession(artifact) {
-  proposalSession.weights = Object.fromEntries(
+  if (isSandboxAllocationMode()) {
+    sandboxProposalSession.weights = Object.fromEntries(
+      (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.proposed_weight || 0]),
+    );
+    sandboxProposalSession.simulation = null;
+    sandboxProposalSession.source = "system";
+    syncProposalSessionPointer();
+    return;
+  }
+  governedProposalSession.weights = Object.fromEntries(
     (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.proposed_weight || 0]),
   );
-  proposalSession.simulation = null;
-  proposalSession.source = "system";
+  governedProposalSession.simulation = null;
+  governedProposalSession.source = "system";
+  syncProposalSessionPointer();
 }
 
 function invalidateProposalSimulation() {
@@ -2474,13 +2553,15 @@ function renderAllocationEditor(artifact) {
       const current = strategy.current_weight || 0;
       const target = proposalSession.weights[strategy.strategy_id] || 0;
       const change = target - current;
-      const elig = formatEligibilityDisplay({ ...strategy, proposed_weight: target });
-      const disabled = !strategy.allocation_eligibility?.eligible && current === 0;
-      const reduceOnly = current > 0 && !strategy.allocation_eligibility?.eligible;
-      const maxWeight = reduceOnly ? current : 0.25;
+      const elig = formatEligibilityDisplay({ ...strategy, proposed_weight: target }, { mode: allocationMode });
+      const rules = allocationEditorRules(strategy);
+      const disabled = rules.disabled;
+      const reduceOnly = rules.reduceOnly;
+      const maxWeight = rules.maxWeight;
+      const lifecycleLabel = strategy.lifecycle_status ? humanize(strategy.lifecycle_status) : (current > 0 ? "allocated" : "research");
       return `<tr data-strategy-row="${strategy.strategy_id}">
         <td><button class="table-link" data-open-strategy="${strategy.strategy_id}"><strong>${strategy.name}</strong></button></td>
-        <td class="col-status">${statusBadge(current > 0 ? "allocated" : "research")}</td>
+        <td class="col-status">${statusBadge(lifecycleLabel)}</td>
         <td class="col-status" title="${escapeHtml(elig.detail)}">${statusBadge(elig.label)}</td>
         <td class="col-pct">${pct(current, 1)}</td>
         <td><div class="weight-adj"><button type="button" data-weight-delta="${strategy.strategy_id}" data-delta="-0.005" ${disabled ? "disabled" : ""}>−</button><input class="weight-input" data-weight-id="${strategy.strategy_id}" type="number" min="0" max="${(maxWeight * 100).toFixed(1)}" step="0.1" value="${(target * 100).toFixed(1)}" ${disabled ? "disabled" : ""}>%<button type="button" data-weight-delta="${strategy.strategy_id}" data-delta="0.005" ${disabled || (reduceOnly && target >= current - 1e-6) ? "disabled" : ""}>+</button></div></td>
@@ -2495,8 +2576,10 @@ function renderAllocationEditor(artifact) {
     }).join("");
   table.querySelectorAll("[data-weight-id]").forEach((input) => input.addEventListener("input", () => {
     const strategy = artifact.strategies.find((s) => s.strategy_id === input.dataset.weightId);
+    const rules = strategy ? allocationEditorRules(strategy) : { maxWeight: 1, reduceOnly: false };
     let val = Math.max(0, Number(input.value || 0) / 100);
-    if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) val = Math.min(val, strategy.current_weight);
+    if (rules.reduceOnly && strategy) val = Math.min(val, strategy.current_weight || 0);
+    val = Math.min(val, rules.maxWeight || 1);
     proposalSession.weights[input.dataset.weightId] = val;
     proposalSession.source = "custom";
     invalidateProposalSimulation();
@@ -2507,9 +2590,10 @@ function renderAllocationEditor(artifact) {
     const id = button.dataset.weightDelta;
     const delta = Number(button.dataset.delta || 0);
     const strategy = artifact.strategies.find((s) => s.strategy_id === id);
+    const rules = strategy ? allocationEditorRules(strategy) : { maxWeight: 1, reduceOnly: false };
     let next = Math.max(0, (proposalSession.weights[id] || 0) + delta);
-    if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) next = Math.min(next, strategy.current_weight);
-    proposalSession.weights[id] = Math.min(next, 0.25);
+    if (rules.reduceOnly && strategy) next = Math.min(next, strategy.current_weight || 0);
+    proposalSession.weights[id] = Math.min(next, rules.maxWeight || 0.25);
     proposalSession.source = "custom";
     invalidateProposalSimulation();
     renderAllocationEditor(artifact);
@@ -3276,14 +3360,15 @@ function buildDailyMemoSections(artifact) {
   const winners = allocated.filter((s) => (s.daily_pnl || 0) > 0).sort((a, b) => b.daily_pnl - a.daily_pnl);
   const losers = allocated.filter((s) => (s.daily_pnl || 0) < 0).sort((a, b) => a.daily_pnl - b.daily_pnl);
   const issues = groupedCurrentPortfolioIssues(artifact).slice(0, 5);
-  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  const governedWeights = governedProposalSession.weights;
+  const proposal = deriveProposalStatus(artifact, governedProposalSession.simulation, governedWeights);
   const lastDecision = latestHumanDecision();
   const regimeNote = (artifact.market_monitor || []).slice(0, 3).map((row) => `${row.ticker} ${pct(row.daily_return || 0, 2)}`).join("; ");
   const allocationConclusion = proposal.status === "No rebalance proposed"
     ? "No rebalance proposed. Current allocation remains under monitoring."
     : proposal.status === "Simulation required"
       ? "Weights differ from current allocation. Simulation required before human review."
-      : `${proposal.status}. ${proposal.detail}${proposalSession.simulation ? ` Estimated transaction cost ${money(proposalSession.simulation.estimatedCost || 0)}.` : ""}`;
+      : `${proposal.status}. ${proposal.detail}${governedProposalSession.simulation ? ` Estimated transaction cost ${money(governedProposalSession.simulation.estimatedCost || 0)}.` : ""}`;
   return [
     ["Executive risk conclusion", `${proposal.status}. ${proposal.detail}`],
     ["Portfolio performance", `Current Model NAV ${money(est.nav)}; daily PnL ${money(est.dailyPnl)}; operating cumulative PnL ${money(est.cumPnl)}.`],
@@ -3345,9 +3430,22 @@ function installOperationalControls(artifact) {
     await runSimulation(artifact);
   });
   document.getElementById("resetWeights").addEventListener("click", () => {
-    initProposalSession(artifact);
+    if (isSandboxAllocationMode()) {
+      sandboxProposalSession.weights = Object.fromEntries(
+        (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.current_weight || 0]),
+      );
+      sandboxProposalSession.simulation = null;
+      sandboxProposalSession.source = "current";
+    } else {
+      initProposalSession(artifact);
+    }
+    syncProposalSessionPointer();
     refreshProposalStatusViews(artifact);
   });
+  document.getElementById("allocationModeSelect")?.addEventListener("change", (event) => {
+    setAllocationMode(event.target.value, artifact);
+  });
+  renderAllocationModeNotice(artifact);
   document.getElementById("simulateWeights").addEventListener("click", () => runSimulation(artifact));
   const rebalanceJump = document.getElementById("openRebalanceTab");
   if (rebalanceJump) rebalanceJump.addEventListener("click", () => setActiveTab("Allocation & Rebalance"));

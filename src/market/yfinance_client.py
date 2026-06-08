@@ -22,6 +22,13 @@ def load_market_universe(path: str | Path = DEFAULT_UNIVERSE_PATH) -> list[dict[
     return list(payload["tickers"])
 
 
+def _frame_date_series(frame: pd.DataFrame) -> pd.Series:
+    for column in ("Date", "Datetime", "index"):
+        if column in frame.columns:
+            return pd.to_datetime(frame[column])
+    return pd.to_datetime(frame.index)
+
+
 def fetch_yfinance_prices(
     universe_path: str | Path = DEFAULT_UNIVERSE_PATH,
     years: int | None = None,
@@ -55,13 +62,14 @@ def fetch_yfinance_prices(
         else:
             frame = data.copy()
         frame = frame.reset_index()
-        for _, row in frame.iterrows():
+        dates = _frame_date_series(frame)
+        for row_idx, row in frame.iterrows():
             close = row.get("Close")
             if pd.isna(close):
                 continue
             rows.append(
                 {
-                    "date": pd.to_datetime(row["Date"]).date().isoformat(),
+                    "date": dates.iloc[row_idx].date().isoformat(),
                     "ticker": alias,
                     "source_ticker": ticker,
                     "name": meta.get("name", alias),

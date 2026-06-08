@@ -43,6 +43,15 @@ FACTOR_LOADINGS: dict[str, dict[str, float]] = {
     "IVW": {"equity_beta": 1.05, "growth_style": 0.90},
     "XLF": {"equity_beta": 1.05, "sector_financials": 0.80},
     "XLI": {"equity_beta": 1.00, "sector_industrials": 0.80},
+    "XLE": {"equity_beta": 1.05, "sector_energy": 0.85},
+    "XLK": {"equity_beta": 1.10, "sector_technology": 0.85},
+    "XLV": {"equity_beta": 0.90, "sector_healthcare": 0.80},
+    "XLY": {"equity_beta": 1.05, "sector_consumer_discretionary": 0.80},
+    "XLP": {"equity_beta": 0.75, "sector_consumer_staples": 0.75},
+    "XLU": {"equity_beta": 0.55, "sector_utilities": 0.70, "defensive_style": 0.40},
+    "XLB": {"equity_beta": 1.00, "sector_materials": 0.80},
+    "XLRE": {"equity_beta": 0.85, "sector_real_estate": 0.85},
+    "XLC": {"equity_beta": 1.00, "sector_communication": 0.80},
     "SHY": {"rates_duration": 0.20},
     "IEF": {"rates_duration": 0.65},
     "TLT": {"rates_duration": 1.20},
@@ -78,6 +87,9 @@ class StrategyPrototype:
     signal_summary: str
     failure_modes: list[str]
     builder: Callable[[pd.DataFrame], pd.DataFrame]
+    archived: bool = False
+    expansion_only: bool = False
+    auto_eligible: bool = True
 
 
 def load_price_returns(price_path: str | Path = "data/processed/market_price_history.csv") -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -300,6 +312,8 @@ def strategy_prototypes() -> list[StrategyPrototype]:
             signal_summary="Mean-revert short-horizon relative performance among SPY, IVV, and VOO with dollar-neutral ETF spread.",
             failure_modes=["edge consumed by costs", "execution timing mismatch", "intraday data required", "tracking spread too small"],
             builder=weights_index_arbitrage_proxy,
+            archived=True,
+            auto_eligible=False,
         ),
         StrategyPrototype(
             strategy_id="CAND_EVENT_DRIVEN_SECTOR_PROXY",
@@ -640,13 +654,22 @@ def weights_event_driven_sector_proxy(returns: pd.DataFrame) -> pd.DataFrame:
     return _rebalance_only(weights, every=5)
 
 
-def run_strategy_backtest(strategy: StrategyPrototype, returns: pd.DataFrame) -> dict:
+def run_strategy_backtest(
+    strategy: StrategyPrototype,
+    returns: pd.DataFrame,
+    *,
+    rebalance_days: int = 1,
+    buy_bps: float = BUY_BPS,
+    sell_bps: float = SELL_BPS,
+) -> dict:
     weights = strategy.builder(returns).reindex(index=returns.index, columns=returns.columns).fillna(0.0)
+    if rebalance_days > 1:
+        weights = _rebalance_only(weights, every=rebalance_days)
     # One-day execution lag: today's signal weights are applied to tomorrow's returns.
     shifted = weights.shift(1).fillna(0.0)
     gross = (shifted * returns).sum(axis=1, min_count=1)
     turnover = shifted.diff().abs().sum(axis=1).fillna(shifted.abs().sum(axis=1))
-    cost = turnover * (BUY_BPS + SELL_BPS) / 2 / 10_000
+    cost = turnover * (buy_bps + sell_bps) / 2 / 10_000
     net = gross - cost
     active_index = _active_strategy_index(shifted)
     if active_index.empty:
@@ -686,15 +709,31 @@ def run_strategy_backtest(strategy: StrategyPrototype, returns: pd.DataFrame) ->
             "annualized_cost_drag": float(cost.mean() * TRADING_DAYS),
         },
         "action": _action_recommendation(net, turnover),
+        "archived": strategy.archived,
+        "expansion_only": strategy.expansion_only,
+        "auto_eligible": strategy.auto_eligible,
+        "rebalance_days": rebalance_days,
+        "cost_assumption_bps": {"buy_bps": buy_bps, "sell_bps": sell_bps},
     }
 
 
-def run_walk_forward(strategy: StrategyPrototype, returns: pd.DataFrame, train_days: int = 504, test_days: int = 126) -> dict:
+def run_walk_forward(
+    strategy: StrategyPrototype,
+    returns: pd.DataFrame,
+    train_days: int = 504,
+    test_days: int = 126,
+    *,
+    rebalance_days: int = 1,
+    buy_bps: float = BUY_BPS,
+    sell_bps: float = SELL_BPS,
+) -> dict:
     weights = strategy.builder(returns).reindex(index=returns.index, columns=returns.columns).fillna(0.0)
+    if rebalance_days > 1:
+        weights = _rebalance_only(weights, every=rebalance_days)
     shifted = weights.shift(1).fillna(0.0)
     gross = (shifted * returns).sum(axis=1, min_count=1)
     turnover = shifted.diff().abs().sum(axis=1).fillna(shifted.abs().sum(axis=1))
-    net = gross - turnover * (BUY_BPS + SELL_BPS) / 2 / 10_000
+    net = gross - turnover * (buy_bps + sell_bps) / 2 / 10_000
     active_index = _active_strategy_index(shifted)
     if active_index.empty:
         return {

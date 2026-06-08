@@ -141,9 +141,31 @@ def main() -> int:
             page.click('button[data-tab="Daily Risk Report / Decision Log"]')
             page.wait_for_timeout(700)
             system_state = page.evaluate(SEMANTICS_JS)
-            report["checks"]["system_proposal_activates_workflow"] = (
-                "no rebalance proposed" not in system_state["approval"]
-                and "no active rebalance proposal" not in system_state["governance"]
+            report["checks"]["governed_system_proposal_preserves_no_rebalance"] = (
+                "no rebalance proposed" in system_state["approval"]
+                and "no active rebalance proposal" in system_state["governance"]
+            )
+
+            page.click('button[data-tab="Allocation & Rebalance"]')
+            page.wait_for_timeout(400)
+            page.select_option("#allocationModeSelect", "research_sandbox")
+            page.wait_for_timeout(500)
+            exp_input = page.locator('input[data-weight-id="EXP_EQUITY_BOND_CORR_REGIME"]')
+            exp_input.fill("5.0")
+            exp_input.dispatch_event("input")
+            page.wait_for_timeout(400)
+            page.click("#simulateWeights")
+            page.wait_for_timeout(2500)
+            sandbox_state = page.evaluate(SEMANTICS_JS)
+            report["checks"]["sandbox_hypothetical_proposal_activates_workflow"] = (
+                "no rebalance proposed" not in sandbox_state["approval"]
+                and "no active rebalance proposal" not in sandbox_state["governance"]
+            )
+            page.click('button[data-tab="Daily Risk Report / Decision Log"]')
+            page.wait_for_timeout(700)
+            sandbox_report_state = page.evaluate(SEMANTICS_JS)
+            report["checks"]["sandbox_does_not_overwrite_governed_daily_report"] = (
+                "no rebalance proposed" in sandbox_report_state["command"]
             )
 
             page.click('button[data-tab="Allocation & Rebalance"]')
