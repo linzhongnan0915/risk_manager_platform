@@ -3,17 +3,22 @@
 
 intraday_refresh:
   enabled: true
-  default_interval_minutes: 30
+  default_interval_minutes: 10
   allowed_intervals_minutes:
+    - 5
     - 10
     - 30
   provider: yfinance
   bar_interval_by_refresh:
+    5: 5m
     10: 5m
     30: 15m
   timezone: America/New_York
   regular_session_only: true
-  stale_after_minutes: 45
+  stale_after_minutes:
+    5: 10
+    10: 20
+    30: 45
   request_timeout_seconds: 20
   retry_attempts: 3
   backoff_seconds:

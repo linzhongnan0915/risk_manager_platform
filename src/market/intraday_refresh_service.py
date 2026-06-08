@@ -9,7 +9,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from src.market.intraday_config import bar_interval_for_refresh, load_intraday_config
+from src.market.intraday_config import (
+    bar_interval_for_refresh,
+    load_intraday_config,
+    resolve_refresh_interval_minutes,
+    stale_after_minutes_for,
+)
 from src.market.intraday_provider import fetch_intraday_bars
 from src.market.intraday_revaluation import revalue_mark_sensitive_outputs
 from src.market.market_hours import (
@@ -70,7 +75,12 @@ def build_refresh_status_payload(
     interval_minutes: int | None = None,
 ) -> dict[str, Any]:
     cfg = config or load_intraday_config()
-    interval = int(interval_minutes or cfg.get("default_interval_minutes") or 30)
+    status = read_refresh_status(cfg)
+    interval = resolve_refresh_interval_minutes(
+        cfg,
+        interval_minutes=interval_minutes,
+        selected_interval_minutes=status.get("selected_interval_minutes"),
+    )
     session = market_session_status(
         timezone=cfg["timezone"],
         holidays=cfg.get("market_holidays") or [],
@@ -86,14 +96,21 @@ def build_refresh_status_payload(
     pointer = read_latest_pointer(cfg)
     snapshot = read_latest_snapshot(cfg)
     latest_observation = None
+    latest_completed_bar = None
     last_success = None
     snapshot_id = pointer.get("snapshot_id") if pointer else None
     if snapshot:
         latest_observation = snapshot.get("latest_observation_ts_et")
+        latest_completed_bar = (
+            (snapshot.get("marks") or {}).get("data_quality", {}).get("latest_completed_bar_ts_et")
+            or snapshot.get("latest_completed_bar_ts_et")
+            or latest_observation
+        )
         last_success = snapshot.get("refresh_completed_at")
         freshness = (snapshot.get("marks") or {}).get("data_quality", {}).get("freshness")
     else:
         freshness = None
+        last_success = status.get("last_success_at")
     in_progress = bool(status.get("in_progress"))
     state = status.get("state") or "idle"
     if in_progress:
@@ -114,11 +131,14 @@ def build_refresh_status_payload(
         "is_trading_day": session.is_trading_day,
         "timezone": cfg["timezone"],
         "refresh_cadence_minutes": interval,
+        "selected_cadence_minutes": interval,
         "bar_interval": bar_interval_for_refresh(cfg, interval),
         "next_scheduled_refresh_at": next_at.isoformat(),
         "last_successful_refresh_at": last_success,
         "latest_market_observation_at": latest_observation,
+        "latest_completed_market_bar_at": latest_completed_bar,
         "data_freshness": freshness if snapshot else status.get("data_freshness"),
+        "scheduler_state": state,
         "canonical_data_state": canonical_data_state,
         "snapshot_id": snapshot_id,
         "previous_valid_snapshot_id": snapshot.get("previous_valid_snapshot_id") if snapshot else None,
@@ -137,6 +157,20 @@ def build_refresh_status_payload(
     }
 
 
+def set_refresh_cadence(
+    interval_minutes: int,
+    *,
+    config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Persist refresh cadence without triggering a market-data fetch."""
+    cfg = config or load_intraday_config()
+    interval = resolve_refresh_interval_minutes(cfg, interval_minutes=interval_minutes)
+    status = read_refresh_status(cfg)
+    status["selected_interval_minutes"] = interval
+    write_refresh_status(status, cfg)
+    return build_refresh_status_payload(cfg, interval_minutes=interval)
+
+
 def run_intraday_refresh(
     *,
     interval_minutes: int | None = None,
@@ -147,9 +181,12 @@ def run_intraday_refresh(
 ) -> dict[str, Any]:
     """Execute intraday proxy refresh. Manual and scheduled jobs share this path."""
     cfg = config or load_intraday_config()
-    interval = int(interval_minutes or cfg.get("default_interval_minutes") or 30)
-    if interval not in cfg.get("allowed_intervals_minutes", [10, 30]):
-        interval = int(cfg.get("default_interval_minutes") or 30)
+    status = read_refresh_status(cfg)
+    interval = resolve_refresh_interval_minutes(
+        cfg,
+        interval_minutes=interval_minutes,
+        selected_interval_minutes=status.get("selected_interval_minutes"),
+    )
 
     session = market_session_status(
         timezone=cfg["timezone"],
@@ -195,6 +232,7 @@ def run_intraday_refresh(
                 "in_progress": True,
                 "started_at": started.isoformat(),
                 "interval_minutes": interval,
+                "selected_interval_minutes": interval,
                 "trigger": "manual" if force else "scheduled",
                 "last_error": None,
             },
@@ -215,6 +253,8 @@ def run_intraday_refresh(
                 retry_attempts=int(cfg.get("retry_attempts") or 3),
                 backoff_seconds=list(cfg.get("backoff_seconds") or [5, 15, 30]),
                 target_timezone=str(cfg.get("timezone") or "America/New_York"),
+                stale_after_minutes=stale_after_minutes_for(cfg, interval),
+                refresh_interval_minutes=interval,
             )
 
             requested = int(fetch_result.get("ticker_count_requested") or len(tickers))
@@ -238,6 +278,8 @@ def run_intraday_refresh(
                 "refresh_started_at": started.isoformat(),
                 "refresh_completed_at": completed.isoformat(),
                 "latest_observation_ts_et": fetch_result.get("latest_observation_ts_et"),
+                "latest_completed_bar_ts_et": fetch_result.get("latest_completed_bar_ts_et"),
+                "incomplete_current_bars": fetch_result.get("incomplete_current_bars") or [],
                 "market_session_date": session.session_date,
                 "market_session_status": session.status,
                 "ticker_count_requested": requested,
@@ -260,6 +302,7 @@ def run_intraday_refresh(
                     "in_progress": False,
                     "last_success_at": completed.isoformat(),
                     "last_snapshot_id": snapshot_id,
+                    "selected_interval_minutes": interval,
                     "data_freshness": marks.get("data_quality", {}).get("freshness"),
                     "last_error": None,
                     "retry_count": snapshot["retry_count"],

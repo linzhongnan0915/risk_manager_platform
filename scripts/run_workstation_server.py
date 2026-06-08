@@ -22,13 +22,14 @@ import pandas as pd
 
 from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
-from src.market.intraday_config import load_intraday_config
+from src.market.intraday_config import load_intraday_config, resolve_refresh_interval_minutes
 from src.market.intraday_refresh_service import (
     build_refresh_status_payload,
     read_latest_snapshot_payload,
     run_intraday_refresh,
+    set_refresh_cadence,
 )
-from src.market.live_refresh import build_live_overlay, write_live_overlay
+from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
 from src.risk.limits import load_risk_limits
 
@@ -241,6 +242,9 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_safe_error(exc, context="snapshot-latest")
             return
+        if parsed.path in {"/api/refresh/cadence", "/api/refresh/cadence/"}:
+            self.send_error(405, "Method not allowed")
+            return
         self._serve_static(parsed.path)
 
     def do_POST(self) -> None:
@@ -277,6 +281,21 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(result, status=status)
             except Exception as exc:
                 self._send_safe_error(exc, context="refresh")
+            return
+        if parsed.path in {"/api/refresh/cadence", "/api/refresh/cadence/"}:
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(length) if length else b"{}"
+                body = json.loads(raw.decode("utf-8") or "{}")
+                interval = body.get("interval_minutes")
+                if interval is None:
+                    self._send_json({"ok": False, "error": "interval_minutes required"}, status=400)
+                    return
+                self._send_json(set_refresh_cadence(int(interval), config=self._intraday_config()))
+            except ValueError as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="refresh-cadence")
             return
         if parsed.path not in {"/api/simulate", "/api/simulate/"}:
             self.send_error(404, "Not found")
@@ -348,10 +367,15 @@ def _startup_refresh() -> None:
 
 
 def _intraday_scheduler_loop(root: Path) -> None:
-    cfg = load_intraday_config(root / "data/config/intraday_refresh.yaml")
-    interval = int(cfg.get("default_interval_minutes") or 30)
     while True:
+        interval = 10
         try:
+            cfg = load_intraday_config(root / "data/config/intraday_refresh.yaml")
+            status = read_refresh_status(cfg)
+            interval = resolve_refresh_interval_minutes(
+                cfg,
+                selected_interval_minutes=status.get("selected_interval_minutes"),
+            )
             if cfg.get("enabled", True):
                 run_intraday_refresh(
                     interval_minutes=interval,
@@ -361,7 +385,7 @@ def _intraday_scheduler_loop(root: Path) -> None:
                 )
         except Exception as exc:
             logger.exception("Intraday scheduler error: %s", exc)
-        time.sleep(interval * 60)
+        time.sleep(max(interval, 1) * 60)
 
 
 def main(

@@ -321,17 +321,20 @@ function renderIntradayRefreshStrip(artifact) {
   const status = artifact.intraday_refresh_status || {};
   const meta = artifact.build_metadata || {};
   const marketAsOf = meta.market_as_of || artifact.as_of_date;
-  const cadence = status.refresh_cadence_minutes || 30;
+  const cadence = status.selected_cadence_minutes || status.refresh_cadence_minutes || selectedIntradayCadence || 10;
   const lastRefresh = status.last_successful_refresh_at || status.refresh_completed_at || artifact.live_refreshed_at;
-  const latestObs = status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
+  const latestBar = status.latest_completed_market_bar_at || status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
   const nextRefresh = status.next_scheduled_refresh_at;
+  const schedulerState = status.scheduler_state || status.refresh_state || monitoring.schedulerLabel || "idle";
+  const freshness = status.data_freshness || status.canonical_data_state || monitoring.stripDataState;
   strip.innerHTML = `
     <span>Market <strong>${monitoring.headerMarket}</strong></span>
     <span>Monitoring <strong class="${monitoring.tone || ""}">${monitoring.stripMonitoring}</strong></span>
-    <span>Data state <strong class="${monitoring.tone || ""}">${monitoring.stripDataState}</strong></span>
     <span>Cadence <strong>${cadence}m</strong></span>
+    <span>Scheduler <strong>${escapeHtml(String(schedulerState))}</strong></span>
+    <span>Freshness <strong class="${monitoring.tone || ""}">${escapeHtml(String(freshness))}</strong></span>
     <span>Last refresh <strong>${formatTimestamp(lastRefresh)}</strong></span>
-    <span>Latest obs. <strong>${formatTimestamp(latestObs)}</strong></span>
+    <span>Latest bar <strong>${formatTimestamp(latestBar)}</strong></span>
     <span>Next refresh <strong>${formatTimestamp(nextRefresh)}</strong></span>
     <span class="muted-copy">${monitoring.detail} · Snapshot ${artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact"} · Proxy as-of ${marketAsOf}</span>`;
 }
@@ -372,9 +375,13 @@ async function refreshLiveDataFromServer(artifact) {
     button.disabled = true;
     button.textContent = "Refreshing proxy data…";
   }
-  renderIntradayRefreshStrip({ ...artifact, intraday_refresh_status: { ...(artifact.intraday_refresh_status || {}), refresh_state: "refreshing", in_progress: true } });
+  renderIntradayRefreshStrip({ ...artifact, intraday_refresh_status: { ...(artifact.intraday_refresh_status || {}), refresh_state: "refreshing", in_progress: true, scheduler_state: "refreshing" } });
   try {
-    const response = await fetch("/api/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const response = await fetch("/api/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ interval_minutes: selectedIntradayCadence }),
+    });
     const payload = await response.json();
     if (!response.ok || payload.ok === false) throw new Error(payload.error || "refresh failed");
     mergeLiveOverlay(artifact, payload);
@@ -402,14 +409,43 @@ function applyIntradayUiRefresh(artifact) {
 
 let intradayPollTimer = null;
 let lastSeenSnapshotId = null;
+let selectedIntradayCadence = 10;
+
+function syncCadenceSelector(minutes) {
+  selectedIntradayCadence = Number(minutes) || 10;
+  const select = document.getElementById("intradayCadenceSelect");
+  if (select && String(select.value) !== String(selectedIntradayCadence)) {
+    select.value = String(selectedIntradayCadence);
+  }
+}
+
+async function setIntradayCadence(minutes, artifact) {
+  syncCadenceSelector(minutes);
+  try {
+    const response = await fetch("/api/refresh/cadence", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ interval_minutes: selectedIntradayCadence }),
+    });
+    const payload = await response.json();
+    if (!response.ok || payload.ok === false) throw new Error(payload.error || "cadence update failed");
+    artifact.intraday_refresh_status = { ...(artifact.intraday_refresh_status || {}), ...payload };
+    renderIntradayRefreshStrip(artifact);
+    renderTopHeader(artifact);
+  } catch (error) {
+    const strip = document.getElementById("intradayRefreshStrip");
+    if (strip) strip.insertAdjacentHTML("beforeend", `<span class="negative">Cadence error: ${escapeHtml(error.message)}</span>`);
+  }
+}
 
 async function pollIntradayRefreshStatus(artifact) {
   try {
-    const response = await fetch("/api/refresh/status", { cache: "no-store" });
+    const response = await fetch(`/api/refresh/status?interval_minutes=${selectedIntradayCadence}`, { cache: "no-store" });
     if (!response.ok) throw new Error("status unavailable");
     const status = await response.json();
     intradayMonitoringOffline = false;
     setWorkstationMonitoring(true, false);
+    syncCadenceSelector(status.selected_cadence_minutes || status.refresh_cadence_minutes || selectedIntradayCadence);
     artifact.intraday_refresh_status = { ...(artifact.intraday_refresh_status || {}), ...status, monitoring_offline: false, ok: true };
     renderIntradayRefreshStrip(artifact);
     renderTopHeader(artifact);
@@ -441,12 +477,17 @@ async function pollIntradayRefreshStatus(artifact) {
 function installIntradayPolling(artifact) {
   if (intradayPollTimer) clearInterval(intradayPollTimer);
   lastSeenSnapshotId = artifact.intraday_snapshot_id || null;
+  syncCadenceSelector(artifact.intraday_refresh_status?.selected_cadence_minutes || artifact.intraday_refresh_status?.refresh_cadence_minutes || 10);
   pollIntradayRefreshStatus(artifact);
-  intradayPollTimer = setInterval(() => pollIntradayRefreshStatus(artifact), 60_000);
+  intradayPollTimer = setInterval(() => pollIntradayRefreshStatus(artifact), 45_000);
 }
 
 function installLiveControls(artifact) {
   const button = document.getElementById("refreshLiveData");
+  const cadenceSelect = document.getElementById("intradayCadenceSelect");
+  if (cadenceSelect) {
+    cadenceSelect.addEventListener("change", () => setIntradayCadence(cadenceSelect.value, artifact));
+  }
   if (!button) return;
   button.addEventListener("click", () => refreshLiveDataFromServer(artifact));
 }

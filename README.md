@@ -22,19 +22,19 @@ python scripts/verify_dashboard_browser.py --no-screenshots
 python scripts/verify_drawer_charts.py
 ```
 
-## Render Deployment
+## Render Deployment (manual Free Web Service)
 
-This repo ships as **one public Render Web Service** using the committed deployment seed artifact.
+Deploy as **one Render Web Service** (Free tier) from the GitHub repo. Blueprint / `render.yaml` is optional and **not required**.
 
 | Item | Value |
 |------|-------|
+| Runtime | Python 3.12 |
 | Build command | `pip install -r requirements.txt && python scripts/validate_deployment_artifact.py` |
 | Start command | `python scripts/run_workstation_server.py --host 0.0.0.0 --port $PORT` |
-| Health check | `GET /api/health` |
-| Runtime | Python 3.12 (`render.yaml`) |
-| Bind address | `0.0.0.0:$PORT` via `HOST` / `PORT` env and CLI |
+| Health check path | `/api/health` |
+| Bind address | `0.0.0.0:$PORT` (CLI); server also reads `HOST` and `PORT` env when flags omitted |
 
-Render configuration lives in `render.yaml`. The build **does not regenerate** the dashboard artifact. It validates the committed seed at `output/dashboard_artifact.json`.
+The build **does not regenerate** the dashboard artifact. It validates the committed seed at `output/dashboard_artifact.json`.
 
 ### Baseline artifact policy
 

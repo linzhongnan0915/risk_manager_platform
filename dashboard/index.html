@@ -19,6 +19,12 @@
         </div>
         <div class="topbar-meta" id="topbarMeta"></div>
         <div class="topbar-actions">
+          <label class="cadence-select-label" for="intradayCadenceSelect" title="Scheduled refresh cadence">Cadence</label>
+          <select id="intradayCadenceSelect" class="cadence-select compact" title="Scheduled refresh cadence" aria-label="Refresh cadence">
+            <option value="5">5 min</option>
+            <option value="10" selected>10 min</option>
+            <option value="30">30 min</option>
+          </select>
           <button type="button" class="ghost-button compact" id="toggleRiskDrawer" title="Toggle risk status drawer">Risk Status</button>
           <button type="button" class="ghost-button compact" id="refreshLiveData" title="Manual intraday proxy refresh (same pipeline as scheduler)">Refresh Now</button>
         </div>

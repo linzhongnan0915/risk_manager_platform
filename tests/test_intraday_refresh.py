@@ -12,13 +12,19 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import pytest
 
-from src.market.intraday_config import bar_interval_for_refresh, load_intraday_config
-from src.market.intraday_provider import _normalize_intraday_panel
+from src.market.intraday_config import (
+    bar_interval_for_refresh,
+    load_intraday_config,
+    resolve_refresh_interval_minutes,
+    stale_after_minutes_for,
+)
+from src.market.intraday_provider import _normalize_intraday_panel, partition_completed_bars
 from src.market.intraday_refresh_service import (
     build_refresh_status_payload,
     collect_refresh_tickers,
     refresh_lock,
     run_intraday_refresh,
+    set_refresh_cadence,
 )
 from src.market.market_hours import market_session_status, should_run_scheduled_refresh
 from src.market.snapshot_store import publish_snapshot, read_latest_pointer, read_latest_snapshot
@@ -107,6 +113,86 @@ def _mock_fetch_partial(tickers, **kwargs):
 
 def _mock_fetch_fail(tickers, **kwargs):
     raise RuntimeError("provider unavailable")
+
+
+def test_bar_interval_mapping_for_five_ten_and_thirty_minutes(intraday_cfg):
+    assert bar_interval_for_refresh(intraday_cfg, 5) == "5m"
+    assert bar_interval_for_refresh(intraday_cfg, 10) == "5m"
+    assert bar_interval_for_refresh(intraday_cfg, 30) == "15m"
+    assert "10m" not in set((intraday_cfg.get("bar_interval_by_refresh") or {}).values())
+
+
+def test_default_refresh_cadence_is_ten_minutes(intraday_cfg):
+    assert intraday_cfg["default_interval_minutes"] == 10
+    assert intraday_cfg["allowed_intervals_minutes"] == [5, 10, 30]
+    assert resolve_refresh_interval_minutes(intraday_cfg) == 10
+    assert stale_after_minutes_for(intraday_cfg, 5) == 10
+    assert stale_after_minutes_for(intraday_cfg, 10) == 20
+    assert stale_after_minutes_for(intraday_cfg, 30) == 45
+
+
+def test_optional_five_minute_refresh_mode(intraday_cfg, minimal_artifact, tmp_path: Path):
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+    result = run_intraday_refresh(
+        force=True,
+        interval_minutes=5,
+        artifact_path=artifact_path,
+        config=intraday_cfg,
+        fetch_fn=_mock_fetch_success,
+    )
+    assert result["ok"] is True
+    assert result["refresh_cadence_minutes"] == 5
+    snapshot = read_latest_snapshot(intraday_cfg)
+    assert snapshot["requested_bar_interval"] == "5m"
+    assert snapshot["refresh_interval_minutes"] == 5
+
+
+def test_completed_bar_selection_ignores_incomplete_current_bar():
+    tz = ZoneInfo("America/New_York")
+    now = datetime(2026, 6, 5, 10, 7, tzinfo=tz)
+    rows = [
+        {
+            "source_ticker": "SPY",
+            "observation_ts_et": datetime(2026, 6, 5, 10, 0, tzinfo=tz).isoformat(),
+            "open": 100.0,
+            "close": 100.5,
+        },
+        {
+            "source_ticker": "SPY",
+            "observation_ts_et": datetime(2026, 6, 5, 10, 5, tzinfo=tz).isoformat(),
+            "open": 100.5,
+            "close": 101.0,
+        },
+    ]
+    completed, incomplete, latest_completed = partition_completed_bars(
+        rows,
+        bar_interval="5m",
+        now_et=now,
+        incomplete_bar_label="incomplete_current_bar",
+    )
+    assert len(completed) == 1
+    assert completed[0]["bar_completeness"] == "completed"
+    assert "SPY" in incomplete
+    assert incomplete["SPY"]["bar_completeness"] == "incomplete_current_bar"
+    assert latest_completed == completed[0]["observation_ts_et"]
+
+
+def test_set_refresh_cadence_persists_without_market_fetch(intraday_cfg):
+    payload = set_refresh_cadence(5, config=intraday_cfg)
+    assert payload["selected_cadence_minutes"] == 5
+    assert payload["bar_interval"] == "5m"
+    status_payload = build_refresh_status_payload(intraday_cfg)
+    assert status_payload["refresh_cadence_minutes"] == 5
+
+
+def test_build_refresh_status_does_not_fetch_market_data(intraday_cfg, monkeypatch):
+    def fail_fetch(*args, **kwargs):
+        raise AssertionError("status poll must not fetch market data")
+
+    monkeypatch.setattr("src.market.intraday_refresh_service.fetch_intraday_bars", fail_fetch)
+    payload = build_refresh_status_payload(intraday_cfg)
+    assert payload["ok"] is True
 
 
 def test_bar_interval_mapping_30_and_10_minutes(intraday_cfg):
@@ -314,8 +400,10 @@ def test_manual_and_scheduled_share_pipeline(intraday_cfg, minimal_artifact, tmp
 def test_build_refresh_status_payload_shape(intraday_cfg):
     payload = build_refresh_status_payload(intraday_cfg)
     assert payload["ok"] is True
-    assert payload["refresh_cadence_minutes"] == 30
-    assert payload["bar_interval"] == "15m"
+    assert payload["refresh_cadence_minutes"] == 10
+    assert payload["bar_interval"] == "5m"
+    assert payload["scheduler_state"]
+    assert payload["latest_completed_market_bar_at"] is None or isinstance(payload["latest_completed_market_bar_at"], str)
     assert "disclosure" in payload
 
 

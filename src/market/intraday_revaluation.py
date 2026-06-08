@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.market.api_client import summarize_market_risk
-from src.market.intraday_provider import latest_bar_by_ticker
+from src.market.intraday_provider import latest_completed_bar_by_ticker
 from src.market.yfinance_client import interpret_market_move
 from src.news.news_analyzer import analyze_news_risk
 from src.news.live_news import build_live_news_snapshot
@@ -70,7 +70,7 @@ def build_market_monitor_from_intraday(
                 "risk_interpretation": interpret_market_move(alias, str(meta.get("bucket", "")), daily_return),
                 "observation_ts_et": lookup.get("observation_ts_et"),
                 "bar_interval": lookup.get("bar_interval"),
-                "bar_completeness": incomplete_bar_label,
+                "bar_completeness": lookup.get("bar_completeness") or incomplete_bar_label,
                 "data_source": "yfinance_intraday_proxy",
             }
         )
@@ -83,7 +83,7 @@ def revalue_mark_sensitive_outputs(
     universe: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Recompute mark-sensitive overlay fields without changing governance state."""
-    latest_bars = latest_bar_by_ticker(fetch_result.get("rows") or [])
+    latest_bars = latest_completed_bar_by_ticker(fetch_result.get("rows") or [])
     capital = float(artifact.get("initial_capital") or 1_000_000)
     operating_cum = _operating_cumulative_return(artifact)
     baseline_nav = capital * (1.0 + operating_cum)
@@ -164,6 +164,8 @@ def revalue_mark_sensitive_outputs(
             "provider": fetch_result.get("provider"),
             "bar_interval": fetch_result.get("bar_interval"),
             "latest_observation_ts_et": fetch_result.get("latest_observation_ts_et"),
+            "latest_completed_bar_ts_et": fetch_result.get("latest_completed_bar_ts_et"),
+            "incomplete_current_bars": fetch_result.get("incomplete_current_bars") or [],
             "disclosure": "Estimated model marks from yfinance intraday research proxies; not live portfolio fills.",
         },
         "evaluation_metadata": {

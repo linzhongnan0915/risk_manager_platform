@@ -2472,6 +2472,22 @@ body { font-size: 12px; }
 .drawer-body textarea::placeholder { color: var(--subtle); }
 .drawer-body label { display: block; margin-top: 8px; color: var(--muted); font-size: 10px; }
 .ghost-button.compact { min-height: 28px; padding: 4px 10px; font-size: 11px; }
+
+.cadence-select-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-right: -4px;
+}
+
+.cadence-select.compact {
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text);
+}
 @media (max-width: 1180px) {
   .v2-grid, .command-v2-grid, .allocation-v2-grid { grid-template-columns: 1fr; }
   .panel-span-4, .panel-span-6, .panel-span-8, .panel-span-12 { grid-column: span 1; }

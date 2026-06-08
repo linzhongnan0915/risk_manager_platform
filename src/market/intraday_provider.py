@@ -3,14 +3,62 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 import yfinance as yf
 
-from src.market.intraday_config import load_intraday_config
+from src.market.intraday_config import load_intraday_config, stale_after_minutes_for
+
+
+def bar_duration_minutes(bar_interval: str) -> int:
+    interval = str(bar_interval).strip().lower()
+    if interval.endswith("m"):
+        return int(interval[:-1])
+    if interval.endswith("h"):
+        return int(interval[:-1]) * 60
+    raise ValueError(f"unsupported bar interval: {bar_interval}")
+
+
+def is_bar_complete(observation_ts_et: datetime, bar_interval: str, now_et: datetime) -> bool:
+    duration = bar_duration_minutes(bar_interval)
+    bar_end = observation_ts_et + timedelta(minutes=duration)
+    return now_et >= bar_end
+
+
+def partition_completed_bars(
+    rows: list[dict[str, Any]],
+    *,
+    bar_interval: str,
+    now_et: datetime | None = None,
+    target_timezone: str = "America/New_York",
+    incomplete_bar_label: str = "incomplete_current_bar",
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]], str | None]:
+    """Split rows into completed bars and the latest incomplete bar per ticker."""
+    tz = ZoneInfo(target_timezone)
+    now = now_et or datetime.now(tz=ZoneInfo("UTC")).astimezone(tz)
+    completed: list[dict[str, Any]] = []
+    incomplete_latest: dict[str, dict[str, Any]] = {}
+    latest_completed_ts: str | None = None
+
+    for row in rows:
+        ts = datetime.fromisoformat(row["observation_ts_et"])
+        enriched = dict(row)
+        if is_bar_complete(ts, bar_interval, now):
+            enriched["bar_completeness"] = "completed"
+            completed.append(enriched)
+            if latest_completed_ts is None or enriched["observation_ts_et"] > latest_completed_ts:
+                latest_completed_ts = enriched["observation_ts_et"]
+        else:
+            enriched["bar_completeness"] = incomplete_bar_label
+            ticker = row["source_ticker"]
+            prior = incomplete_latest.get(ticker)
+            if prior is None or enriched["observation_ts_et"] > prior["observation_ts_et"]:
+                incomplete_latest[ticker] = enriched
+
+    return completed, incomplete_latest, latest_completed_ts
 
 
 def fetch_intraday_bars(
@@ -21,6 +69,8 @@ def fetch_intraday_bars(
     retry_attempts: int | None = None,
     backoff_seconds: list[int] | None = None,
     target_timezone: str = "America/New_York",
+    stale_after_minutes: int | None = None,
+    refresh_interval_minutes: int | None = None,
 ) -> dict[str, Any]:
     """Fetch intraday proxy bars for the given tickers.
 
@@ -59,26 +109,48 @@ def fetch_intraday_bars(
     if raw.empty:
         raise ValueError(str(last_error or "intraday fetch failed"))
 
+    incomplete_label = cfg.get("incomplete_bar_label") or "incomplete_current_bar"
+    stale_minutes = int(
+        stale_after_minutes
+        if stale_after_minutes is not None
+        else stale_after_minutes_for(cfg, refresh_interval_minutes)
+    )
+
     rows, missing, stale = _normalize_intraday_panel(
         raw,
         unique,
         bar_interval=bar_interval,
         target_timezone=target_timezone,
-        stale_after_minutes=int(cfg.get("stale_after_minutes") or 45),
+        stale_after_minutes=stale_minutes,
     )
-    latest_ts = max((row["observation_ts_et"] for row in rows), default=None)
+    tz = ZoneInfo(target_timezone)
+    now_et = datetime.now(tz=ZoneInfo("UTC")).astimezone(tz)
+    completed_rows, incomplete_latest, latest_completed_ts = partition_completed_bars(
+        rows,
+        bar_interval=bar_interval,
+        now_et=now_et,
+        target_timezone=target_timezone,
+        incomplete_bar_label=incomplete_label,
+    )
+    valuation_rows = completed_rows if completed_rows else rows
+    latest_ts = latest_completed_ts or max((row["observation_ts_et"] for row in valuation_rows), default=None)
     return {
         "provider": "yfinance",
         "bar_interval": bar_interval,
         "requested_tickers": unique,
-        "rows": rows,
+        "rows": valuation_rows,
+        "all_rows": rows,
+        "completed_rows": completed_rows,
+        "incomplete_current_bars": list(incomplete_latest.values()),
         "missing_tickers": missing,
         "stale_tickers": stale,
         "ticker_count_requested": len(unique),
-        "ticker_count_successful": len({row["source_ticker"] for row in rows}),
+        "ticker_count_successful": len({row["source_ticker"] for row in valuation_rows}),
         "latest_observation_ts_et": latest_ts,
+        "latest_completed_bar_ts_et": latest_completed_ts,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
-        "incomplete_bar_label": cfg.get("incomplete_bar_label") or "incomplete_current_bar",
+        "incomplete_bar_label": incomplete_label,
+        "used_completed_bars_only": bool(completed_rows),
     }
 
 
@@ -163,6 +235,12 @@ def latest_bar_by_ticker(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]
         if ticker not in latest or row["observation_ts_et"] > latest[ticker]["observation_ts_et"]:
             latest[ticker] = row
     return latest
+
+
+def latest_completed_bar_by_ticker(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    completed = [row for row in rows if row.get("bar_completeness") == "completed"]
+    source = completed if completed else rows
+    return latest_bar_by_ticker(source)
 
 
 def _float(value: Any) -> float | None:
