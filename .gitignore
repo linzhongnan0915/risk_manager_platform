@@ -11,11 +11,16 @@ data/processed/*
 
 reports/generated/
 
-output/dashboard_artifact.json
+output/browser_verification/
+output/contract_audit/
 output/literature_strategy_backtests.json
 output/replication_clone_snapshot.json
 output/live_overlay.json
 output/market_snapshot.json
+output/intraday_latest.json
+output/intraday_refresh_status.json
+output/intraday_refresh.lock
+output/intraday_snapshots/
 
 .env
 .env.*

@@ -1,0 +1,340 @@
+"""Scheduled and manual intraday proxy refresh pipeline."""
+
+from __future__ import annotations
+
+import json
+import os
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+
+from src.market.intraday_config import bar_interval_for_refresh, load_intraday_config
+from src.market.intraday_provider import fetch_intraday_bars
+from src.market.intraday_revaluation import revalue_mark_sensitive_outputs
+from src.market.market_hours import (
+    market_session_status,
+    next_scheduled_refresh,
+    should_run_scheduled_refresh,
+)
+from src.market.snapshot_store import (
+    new_snapshot_id,
+    publish_snapshot,
+    read_latest_pointer,
+    read_latest_snapshot,
+    read_refresh_status,
+    write_refresh_status,
+)
+from src.market.yfinance_client import load_market_universe
+
+DEFAULT_ARTIFACT_PATH = Path("output/dashboard_artifact.json")
+
+
+def load_dashboard_artifact(path: Path | str = DEFAULT_ARTIFACT_PATH) -> dict[str, Any]:
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def collect_refresh_tickers(artifact: dict[str, Any]) -> list[str]:
+    tickers = {row["ticker"] for row in load_market_universe()}
+    for strategy in artifact.get("strategies") or []:
+        for position in strategy.get("position_packet", {}).get("latest_positions") or []:
+            ticker = position.get("source_ticker") or position.get("ticker")
+            if ticker:
+                tickers.add(str(ticker))
+    return sorted(tickers)
+
+
+@contextmanager
+def refresh_lock(lock_path: Path):
+    acquired = False
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        acquired = True
+        yield True
+    except FileExistsError:
+        yield False
+    finally:
+        if acquired and lock_path.exists():
+            try:
+                lock_path.unlink()
+            except OSError:
+                pass
+
+
+def build_refresh_status_payload(
+    config: dict[str, Any] | None = None,
+    *,
+    interval_minutes: int | None = None,
+) -> dict[str, Any]:
+    cfg = config or load_intraday_config()
+    interval = int(interval_minutes or cfg.get("default_interval_minutes") or 30)
+    session = market_session_status(
+        timezone=cfg["timezone"],
+        holidays=cfg.get("market_holidays") or [],
+        interval_minutes=interval,
+    )
+    next_at = next_scheduled_refresh(
+        None,
+        interval,
+        timezone=cfg["timezone"],
+        holidays=cfg.get("market_holidays") or [],
+    )
+    status = read_refresh_status(cfg)
+    pointer = read_latest_pointer(cfg)
+    snapshot = read_latest_snapshot(cfg)
+    latest_observation = None
+    last_success = None
+    snapshot_id = pointer.get("snapshot_id") if pointer else None
+    if snapshot:
+        latest_observation = snapshot.get("latest_observation_ts_et")
+        last_success = snapshot.get("refresh_completed_at")
+        freshness = (snapshot.get("marks") or {}).get("data_quality", {}).get("freshness")
+    else:
+        freshness = None
+    in_progress = bool(status.get("in_progress"))
+    state = status.get("state") or "idle"
+    if in_progress:
+        state = "refreshing"
+    canonical_data_state = _canonical_data_state_label(
+        session.status,
+        freshness,
+        has_snapshot=bool(snapshot),
+        in_progress=in_progress,
+        refresh_state=state,
+        last_error=status.get("last_error"),
+    )
+    return {
+        "ok": True,
+        "enabled": bool(cfg.get("enabled", True)),
+        "market_status": session.status,
+        "market_session_date": session.session_date,
+        "is_trading_day": session.is_trading_day,
+        "timezone": cfg["timezone"],
+        "refresh_cadence_minutes": interval,
+        "bar_interval": bar_interval_for_refresh(cfg, interval),
+        "next_scheduled_refresh_at": next_at.isoformat(),
+        "last_successful_refresh_at": last_success,
+        "latest_market_observation_at": latest_observation,
+        "data_freshness": freshness if snapshot else status.get("data_freshness"),
+        "canonical_data_state": canonical_data_state,
+        "snapshot_id": snapshot_id,
+        "previous_valid_snapshot_id": snapshot.get("previous_valid_snapshot_id") if snapshot else None,
+        "refresh_state": state,
+        "in_progress": in_progress,
+        "last_error": status.get("last_error"),
+        "retry_count": status.get("retry_count"),
+        "provider": cfg.get("provider", "yfinance"),
+        "disclosure": "Research market proxy refresh; not live portfolio or exchange data.",
+        "demo_hosting": bool(os.environ.get("PUBLIC_DEMO") or os.environ.get("RENDER")),
+        "scheduler_label": (
+            "Scheduler active while service is running"
+            if os.environ.get("PUBLIC_DEMO") or os.environ.get("RENDER")
+            else None
+        ),
+    }
+
+
+def run_intraday_refresh(
+    *,
+    interval_minutes: int | None = None,
+    force: bool = False,
+    artifact_path: Path | str = DEFAULT_ARTIFACT_PATH,
+    config: dict[str, Any] | None = None,
+    fetch_fn: Callable[..., dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Execute intraday proxy refresh. Manual and scheduled jobs share this path."""
+    cfg = config or load_intraday_config()
+    interval = int(interval_minutes or cfg.get("default_interval_minutes") or 30)
+    if interval not in cfg.get("allowed_intervals_minutes", [10, 30]):
+        interval = int(cfg.get("default_interval_minutes") or 30)
+
+    session = market_session_status(
+        timezone=cfg["timezone"],
+        holidays=cfg.get("market_holidays") or [],
+        interval_minutes=interval,
+    )
+    if not force and not should_run_scheduled_refresh(
+        None,
+        timezone=cfg["timezone"],
+        holidays=cfg.get("market_holidays") or [],
+        regular_session_only=bool(cfg.get("regular_session_only", True)),
+    ):
+        payload = build_refresh_status_payload(cfg, interval_minutes=interval)
+        payload.update(
+            {
+                "ok": True,
+                "skipped": True,
+                "reason": f"market_{session.status.lower().replace('-', '_')}",
+                "message": "Scheduled intraday refresh skipped outside regular session.",
+            }
+        )
+        return payload
+
+    lock_path = Path(cfg["lock_path"])
+    with refresh_lock(lock_path) as acquired:
+        if not acquired:
+            current = read_refresh_status(cfg)
+            return {
+                "ok": False,
+                "error": "refresh_already_in_progress",
+                "refresh_state": "refreshing",
+                "in_progress": True,
+                "snapshot_id": read_latest_pointer(cfg).get("snapshot_id") if read_latest_pointer(cfg) else None,
+                "started_at": current.get("started_at"),
+            }
+
+        started = datetime.now(timezone.utc)
+        previous_pointer = read_latest_pointer(cfg)
+        previous_snapshot_id = previous_pointer.get("snapshot_id") if previous_pointer else None
+        write_refresh_status(
+            {
+                "state": "running",
+                "in_progress": True,
+                "started_at": started.isoformat(),
+                "interval_minutes": interval,
+                "trigger": "manual" if force else "scheduled",
+                "last_error": None,
+            },
+            cfg,
+        )
+
+        try:
+            artifact = load_dashboard_artifact(artifact_path)
+            baseline_allocation = dict(artifact.get("allocation", {}).get("current_weights") or {})
+            baseline_signals_as_of = artifact.get("as_of_date")
+            tickers = collect_refresh_tickers(artifact)
+            bar_interval = bar_interval_for_refresh(cfg, interval)
+            fetcher = fetch_fn or fetch_intraday_bars
+            fetch_result = fetcher(
+                tickers,
+                bar_interval=bar_interval,
+                timeout_seconds=int(cfg.get("request_timeout_seconds") or 20),
+                retry_attempts=int(cfg.get("retry_attempts") or 3),
+                backoff_seconds=list(cfg.get("backoff_seconds") or [5, 15, 30]),
+                target_timezone=str(cfg.get("timezone") or "America/New_York"),
+            )
+
+            requested = int(fetch_result.get("ticker_count_requested") or len(tickers))
+            successful = int(fetch_result.get("ticker_count_successful") or 0)
+            ratio = successful / max(requested, 1)
+            min_ratio = float(cfg.get("min_success_ticker_ratio") or 0.6)
+            if ratio < min_ratio:
+                raise ValueError(
+                    f"insufficient ticker coverage ({successful}/{requested}, need {min_ratio:.0%})"
+                )
+
+            marks = revalue_mark_sensitive_outputs(artifact, fetch_result, load_market_universe())
+            completed = datetime.now(timezone.utc)
+            snapshot_id = new_snapshot_id(completed)
+            snapshot = {
+                "snapshot_id": snapshot_id,
+                "previous_valid_snapshot_id": previous_snapshot_id,
+                "refresh_status": "success",
+                "provider": fetch_result.get("provider") or cfg.get("provider"),
+                "requested_bar_interval": bar_interval,
+                "refresh_started_at": started.isoformat(),
+                "refresh_completed_at": completed.isoformat(),
+                "latest_observation_ts_et": fetch_result.get("latest_observation_ts_et"),
+                "market_session_date": session.session_date,
+                "market_session_status": session.status,
+                "ticker_count_requested": requested,
+                "ticker_count_successful": successful,
+                "missing_tickers": fetch_result.get("missing_tickers") or [],
+                "stale_tickers": fetch_result.get("stale_tickers") or [],
+                "retry_count": int(fetch_result.get("retry_count") or 0),
+                "refresh_interval_minutes": interval,
+                "marks": marks,
+                "governance_preserved": {
+                    "allocation_weights_unchanged": baseline_allocation,
+                    "signals_as_of_unchanged": baseline_signals_as_of,
+                    "execution_authorized": False,
+                },
+            }
+            publish_snapshot(snapshot, cfg)
+            write_refresh_status(
+                {
+                    "state": "idle",
+                    "in_progress": False,
+                    "last_success_at": completed.isoformat(),
+                    "last_snapshot_id": snapshot_id,
+                    "data_freshness": marks.get("data_quality", {}).get("freshness"),
+                    "last_error": None,
+                    "retry_count": snapshot["retry_count"],
+                },
+                cfg,
+            )
+            result = build_refresh_status_payload(cfg, interval_minutes=interval)
+            result.update(
+                {
+                    "ok": True,
+                    "snapshot_id": snapshot_id,
+                    "previous_valid_snapshot_id": previous_snapshot_id,
+                    "refresh_status": "success",
+                    "latest_market_observation_at": snapshot["latest_observation_ts_et"],
+                    "last_successful_refresh_at": completed.isoformat(),
+                }
+            )
+            return result
+        except Exception as exc:
+            failed_at = datetime.now(timezone.utc)
+            last_valid = read_latest_snapshot(cfg)
+            write_refresh_status(
+                {
+                    "state": "failed",
+                    "in_progress": False,
+                    "last_error": str(exc),
+                    "failed_at": failed_at.isoformat(),
+                    "data_freshness": "Failed" if not last_valid else "Stale",
+                    "last_snapshot_id": last_valid.get("snapshot_id") if last_valid else None,
+                },
+                cfg,
+            )
+            payload = build_refresh_status_payload(cfg, interval_minutes=interval)
+            payload.update(
+                {
+                    "ok": False,
+                    "error": str(exc),
+                    "refresh_status": "failed",
+                    "snapshot_id": last_valid.get("snapshot_id") if last_valid else None,
+                    "previous_valid_snapshot_id": last_valid.get("previous_valid_snapshot_id") if last_valid else None,
+                    "data_freshness": "Failed" if not last_valid else "Stale",
+                }
+            )
+            return payload
+
+
+def read_latest_snapshot_payload(config: dict[str, Any] | None = None) -> dict[str, Any]:
+    cfg = config or load_intraday_config()
+    snapshot = read_latest_snapshot(cfg)
+    if not snapshot:
+        return {"ok": False, "error": "no_valid_snapshot"}
+    return {"ok": True, **snapshot}
+
+
+def _canonical_data_state_label(
+    market_status: str,
+    freshness: str | None,
+    *,
+    has_snapshot: bool,
+    in_progress: bool,
+    refresh_state: str,
+    last_error: str | None,
+) -> str:
+    if in_progress:
+        return "Refreshing"
+    if refresh_state == "failed" or freshness == "Failed":
+        return "Refresh failed"
+    if market_status != "Open":
+        return "Latest market close"
+    if freshness == "Current":
+        return "Current intraday proxy"
+    if freshness == "Delayed":
+        return "Delayed"
+    if freshness == "Stale":
+        return "Stale"
+    if not has_snapshot:
+        return "Latest market close"
+    return "Latest market close"

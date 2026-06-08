@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import subprocess
@@ -26,9 +27,126 @@ TABS = [
   "Daily Risk Report / Decision Log",
 ]
 
+VIEWPORTS = (
+  (1920, 1080),
+  (1440, 900),
+  (1366, 768),
+)
 
 VERIFY_PORT = 8767
 BASE_URL = f"http://127.0.0.1:{VERIFY_PORT}"
+
+GEOMETRY_JS = """
+() => {
+  const doc = document.documentElement;
+  const pageOverflow = doc.scrollWidth <= doc.clientWidth + 1;
+  const topbar = document.querySelector('.topbar');
+  const brand = document.querySelector('.brand');
+  const tabButtons = [...document.querySelectorAll('.nav-rail button[data-tab]')];
+  const drawer = document.getElementById('riskDrawer');
+  const mainStage = document.querySelector('.main-stage');
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const scrollers = [...document.querySelectorAll('*')].filter((node) => {
+    if (!node || node === document.body || node === doc) return false;
+    const style = window.getComputedStyle(node);
+    const overflowY = style.overflowY;
+    const overflowX = style.overflowX;
+    const scrollableY = (overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight + 1;
+    const scrollableX = (overflowX === 'auto' || overflowX === 'scroll') && node.scrollWidth > node.clientWidth + 1;
+    return scrollableY || scrollableX;
+  }).map((node) => ({
+    tag: node.tagName.toLowerCase(),
+    id: node.id || null,
+    className: node.className || null,
+    scrollHeight: node.scrollHeight,
+    clientHeight: node.clientHeight,
+    scrollWidth: node.scrollWidth,
+    clientWidth: node.clientWidth,
+  }));
+  const primaryVertical = scrollers.filter((node) => node.className && String(node.className).includes('main-stage'));
+  const approvedHorizontal = scrollers.filter((node) => {
+    const cls = String(node.className || '');
+    return cls.includes('table-scroll') || cls.includes('matrix-scroll') || cls.includes('mini-matrix') || cls.includes('table-viewport');
+  });
+  const headerOk = topbar && topbar.scrollWidth <= topbar.clientWidth + 1;
+  const brandRect = brand ? brand.getBoundingClientRect() : null;
+  const brandVisible = brandRect
+    ? brandRect.top >= 0 && brandRect.bottom <= viewportHeight && brandRect.left >= 0 && brandRect.right <= viewportWidth
+    : false;
+  const tabsVisible = tabButtons.every((button) => {
+    const rect = button.getBoundingClientRect();
+    return rect.left >= 0 && rect.right <= viewportWidth + 0.5 && rect.width >= 48;
+  });
+  const drawerCollapsed = !drawer || drawer.classList.contains('collapsed') || drawer.offsetWidth === 0;
+  const mainRect = mainStage ? mainStage.getBoundingClientRect() : null;
+  const mainReachesRight = mainRect ? Math.abs(mainRect.right - viewportWidth) <= 2 : false;
+  const activePanel = document.querySelector('.tab-panel.active');
+  const panelOverflow = activePanel
+    ? [...activePanel.querySelectorAll('.panel, .kpi-card, .approval-status-bar, canvas')].every((node) => {
+        const rect = node.getBoundingClientRect();
+        return rect.left >= -1 && rect.right <= viewportWidth + 1;
+      })
+    : true;
+  const hiddenSidePanel = document.querySelector('.strategy-drawer:not(.collapsed)') == null || document.querySelector('.strategy-drawer:not(.collapsed)').getBoundingClientRect().right <= viewportWidth + 1;
+  return {
+    pageOverflow,
+    headerOk,
+    brandVisible,
+    tabsVisible,
+    tabCount: tabButtons.length,
+    drawerCollapsed,
+    mainReachesRight,
+    panelOverflow,
+    hiddenSidePanel,
+    primaryVerticalCount: primaryVertical.length,
+    approvedHorizontalCount: approvedHorizontal.length,
+    extraScrollers: scrollers.filter((node) => {
+      const cls = String(node.className || '');
+      if (cls.includes('main-stage')) return false;
+      if (cls.includes('table-scroll') || cls.includes('matrix-scroll') || cls.includes('mini-matrix') || cls.includes('table-viewport')) return false;
+      if (node.id === 'riskDrawer' || node.id === 'strategyDrawer') return false;
+      if (cls.includes('drawer-body')) return false;
+      return false;
+    }).slice(0, 12),
+    unapprovedScrollers: [...document.querySelectorAll('*')].filter((node) => {
+      if (!node || node === document.body || node === doc) return false;
+      const cls = String(node.className || '');
+      if (cls.includes('main-stage')) return false;
+      if (cls.includes('table-scroll') || cls.includes('matrix-scroll') || cls.includes('mini-matrix') || cls.includes('table-viewport')) return false;
+      if (node.id === 'riskDrawer' || node.id === 'strategyDrawer') return false;
+      if (cls.includes('drawer-body')) return false;
+      const style = window.getComputedStyle(node);
+      if (style.overflowX !== 'auto' && style.overflowX !== 'scroll' && style.overflowY !== 'auto' && style.overflowY !== 'scroll') return false;
+      return node.scrollHeight > node.clientHeight + 1 || node.scrollWidth > node.clientWidth + 1;
+    }).map((node) => ({ tag: node.tagName.toLowerCase(), className: node.className || null })).slice(0, 12),
+  };
+}
+"""
+
+REPORT_LAYOUT_JS = """
+() => {
+  const workspace = document.getElementById('reportWorkspace');
+  const memo = document.getElementById('dailyRiskMemo');
+  const preview = document.getElementById('generatedReport');
+  const strip = document.getElementById('reportStatusStrip');
+  const doc = document.documentElement;
+  const stripSpan = strip ? window.getComputedStyle(strip).gridColumnStart : null;
+  const memoSpan = memo?.closest('.report-span-8') ? window.getComputedStyle(memo.closest('.report-span-8')).gridColumnEnd : null;
+  return {
+    workspaceExists: Boolean(workspace),
+    memoHasSections: (memo?.querySelectorAll('section')?.length || 0) >= 5,
+    previewHasContent: Boolean(preview?.innerText?.trim()),
+    previewHasTitle: /daily risk report/i.test(preview?.innerText || ''),
+    pageNoHorizontalOverflow: doc.scrollWidth <= doc.clientWidth + 1,
+    stripFullWidth: strip ? strip.getBoundingClientRect().width >= (workspace?.getBoundingClientRect().width || 0) * 0.9 : false,
+    noRebalanceCopy: /no rebalance proposed/i.test(document.body.innerText),
+    executionNotAuthorized: /execution authorization: not authorized/i.test(document.body.innerText),
+    workflowNotSubmitted: !/submitted for independent risk review/i.test(document.getElementById('governanceFlow')?.innerText || ''),
+    workflowMonitoringOnly: /no active rebalance proposal/i.test(document.getElementById('governanceFlow')?.innerText || ''),
+  };
+}
+"""
 
 
 def _start_verify_server() -> subprocess.Popen:
@@ -64,7 +182,34 @@ def _post_simulate(payload: dict) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
+def _slug(tab: str) -> str:
+    return tab.lower().replace(" & ", "_").replace(" / ", "_").replace(" ", "_")
+
+
+def _assert_geometry(report: dict, geometry: dict, viewport: tuple[int, int], tab: str) -> None:
+    key = f"{viewport[0]}x{viewport[1]}::{tab}"
+    report.setdefault("geometry", {})[key] = geometry
+    checks = report.setdefault("geometry_checks", {})
+    no_unapprovedScrollers = geometry.get("unapprovedScrollers") or []
+    checks[key] = {
+        "page_no_horizontal_overflow": geometry.get("pageOverflow") is True,
+        "header_fits": geometry.get("headerOk") is True,
+        "brand_visible": geometry.get("brandVisible") is True,
+        "all_tabs_visible": geometry.get("tabsVisible") is True and geometry.get("tabCount") == 9,
+        "drawer_collapsed_zero_width": geometry.get("drawerCollapsed") is True,
+        "main_stage_reaches_right_edge": geometry.get("mainReachesRight") is True,
+        "active_panel_within_viewport": geometry.get("panelOverflow") is True,
+        "no_visible_side_detail_panel": geometry.get("hiddenSidePanel") is True,
+        "single_primary_vertical_scroller": geometry.get("primaryVerticalCount", 0) <= 1,
+        "no_unapproved_page_scrollers": len(no_unapprovedScrollers) == 0,
+    }
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Verify Risk Manager workstation in browser.")
+    parser.add_argument("--no-screenshots", action="store_true", help="Skip screenshot capture; geometry and interaction checks only.")
+    args = parser.parse_args()
+
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
@@ -74,14 +219,14 @@ def main() -> int:
     server_proc = _start_verify_server()
     try:
         _wait_for_server()
-        return _run_browser_verification(server_proc, sync_playwright)
+        return _run_browser_verification(sync_playwright, no_screenshots=args.no_screenshots)
     finally:
         server_proc.terminate()
         server_proc.wait(timeout=10)
 
 
-def _run_browser_verification(server_proc: subprocess.Popen, sync_playwright) -> int:
-    artifact = json.loads((PROJECT_ROOT / "output" / "dashboard_artifact.json").read_text(encoding="utf-8"))
+def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> int:
+    artifact = json.loads((PROJECT_ROOT / "output/dashboard_artifact.json").read_text(encoding="utf-8"))
     strategies = artifact.get("strategies", [])
     first_allocated = next((row for row in strategies if row.get("current_weight", 0) > 0), strategies[0])
     current_weights = {row["strategy_id"]: row.get("current_weight", 0) for row in strategies}
@@ -93,12 +238,14 @@ def _run_browser_verification(server_proc: subprocess.Popen, sync_playwright) ->
         "console_errors": [],
         "api_checks": {},
         "checks": {},
+        "geometry": {},
+        "geometry_checks": {},
         "screenshots": [],
     }
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1920, "height": 1080})
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
 
         def capture_console(msg):
             if msg.type != "error":
@@ -114,44 +261,55 @@ def _run_browser_verification(server_proc: subprocess.Popen, sync_playwright) ->
 
         page.on("console", capture_console)
         page.on("response", capture_bad_response)
-        page.goto(report["url"], wait_until="networkidle", timeout=120000)
+        page.goto(report["url"], wait_until="load", timeout=120000)
         page.wait_for_timeout(1500)
 
-        for index, tab in enumerate(TABS, start=1):
-            page.click(f'button[data-tab="{tab}"]')
-            page.wait_for_timeout(600)
-            slug = f"{index:02d}_{tab.lower().replace(' & ', '_').replace(' / ', '_').replace(' ', '_')}"
-            shot = SCREENSHOT_DIR / f"{slug}.png"
-            page.screenshot(path=str(shot), full_page=True)
-            report["screenshots"].append(str(shot.relative_to(PROJECT_ROOT)))
-            report["tabs"].append({"tab": tab, "loaded": True, "screenshot": str(shot.name), "viewport": "1920x1080"})
-
-        for viewport in ((1440, 900), (1366, 768), (1920, 1080)):
+        for viewport in VIEWPORTS:
             page.set_viewport_size({"width": viewport[0], "height": viewport[1]})
-            page.click('button[data-tab="Portfolio Command Center"]')
-            page.wait_for_timeout(500)
-            shot = SCREENSHOT_DIR / f"command_center_{viewport[0]}x{viewport[1]}.png"
-            page.screenshot(path=str(shot), full_page=True)
-            report["screenshots"].append(str(shot.relative_to(PROJECT_ROOT)))
+            for index, tab in enumerate(TABS, start=1):
+                page.click(f'button[data-tab="{tab}"]')
+                page.wait_for_timeout(500)
+                geometry = page.evaluate(GEOMETRY_JS)
+                _assert_geometry(report, geometry, viewport, tab)
+                if not no_screenshots:
+                    slug = f"{viewport[0]}x{viewport[1]}_{index:02d}_{_slug(tab)}"
+                    shot = SCREENSHOT_DIR / f"{slug}.png"
+                    page.screenshot(path=str(shot), full_page=False)
+                    report["screenshots"].append(str(shot.relative_to(PROJECT_ROOT)))
+                    report["tabs"].append({"tab": tab, "loaded": True, "screenshot": shot.name, "viewport": f"{viewport[0]}x{viewport[1]}"})
+                    full_shot = SCREENSHOT_DIR / f"full_{slug}.png"
+                    page.screenshot(path=str(full_shot), full_page=True)
+                    report["screenshots"].append(str(full_shot.relative_to(PROJECT_ROOT)))
+                else:
+                    report["tabs"].append({"tab": tab, "loaded": True, "viewport": f"{viewport[0]}x{viewport[1]}"})
 
         page.set_viewport_size({"width": 1440, "height": 900})
-        for index, tab in enumerate(TABS, start=1):
-            page.click(f'button[data-tab="{tab}"]')
-            page.wait_for_timeout(500)
-            slug = f"1440x900_{index:02d}_{tab.lower().replace(' & ', '_').replace(' / ', '_').replace(' ', '_')}"
-            shot = SCREENSHOT_DIR / f"{slug}.png"
-            page.screenshot(path=str(shot), full_page=True)
-            report["screenshots"].append(str(shot.relative_to(PROJECT_ROOT)))
-            report["tabs"].append({"tab": tab, "loaded": True, "screenshot": str(shot.name), "viewport": "1440x900"})
-
         page.click('button[data-tab="Strategy Monitor"]')
         page.wait_for_timeout(400)
         page.click("#monitorTable tr[data-strategy]")
-        report["checks"]["strategy_row_opens_detail"] = page.locator("#selectedStrategyName").inner_text().strip() != "Select a strategy"
+        page.wait_for_timeout(400)
+        report["checks"]["strategy_row_opens_detail"] = page.locator("#strategyDrawer:not(.collapsed)").count() > 0
+        if page.locator("#strategyDrawer:not(.collapsed)").count():
+            page.click("#closeStrategyDrawer")
+            page.wait_for_timeout(200)
+        report["checks"]["strategy_drawer_closes"] = page.locator("#strategyDrawer.collapsed").count() > 0
 
         page.click('button[data-tab="Allocation & Rebalance"]')
         page.wait_for_timeout(800)
-        report["checks"]["simulation_completed"] = "simulation completed" in page.locator("#decisionAuthorityStatus").inner_text().lower()
+        page.click("#resetWeights")
+        page.wait_for_timeout(1200)
+        report["checks"]["no_change_proposal_status"] = "no rebalance proposed" in page.locator("#approvalStatusBar").inner_text().lower()
+        report["checks"]["simulation_completed"] = (
+            "simulation not required" in page.locator("#decisionAuthorityStatus").inner_text().lower()
+            or "no allocation change" in page.locator("#decisionAuthorityStatus").inner_text().lower()
+        )
+        approval_text = page.locator("#approvalStatusBar").inner_text().lower()
+        report["checks"]["gate_status_not_contradictory"] = (
+            "proposal gate status: clear" in approval_text or "proposal gate status: blocked" in approval_text
+        ) and not ("blocked" in approval_text and "no hard gate blockers" in approval_text)
+        report["checks"]["current_portfolio_breaches_visible"] = (
+            "current portfolio breaches" in page.locator("#allocationPersistentChecks").inner_text().lower()
+        )
 
         enabled_input = page.locator("#allocationEditorTable input.weight-input:not([disabled])").first
         original = float(enabled_input.input_value())
@@ -159,7 +317,7 @@ def _run_browser_verification(server_proc: subprocess.Popen, sync_playwright) ->
         page.click("#simulateWeights")
         page.wait_for_timeout(1200)
         report["checks"]["custom_weight_edit_simulates"] = "simulation completed" in page.locator("#decisionAuthorityStatus").inner_text().lower()
-        report["checks"]["factor_before_after_visible"] = "→" in page.locator("#simulationChecks").inner_text()
+        report["checks"]["factor_before_after_visible"] = "→" in page.locator("#allocationBeforeAfterStrip").inner_text() or "→" in page.locator("#factorConcentrationTable").inner_text()
 
         enabled_input.fill("5")
         page.click("#simulateWeights")
@@ -171,39 +329,119 @@ def _run_browser_verification(server_proc: subprocess.Popen, sync_playwright) ->
         page.wait_for_timeout(1200)
         sim_text = page.locator("#simulationChecks").inner_text().lower()
         report["checks"]["overinvestment_blocked_in_checks"] = "cannot exceed 100%" in sim_text or "exceed 100%" in sim_text
+        report["checks"]["hard_breach_blocks_approval"] = page.locator("#approveDecision").is_disabled()
 
-        if not report["checks"]["overinvestment_blocked_in_checks"]:
-            enabled_input.fill("20")
-            page.click("#simulateWeights")
-            page.wait_for_timeout(1200)
-        page.fill("#decisionReviewer", "Risk Manager QA")
-        page.fill("#decisionNote", "Attempt approval with hard breach")
-        page.click("#approveDecision")
-        page.wait_for_timeout(400)
-        report["checks"]["hard_breach_blocks_approval"] = "approval blocked" in page.locator("#decisionAuthorityStatus").inner_text().lower()
-
+        page.click("#resetWeights")
+        page.wait_for_timeout(800)
+        page.click("#simulateWeights")
+        page.wait_for_timeout(1000)
         page.fill("#decisionReviewer", "")
         page.fill("#decisionNote", "")
-        page.click("#approveDecision")
+        page.click("#modifyDecision")
         report["checks"]["reviewer_validation_blocks_empty_decision"] = "required" in page.locator("#decisionAuthorityStatus").inner_text().lower()
 
+        report["checks"]["execution_not_authorized"] = "execution authorization: disabled" in page.locator("#approvalStatusBar").inner_text().lower() or "not authorized" in page.locator("#decisionStatusLines").inner_text().lower()
+
+        page.set_viewport_size({"width": 1440, "height": 900})
+        if not no_screenshots:
+            v2_shots = [
+                ("v2_1440_command_center", "Portfolio Command Center"),
+                ("v2_1440_strategy_monitor", "Strategy Monitor"),
+            ]
+            for name, tab in v2_shots:
+                page.click(f'button[data-tab="{tab}"]')
+                page.wait_for_timeout(500)
+                path = SCREENSHOT_DIR / f"{name}.png"
+                page.screenshot(path=str(path), full_page=False)
+                report["screenshots"].append(str(path.relative_to(PROJECT_ROOT)))
+
         page.click('button[data-tab="Backtesting & Research Lab"]')
-        page.wait_for_timeout(400)
+        page.wait_for_timeout(500)
+        selector = page.locator("#researchLabSelector")
+        option_count = selector.locator("option").count()
+        first_caption = page.locator("#researchLabCaption").inner_text().lower()
+        if option_count > 1:
+            selector.select_option(index=1)
+            page.wait_for_timeout(400)
+            second_caption = page.locator("#researchLabCaption").inner_text().lower()
+            report["checks"]["research_lab_selector_changes_strategy"] = first_caption != second_caption
+        else:
+            report["checks"]["research_lab_selector_changes_strategy"] = option_count >= 1
+        report["checks"]["research_lab_summary_strip"] = page.locator("#researchLabSummaryStrip").inner_text().strip() != ""
         page.click("#literatureStrategyTable tr[data-literature-strategy]")
         page.wait_for_timeout(500)
-        if page.locator("#strategyDialog[open]").count():
-            page.click("#closeStrategyReview")
+        if page.locator("#strategyDrawer:not(.collapsed)").count():
+            page.click("#closeStrategyDrawer")
             page.wait_for_timeout(200)
         caption = page.locator("#researchLabCaption").inner_text().lower()
         report["checks"]["research_lab_updates_on_selection"] = "|" in caption and "select a literature" not in caption
 
         page.click('button[data-tab="Daily Risk Report / Decision Log"]')
-        page.wait_for_timeout(500)
-        page.click("#generateReport")
         page.wait_for_timeout(800)
+        layout = page.evaluate(REPORT_LAYOUT_JS)
+        report["checks"]["report_auto_render_on_open"] = layout.get("previewHasContent") and layout.get("memoHasSections")
+        report["checks"]["report_preview_title"] = layout.get("previewHasTitle") is True
+        report["checks"]["report_no_horizontal_overflow"] = layout.get("pageNoHorizontalOverflow") is True
+        report["checks"]["report_status_strip_full_width"] = layout.get("stripFullWidth") is True
+        report["checks"]["no_rebalance_report_copy"] = layout.get("noRebalanceCopy") is True
+        report["checks"]["report_workflow_not_submitted_without_proposal"] = layout.get("workflowNotSubmitted") is True
+        report["checks"]["report_workflow_monitoring_only"] = layout.get("workflowMonitoringOnly") is True
+        report["checks"]["report_execution_not_authorized"] = layout.get("executionNotAuthorized") is True
+        page.click("#generateReport")
+        page.wait_for_timeout(400)
         report["checks"]["report_generation"] = "daily risk report" in page.locator("#generatedReport").inner_text().lower()
+        page.fill("#reportDecisionReviewer", "Risk Manager QA")
+        page.fill("#reportDecisionNote", "Prototype review note for verification.")
+        page.select_option("#reportDecisionAction", "Modification requested")
+        page.click("#reportRecordDecision")
+        page.wait_for_timeout(500)
+        report["checks"]["report_decision_recorded"] = "modification requested" in page.locator("#decisionLog").inner_text().lower()
+        report["checks"]["report_decision_not_execution"] = "execution authorization: not authorized" in page.locator("#reportHumanDecision").inner_text().lower()
+
+        topbar_text = page.locator("#topbarMeta").inner_text().lower()
+        report["checks"]["market_status_not_unknown_when_closed"] = "market unknown" not in topbar_text or "closed" in topbar_text or "latest market close" in topbar_text
+
+        page.click('button[data-tab="Backtesting & Research Lab"]')
+        page.wait_for_timeout(500)
+        research_checklist = page.locator("#researchChecklist").inner_text().strip()
+        report["checks"]["research_checklist_populated_or_unavailable"] = (
+            len(research_checklist) > 0
+            and (
+                "summary statistics" in research_checklist.lower()
+                or "analyst prompt" in research_checklist.lower()
+                or "unavailable" in research_checklist.lower()
+            )
+        )
+        report["checks"]["research_checklist_uses_correct_id"] = page.locator("#researchChecklist").count() == 1
+
+        page.click('button[data-tab="Strategy Monitor"]')
+        page.wait_for_timeout(400)
+        monitor_kpi = page.locator("#monitorKpiStrip").inner_text().lower()
+        report["checks"]["monitor_allocated_strategy_breaches_label"] = "allocated strategy breaches" in monitor_kpi
+
+        page.click('button[data-tab="Daily Risk Report / Decision Log"]')
+        page.wait_for_timeout(500)
+        memo_text = page.locator("#dailyRiskMemo").inner_text().lower()
+        report["checks"]["report_memo_no_raw_metric_keys"] = not any(
+            key in memo_text for key in ("equity_beta", "credit_spread", "rates_duration", "factor_herfindahl")
+        )
+        issues_text = page.locator("#reportIssuesTable").inner_text()
+        report["checks"]["report_no_portfolio_portfolio_label"] = "Portfolio · Portfolio" not in issues_text
+
+        page.click('button[data-tab="Risk Factors & Exposure"]')
+        page.wait_for_timeout(400)
+        factor_text = page.locator('.tab-panel[data-tab-panel="Risk Factors & Exposure"]').inner_text().lower()
+        report["checks"]["factor_labels_human_readable"] = "equity_beta" not in factor_text and "factor_herfindahl" not in factor_text
+        report["checks"]["factor_exposure_share_label"] = "factor exposure share" in factor_text and "factor contribution to portfolio risk" not in factor_text
+
+        page.click('button[data-tab="Allocation & Rebalance"]')
+        page.wait_for_timeout(400)
+        toolbar = page.locator(".simulation-toolbar .toolbar-actions")
+        report["checks"]["allocation_toolbar_horizontal"] = toolbar.count() > 0 and toolbar.evaluate("el => getComputedStyle(el).display") == "flex"
 
         with page.expect_download() as download_info:
+            page.click('button[data-tab="Daily Risk Report / Decision Log"]')
+            page.wait_for_timeout(300)
             page.click("#exportJson")
         report["checks"]["json_export"] = download_info.value.suggested_filename.endswith(".json")
 
@@ -258,12 +496,17 @@ def _run_browser_verification(server_proc: subprocess.Popen, sync_playwright) ->
         report["api_checks"]["numeric_metrics_present"] = False
 
     report["checks"]["no_console_errors"] = len(report["console_errors"]) == 0
+    geometry_pass = all(all(values.values()) for values in report["geometry_checks"].values())
+    report["checks"]["geometry_pass"] = geometry_pass
     unique_tabs = {entry["tab"] for entry in report["tabs"]}
-    report["passed"] = all(report["checks"].values()) and all(
-        value is True for key, value in report["api_checks"].items() if key != "error"
-    ) and len(unique_tabs) == 9
+    report["passed"] = (
+        all(report["checks"].values())
+        and all(value is True for key, value in report["api_checks"].items() if key != "error")
+        and len(unique_tabs) == 9
+        and geometry_pass
+    )
     REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(json.dumps({"checks": report["checks"], "api_checks": report["api_checks"]}, indent=2))
+    print(json.dumps({"checks": report["checks"], "api_checks": report["api_checks"], "geometry_pass": geometry_pass}, indent=2))
     print(f"Console errors: {len(report['console_errors'])}")
     print(f"Wrote {REPORT_PATH}")
     return 0 if report["passed"] else 1

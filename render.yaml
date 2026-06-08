@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: risk-manager-platform
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python scripts/validate_deployment_artifact.py
+    startCommand: python scripts/run_workstation_server.py --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: PUBLIC_DEMO
+        value: "1"
+      - key: HOST
+        value: 0.0.0.0

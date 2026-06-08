@@ -2,41 +2,122 @@
 
 from __future__ import annotations
 
+import gzip
 import json
+import logging
 import mimetypes
+import os
 import sys
+import threading
+import time
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import pandas as pd
 
+from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
-from src.market.live_refresh import build_live_overlay, quick_refresh_market_and_news, write_live_overlay
+from src.market.intraday_config import load_intraday_config
+from src.market.intraday_refresh_service import (
+    build_refresh_status_payload,
+    read_latest_snapshot_payload,
+    run_intraday_refresh,
+)
+from src.market.live_refresh import build_live_overlay, write_live_overlay
 from src.portfolio.return_alignment import align_strategy_series
 from src.risk.limits import load_risk_limits
+
+logger = logging.getLogger(__name__)
+
+GZIP_MIN_BYTES = 512
+GZIP_EXTENSIONS = {".html", ".htm", ".js", ".css", ".json", ".svg"}
+MANUAL_REFRESH_COOLDOWN_SECONDS = int(os.environ.get("MANUAL_REFRESH_COOLDOWN_SECONDS", "60"))
+
+
+def resolve_server_bind(host: str | None = None, port: int | None = None) -> tuple[str, int]:
+    resolved_host = host if host is not None else os.environ.get("HOST", "127.0.0.1")
+    resolved_port = port if port is not None else int(os.environ.get("PORT", "8765"))
+    return resolved_host, resolved_port
+
+
+def _json_bytes(payload: dict) -> bytes:
+    return json.dumps(payload, separators=(",", ":")).encode("utf-8")
+
+
+def _maybe_gzip(body: bytes, accept_encoding: str | None) -> tuple[bytes, str | None]:
+    if len(body) < GZIP_MIN_BYTES:
+        return body, None
+    if not accept_encoding or "gzip" not in accept_encoding.lower():
+        return body, None
+    return gzip.compress(body), "gzip"
+
+
+def ensure_deployment_artifact(root: Path = PROJECT_ROOT) -> dict:
+    artifact_path = root / "output" / "dashboard_artifact.json"
+    try:
+        return validate_deployment_artifact(artifact_path)
+    except DeploymentArtifactError as exc:
+        raise SystemExit(f"Startup blocked: {exc}") from exc
 
 
 class WorkstationHandler(BaseHTTPRequestHandler):
     server_root = PROJECT_ROOT
+    deployment_artifact: dict | None = None
+    last_manual_refresh_at = 0.0
+    refresh_cooldown_lock = threading.Lock()
 
     def log_message(self, format: str, *args) -> None:
         return
 
-    def _send_json(self, payload: dict, status: int = 200) -> None:
-        body = json.dumps(payload).encode("utf-8")
+    def _write_response(
+        self,
+        body: bytes,
+        *,
+        status: int = 200,
+        content_type: str = "application/json",
+        cache_control: str | None = None,
+        compress: bool = True,
+    ) -> None:
+        payload = body
+        encoding = None
+        if compress:
+            payload, encoding = _maybe_gzip(body, self.headers.get("Accept-Encoding"))
         self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(payload)))
+        if encoding:
+            self.send_header("Content-Encoding", encoding)
+        if cache_control:
+            self.send_header("Cache-Control", cache_control)
+            self.send_header("Pragma", "no-cache")
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(payload)
+
+    def _send_json(self, payload: dict, status: int = 200) -> None:
+        body = _json_bytes(payload)
+        cache_control = None
+        if status == 200:
+            cache_control = "no-store, no-cache, must-revalidate"
+        self._write_response(
+            body,
+            status=status,
+            content_type="application/json",
+            cache_control=cache_control,
+            compress=True,
+        )
+
+    def _send_safe_error(self, exc: Exception, *, status: int = 500, context: str = "request") -> None:
+        logger.exception("%s failed", context)
+        self._send_json({"ok": False, "error": "Internal server error"}, status=status)
 
     def _load_artifact(self) -> dict:
+        if self.deployment_artifact is not None:
+            return self.deployment_artifact
         path = self.server_root / "output" / "dashboard_artifact.json"
         return json.loads(path.read_text(encoding="utf-8"))
 
@@ -46,15 +127,50 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return None
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def _intraday_config(self) -> dict:
+        return load_intraday_config(self.server_root / "data/config/intraday_refresh.yaml")
+
     def _live_summary_payload(self, refresh: bool = False) -> dict:
         artifact = self._load_artifact()
         if refresh:
-            overlay = write_live_overlay(artifact, refresh_market=True)
+            intraday = run_intraday_refresh(
+                force=True,
+                artifact_path=self.server_root / "output" / "dashboard_artifact.json",
+                config=self._intraday_config(),
+            )
+            if intraday.get("ok"):
+                snapshot = read_latest_snapshot_payload(self._intraday_config())
+                overlay = self._overlay_from_intraday_snapshot(snapshot, artifact)
+            else:
+                overlay = write_live_overlay(artifact, refresh_market=True)
+                overlay["intraday_refresh_error"] = intraday.get("error")
         else:
-            overlay = self._load_live_overlay()
-            if overlay is None:
-                overlay = build_live_overlay(artifact)
+            snapshot_payload = read_latest_snapshot_payload(self._intraday_config())
+            if snapshot_payload.get("ok"):
+                overlay = self._overlay_from_intraday_snapshot(snapshot_payload, artifact)
+            else:
+                overlay = self._load_live_overlay()
+                if overlay is None:
+                    overlay = build_live_overlay(artifact)
         return {"ok": True, **overlay}
+
+    def _overlay_from_intraday_snapshot(self, snapshot_payload: dict, artifact: dict) -> dict:
+        marks = snapshot_payload.get("marks") or {}
+        return {
+            "refreshed_at": marks.get("refreshed_at") or snapshot_payload.get("refresh_completed_at"),
+            "data_mode": marks.get("data_mode") or "yfinance_intraday_proxy",
+            "market_as_of": marks.get("data_quality", {}).get("latest_observation_ts_et"),
+            "market_monitor": marks.get("market_monitor") or artifact.get("market_monitor", []),
+            "news_risk": marks.get("news_risk") or artifact.get("news_risk", {}),
+            "recommendations": marks.get("recommendations") or artifact.get("recommendations", []),
+            "factor_exposure_current": marks.get("factor_exposure_current")
+            or artifact.get("factors", {}).get("portfolio_factor_exposure_current", {}),
+            "factor_alerts": artifact.get("factors", {}).get("human_review_alerts", []),
+            "system_conclusion": artifact.get("decision_review", {}).get("final_decision"),
+            "intraday_marks": marks,
+            "snapshot_id": snapshot_payload.get("snapshot_id"),
+            "evaluation_metadata": marks.get("evaluation_metadata"),
+        }
 
     def _strategy_returns_from_artifact(self, artifact: dict) -> dict[str, list[float]]:
         series_by_id: dict[str, pd.Series] = {}
@@ -88,12 +204,14 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             return candidate
         return None
 
-    def do_OPTIONS(self) -> None:
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
+    def _reserve_manual_refresh(self) -> tuple[bool, int]:
+        with self.refresh_cooldown_lock:
+            now = time.monotonic()
+            elapsed = now - WorkstationHandler.last_manual_refresh_at
+            if elapsed < MANUAL_REFRESH_COOLDOWN_SECONDS:
+                return False, max(1, int(MANUAL_REFRESH_COOLDOWN_SECONDS - elapsed))
+            WorkstationHandler.last_manual_refresh_at = now
+            return True, 0
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
@@ -104,20 +222,61 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             try:
                 self._send_json(self._live_summary_payload(refresh=False))
             except Exception as exc:
-                self._send_json({"ok": False, "error": str(exc)}, status=500)
+                self._send_safe_error(exc, context="live-summary")
+            return
+        if parsed.path in {"/api/refresh/status", "/api/refresh/status/"}:
+            try:
+                query = parse_qs(parsed.query or "")
+                interval = query.get("interval_minutes", [None])[0]
+                interval_minutes = int(interval) if interval else None
+                self._send_json(build_refresh_status_payload(self._intraday_config(), interval_minutes=interval_minutes))
+            except Exception as exc:
+                self._send_safe_error(exc, context="refresh-status")
+            return
+        if parsed.path in {"/api/snapshot/latest", "/api/snapshot/latest/"}:
+            try:
+                payload = read_latest_snapshot_payload(self._intraday_config())
+                status = 200 if payload.get("ok") else 404
+                self._send_json(payload, status=status)
+            except Exception as exc:
+                self._send_safe_error(exc, context="snapshot-latest")
             return
         self._serve_static(parsed.path)
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path in {"/api/refresh-data", "/api/refresh-data/"}:
-            try:
-                self._send_json(self._live_summary_payload(refresh=True))
-            except Exception as exc:
+        if parsed.path in {"/api/refresh", "/api/refresh/", "/api/refresh-data", "/api/refresh-data/"}:
+            allowed, retry_after = self._reserve_manual_refresh()
+            if not allowed:
                 self._send_json(
-                    {"ok": False, "error": str(exc), "trace": traceback.format_exc(limit=2)},
-                    status=500,
+                    {
+                        "ok": False,
+                        "error": "Manual refresh cooldown active",
+                        "retry_after_seconds": retry_after,
+                    },
+                    status=429,
                 )
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                raw = self.rfile.read(length) if length else b"{}"
+                body = json.loads(raw.decode("utf-8") or "{}")
+                interval = body.get("interval_minutes")
+                result = run_intraday_refresh(
+                    force=True,
+                    interval_minutes=int(interval) if interval is not None else None,
+                    artifact_path=self.server_root / "output" / "dashboard_artifact.json",
+                    config=self._intraday_config(),
+                )
+                if result.get("ok") and result.get("snapshot_id"):
+                    artifact = self._load_artifact()
+                    snapshot = read_latest_snapshot_payload(self._intraday_config())
+                    overlay = self._overlay_from_intraday_snapshot(snapshot, artifact)
+                    result = {**result, **overlay, "ok": True}
+                status = 200 if result.get("ok") else 409 if result.get("error") == "refresh_already_in_progress" else 500
+                self._send_json(result, status=status)
+            except Exception as exc:
+                self._send_safe_error(exc, context="refresh")
             return
         if parsed.path not in {"/api/simulate", "/api/simulate/"}:
             self.send_error(404, "Not found")
@@ -156,15 +315,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             result["ok"] = True
             self._send_json(result)
         except Exception as exc:
-            self._send_json(
-                {
-                    "ok": False,
-                    "error": str(exc),
-                    "error_type": exc.__class__.__name__,
-                    "trace": traceback.format_exc(limit=3),
-                },
-                status=500,
-            )
+            self._send_safe_error(exc, context="simulate")
 
     def _serve_static(self, path: str) -> None:
         file_path = self._resolve_static_path(path)
@@ -174,14 +325,17 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         content = file_path.read_bytes()
         mime, _ = mimetypes.guess_type(str(file_path))
         relative = str(file_path.relative_to(self.server_root)).replace("\\", "/")
-        self.send_response(200)
-        self.send_header("Content-Type", mime or "application/octet-stream")
-        self.send_header("Content-Length", str(len(content)))
+        cache_control = None
         if relative.startswith("dashboard/") or relative.startswith("output/"):
-            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
-            self.send_header("Pragma", "no-cache")
-        self.end_headers()
-        self.wfile.write(content)
+            cache_control = "no-store, no-cache, must-revalidate"
+        compress = file_path.suffix.lower() in GZIP_EXTENSIONS
+        self._write_response(
+            content,
+            status=200,
+            content_type=mime or "application/octet-stream",
+            cache_control=cache_control,
+            compress=compress,
+        )
 
 
 def _startup_refresh() -> None:
@@ -193,12 +347,53 @@ def _startup_refresh() -> None:
         print(f"Startup live refresh skipped: {exc}")
 
 
-def main(host: str = "127.0.0.1", port: int = 8765, refresh_on_start: bool = False) -> None:
+def _intraday_scheduler_loop(root: Path) -> None:
+    cfg = load_intraday_config(root / "data/config/intraday_refresh.yaml")
+    interval = int(cfg.get("default_interval_minutes") or 30)
+    while True:
+        try:
+            if cfg.get("enabled", True):
+                run_intraday_refresh(
+                    interval_minutes=interval,
+                    force=False,
+                    artifact_path=root / "output" / "dashboard_artifact.json",
+                    config=cfg,
+                )
+        except Exception as exc:
+            logger.exception("Intraday scheduler error: %s", exc)
+        time.sleep(interval * 60)
+
+
+def main(
+    host: str | None = None,
+    port: int | None = None,
+    refresh_on_start: bool = False,
+    intraday_scheduler: bool | None = None,
+    no_intraday_scheduler: bool = False,
+) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    artifact = ensure_deployment_artifact()
+    WorkstationHandler.deployment_artifact = artifact
+
+    bind_host, bind_port = resolve_server_bind(host, port)
     if refresh_on_start:
         _startup_refresh()
-    server = ThreadingHTTPServer((host, port), WorkstationHandler)
-    print(f"Risk Manager workstation server running at http://{host}:{port}/dashboard/index.html")
-    print("APIs: POST /api/simulate | GET /api/live-summary | POST /api/refresh-data")
+    cfg = load_intraday_config(PROJECT_ROOT / "data/config/intraday_refresh.yaml")
+    start_scheduler = intraday_scheduler
+    if start_scheduler is None:
+        start_scheduler = bool(cfg.get("enabled", True)) and not no_intraday_scheduler
+    if start_scheduler:
+        scheduler_thread = threading.Thread(target=_intraday_scheduler_loop, args=(PROJECT_ROOT,), daemon=True)
+        scheduler_thread.start()
+        print("Intraday proxy scheduler thread started (enabled in intraday_refresh.yaml).")
+    elif no_intraday_scheduler:
+        print("Intraday proxy scheduler disabled via --no-intraday-scheduler.")
+    server = ThreadingHTTPServer((bind_host, bind_port), WorkstationHandler)
+    print(f"Risk Manager workstation server running at http://{bind_host}:{bind_port}/dashboard/index.html")
+    print(
+        "APIs: POST /api/simulate | GET /api/live-summary | GET /api/refresh/status | "
+        "POST /api/refresh | GET /api/snapshot/latest"
+    )
     server.serve_forever()
 
 
@@ -206,8 +401,24 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Run the Risk Manager workstation server.")
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--host", default=None, help="Bind host (default: HOST env or 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=None, help="Bind port (default: PORT env or 8765)")
     parser.add_argument("--refresh-on-start", action="store_true", help="Refresh yfinance market/news overlay before serving.")
+    parser.add_argument(
+        "--intraday-scheduler",
+        action="store_true",
+        help="Force-start background intraday proxy scheduler (default: on when intraday_refresh.enabled).",
+    )
+    parser.add_argument(
+        "--no-intraday-scheduler",
+        action="store_true",
+        help="Disable background intraday proxy scheduler.",
+    )
     args = parser.parse_args()
-    main(host=args.host, port=args.port, refresh_on_start=args.refresh_on_start)
+    main(
+        host=args.host,
+        port=args.port,
+        refresh_on_start=args.refresh_on_start,
+        intraday_scheduler=True if args.intraday_scheduler else None,
+        no_intraday_scheduler=args.no_intraday_scheduler,
+    )

@@ -10,6 +10,30 @@ const tabs = [
   "Daily Risk Report / Decision Log",
 ];
 
+const tabCompactLabels = [
+  "Command Center",
+  "Strategies",
+  "Allocation",
+  "Factors",
+  "Correlation",
+  "Market & Macro",
+  "Research Lab",
+  "Workflow",
+  "Daily Report",
+];
+
+const NAV_SECTIONS = [
+  { group: "Portfolio", tab: "Portfolio Command Center", label: "Command Center", icon: "portfolio" },
+  { group: "Strategies", tab: "Strategy Monitor", label: "Strategies", icon: "line" },
+  { group: "Allocation", tab: "Allocation & Rebalance", label: "Allocation", icon: "target" },
+  { group: "Risk", tab: "Risk Factors & Exposure", label: "Factors", icon: "risk" },
+  { group: "Risk", tab: "Correlation & Diversification", label: "Correlation", icon: "layers" },
+  { group: "Research", tab: "Backtesting & Research Lab", label: "Research Lab", icon: "shield" },
+  { group: "Workflow", tab: "Strategy Library & Workflow", label: "Workflow", icon: "layers" },
+  { group: "Reports", tab: "Daily Risk Report / Decision Log", label: "Daily Report", icon: "line" },
+  { group: "Data", tab: "Market & Macro Monitor", label: "Market & Macro", icon: "activity" },
+];
+
 const fallbackArtifact = {
   as_of_date: "2026-06-04",
   initial_capital: 1000000,
@@ -57,8 +81,7 @@ function humanize(value, fallback = "Not available") {
 function humanizeFactor(factor, artifact = activeArtifact) {
   const labels = artifact?.factors?.factor_display_labels || {};
   if (labels[factor]) return labels[factor];
-  if (factor === "cash") return "Treasury-bill / liquidity proxy exposure";
-  return humanize(factor);
+  return humanizeMetricLabel(factor, artifact);
 }
 
 function operatingMetric(artifact, key) {
@@ -169,21 +192,18 @@ function redrawAllCharts(artifact = activeArtifact) {
   const start = investmentStart(artifact);
   const caption = document.getElementById("pnlChartCaption");
   if (caption) caption.textContent = `Operating period since ${start} · Historical research context in Research Lab`;
-  drawDualAxisChart(document.getElementById("pnlCanvas"), series, { label: `Cumulative return since ${start}` });
+  drawOperatingPeriodCharts(series);
   renderFactorExposureBars("portfolioFactorBars", artifact.factors?.portfolio_factor_exposure_current, artifact);
   renderFactorExposureBars("riskFactorBars", artifact.factors?.portfolio_factor_exposure_current, artifact);
   renderFactorNotes(artifact);
   if (selectedLiteratureItem?.backtest) renderResearchLabPanels(selectedLiteratureItem);
-  if (activeStrategy) {
-    drawSeriesReturnAndDrawdown(document.getElementById("strategyCanvas"), activeStrategy.risk_packet?.chart_series || {});
-  }
   document.querySelectorAll("[data-spark]").forEach((canvas) => {
     if (canvas.__sparkValues) drawSparkline(canvas, canvas.__sparkValues, canvas.__sparkColor || "#1ac8ff");
   });
 }
 
 function installChartObservers(artifact) {
-  const targets = ["pnlCanvas", "backtestCanvas", "strategyCanvas"];
+  const targets = ["pnlCanvas", "drawdownCanvas", "backtestCanvas"];
   if (typeof ResizeObserver === "undefined") return;
   const observer = new ResizeObserver(debounce(() => redrawAllCharts(artifact), 120));
   targets.forEach((id) => {
@@ -246,6 +266,8 @@ function mergeLiveOverlay(artifact, overlay) {
   artifact.recommendations = overlay.recommendations || artifact.recommendations;
   artifact.live_refreshed_at = overlay.refreshed_at;
   artifact.live_market_as_of = overlay.market_as_of;
+  artifact.intraday_snapshot_id = overlay.snapshot_id || artifact.intraday_snapshot_id;
+  if (overlay.intraday_marks) mergeIntradayMarks(artifact, overlay.intraday_marks);
   if (overlay.factor_exposure_current) {
     artifact.factors = artifact.factors || {};
     artifact.factors.portfolio_factor_exposure_current = overlay.factor_exposure_current;
@@ -253,53 +275,174 @@ function mergeLiveOverlay(artifact, overlay) {
   return artifact;
 }
 
+function mergeIntradayMarks(artifact, marks) {
+  if (!marks) return artifact;
+  artifact.intraday_marks = marks;
+  artifact.intraday_snapshot_id = marks.snapshot_id || artifact.intraday_snapshot_id;
+  artifact.intraday_refresh_status = {
+    data_freshness: marks.data_quality?.freshness,
+    latest_observation: marks.data_quality?.latest_observation_ts_et,
+    refreshed_at: marks.refreshed_at,
+    evaluation_metadata: marks.evaluation_metadata,
+  };
+  if (marks.market_monitor) artifact.market_monitor = marks.market_monitor;
+  if (marks.news_risk) artifact.news_risk = marks.news_risk;
+  if (marks.recommendations) artifact.recommendations = marks.recommendations;
+  if (marks.data_quality) {
+    artifact.data_quality = { ...(artifact.data_quality || {}), intraday: marks.data_quality };
+  }
+  return artifact;
+}
+
+function mergeIntradaySnapshot(artifact, snapshot) {
+  if (!snapshot?.marks) return artifact;
+  mergeIntradayMarks(artifact, snapshot.marks);
+  artifact.intraday_snapshot_id = snapshot.snapshot_id;
+  artifact.intraday_refresh_status = {
+    ...(artifact.intraday_refresh_status || {}),
+    snapshot_id: snapshot.snapshot_id,
+    refresh_completed_at: snapshot.refresh_completed_at,
+    latest_observation: snapshot.latest_observation_ts_et,
+    market_status: snapshot.market_session_status,
+    refresh_status: snapshot.refresh_status,
+  };
+  return artifact;
+}
+
 function renderLiveDataState(artifact) {
-  const state = document.getElementById("headerDataState");
-  if (!state) return;
-  const marketAsOf = artifact?.build_metadata?.market_as_of || artifact?.data_classification?.market_as_of || artifact.as_of_date;
-  state.textContent = `Research market proxy · yfinance · ${marketAsOf}`;
-  state.className = "proxy-state";
+  renderIntradayRefreshStrip(artifact);
   renderTruthDisclosure(artifact);
+}
+
+function renderIntradayRefreshStrip(artifact) {
+  const strip = document.getElementById("intradayRefreshStrip");
+  if (!strip) return;
+  const monitoring = formatMonitoringState(artifact);
+  const status = artifact.intraday_refresh_status || {};
+  const meta = artifact.build_metadata || {};
+  const marketAsOf = meta.market_as_of || artifact.as_of_date;
+  const cadence = status.refresh_cadence_minutes || 30;
+  const lastRefresh = status.last_successful_refresh_at || status.refresh_completed_at || artifact.live_refreshed_at;
+  const latestObs = status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
+  const nextRefresh = status.next_scheduled_refresh_at;
+  strip.innerHTML = `
+    <span>Market <strong>${monitoring.headerMarket}</strong></span>
+    <span>Monitoring <strong class="${monitoring.tone || ""}">${monitoring.stripMonitoring}</strong></span>
+    <span>Data state <strong class="${monitoring.tone || ""}">${monitoring.stripDataState}</strong></span>
+    <span>Cadence <strong>${cadence}m</strong></span>
+    <span>Last refresh <strong>${formatTimestamp(lastRefresh)}</strong></span>
+    <span>Latest obs. <strong>${formatTimestamp(latestObs)}</strong></span>
+    <span>Next refresh <strong>${formatTimestamp(nextRefresh)}</strong></span>
+    <span class="muted-copy">${monitoring.detail} · Snapshot ${artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact"} · Proxy as-of ${marketAsOf}</span>`;
+}
+
+function formatTimestamp(value) {
+  if (!value) return "n/a";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", month: "short", day: "numeric" });
 }
 
 function renderNewsRiskSummary(newsRisk = {}) {
   const el = document.getElementById("newsRiskSummary");
   if (!el) return;
   const items = newsRisk.items || [];
+  const material = items.filter((item) => item.human_review || ["high", "medium"].includes(String(item.severity || "").toLowerCase()));
+  const urgent = material.length > 0 && material.some((item) => item.portfolio_mapped || item.affected_strategies?.length);
+  const watch = urgent ? "urgent review" : items.length ? "monitor" : "normal";
+  const sourceLabel = newsRisk.source?.includes("fallback") || newsRisk.source?.includes("proxy")
+    ? "Sample / proxy headline feed"
+    : (newsRisk.source || "yfinance / market-move proxy");
   el.innerHTML = `
-    <p>${statusBadge(newsRisk.watch_level || "normal")} News risk score <strong>${newsRisk.news_risk_score || 0}</strong> across ${items.length} headline(s).</p>
-    ${items.slice(0, 4).map((item) => `<p><strong>${item.headline}</strong><br><span class="muted-copy">${item.risk_interpretation}</span></p>`).join("") || "<p class='empty-state'>No live news items loaded.</p>"}`;
+    <p>${statusBadge(watch)} News risk score <strong>${newsRisk.news_risk_score || 0}</strong> · ${items.length} headline(s) · ${escapeHtml(sourceLabel)}</p>
+    ${items.slice(0, 3).map((item) => `<p><strong>${escapeHtml(item.headline)}</strong><br><span class="muted-copy">${escapeHtml(item.risk_interpretation || item.topic || "")}</span></p>`).join("") || "<p class='empty-state'>No live news items loaded.</p>"}`;
 }
 
-function renderRecommendationPanels(recs = []) {
-  const recHtml = recs.map((rec) => `<p>${statusBadge(rec.priority)} <strong>${rec.action}</strong><br>${rec.rationale}</p>`).join("");
-  document.getElementById("recommendationList").innerHTML = recHtml || "<p class='empty-state'>No recommendations.</p>";
-  document.getElementById("reportRecommendationList").innerHTML = recHtml;
+function renderRecommendationPanels(recs = [], artifact = activeArtifact) {
+  const recHtml = recs.map((rec) => `<p>${statusBadge(rec.priority)} <strong>${escapeHtml(humanizeUserFacingText(rec.action, artifact))}</strong><br>${escapeHtml(humanizeUserFacingText(rec.rationale, artifact))}</p>`).join("") || emptyState("No recommendations.");
+  const list = document.getElementById("recommendationList");
+  if (list) list.innerHTML = recHtml;
+  const reportList = document.getElementById("reportRecommendationList");
+  if (reportList) reportList.innerHTML = recHtml;
 }
 
 async function refreshLiveDataFromServer(artifact) {
   const button = document.getElementById("refreshLiveData");
   if (button) {
     button.disabled = true;
-    button.textContent = "Refreshing…";
+    button.textContent = "Refreshing proxy data…";
   }
+  renderIntradayRefreshStrip({ ...artifact, intraday_refresh_status: { ...(artifact.intraday_refresh_status || {}), refresh_state: "refreshing", in_progress: true } });
   try {
-    const response = await fetch("/api/refresh-data", { method: "POST" });
-    const overlay = await response.json();
-    if (!response.ok || overlay.ok === false) throw new Error(overlay.error || "refresh failed");
-    mergeLiveOverlay(artifact, overlay);
-    renderLiveDataState(artifact);
-    renderNewsRiskSummary(artifact.news_risk);
-    renderRecommendationPanels(artifact.recommendations);
-    renderStaticTables(artifact);
-    redrawAllCharts(artifact);
+    const response = await fetch("/api/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const payload = await response.json();
+    if (!response.ok || payload.ok === false) throw new Error(payload.error || "refresh failed");
+    mergeLiveOverlay(artifact, payload);
+    if (payload.snapshot_id) artifact.intraday_snapshot_id = payload.snapshot_id;
+    applyIntradayUiRefresh(artifact);
     if (button) button.textContent = `Updated ${new Date().toLocaleTimeString()}`;
   } catch (error) {
     if (button) button.textContent = "Refresh failed";
-    document.getElementById("newsRiskSummary").innerHTML = `<p class="negative">${error.message}. Start run_workstation_server.py --refresh-on-start</p>`;
+    const strip = document.getElementById("intradayRefreshStrip");
+    if (strip) strip.insertAdjacentHTML("beforeend", `<span class="negative">Error: ${escapeHtml(error.message)}</span>`);
   } finally {
     if (button) button.disabled = false;
   }
+}
+
+function applyIntradayUiRefresh(artifact) {
+  renderTopHeader(artifact);
+  renderLiveDataState(artifact);
+  renderNewsRiskSummary(artifact.news_risk);
+  renderRecommendationPanels(artifact.recommendations);
+  renderKpis(artifact);
+  renderStaticTables(artifact);
+  redrawAllCharts(artifact);
+}
+
+let intradayPollTimer = null;
+let lastSeenSnapshotId = null;
+
+async function pollIntradayRefreshStatus(artifact) {
+  try {
+    const response = await fetch("/api/refresh/status", { cache: "no-store" });
+    if (!response.ok) throw new Error("status unavailable");
+    const status = await response.json();
+    intradayMonitoringOffline = false;
+    setWorkstationMonitoring(true, false);
+    artifact.intraday_refresh_status = { ...(artifact.intraday_refresh_status || {}), ...status, monitoring_offline: false, ok: true };
+    renderIntradayRefreshStrip(artifact);
+    renderTopHeader(artifact);
+    const snapshotId = status.snapshot_id;
+    if (snapshotId && snapshotId !== lastSeenSnapshotId) {
+      const snapResponse = await fetch("/api/snapshot/latest", { cache: "no-store" });
+      if (snapResponse.ok) {
+        const snapshot = await snapResponse.json();
+        if (snapshot.ok !== false) {
+          mergeIntradaySnapshot(artifact, snapshot);
+          lastSeenSnapshotId = snapshotId;
+          applyIntradayUiRefresh(artifact);
+        }
+      }
+    }
+  } catch {
+    intradayMonitoringOffline = true;
+    setWorkstationMonitoring(false, false);
+    artifact.intraday_refresh_status = {
+      ...(artifact.intraday_refresh_status || {}),
+      monitoring_offline: true,
+      ok: false,
+    };
+    renderIntradayRefreshStrip(artifact);
+    renderTopHeader(artifact);
+  }
+}
+
+function installIntradayPolling(artifact) {
+  if (intradayPollTimer) clearInterval(intradayPollTimer);
+  lastSeenSnapshotId = artifact.intraday_snapshot_id || null;
+  pollIntradayRefreshStatus(artifact);
+  intradayPollTimer = setInterval(() => pollIntradayRefreshStatus(artifact), 60_000);
 }
 
 function installLiveControls(artifact) {
@@ -308,15 +451,80 @@ function installLiveControls(artifact) {
   button.addEventListener("click", () => refreshLiveDataFromServer(artifact));
 }
 
-let activeStrategy = null;
+let riskActionFilter = "current_model";
+let reportFrozenAt = null;
+let intradayMonitoringOffline = false;
 let activeArtifact = null;
 let activeDrawerView = "overview";
-let simulatedWeights = {};
-let simulationResult = null;
+const proposalSession = {
+  weights: {},
+  simulation: null,
+  source: "current",
+};
+
+function initProposalSession(artifact) {
+  proposalSession.weights = Object.fromEntries(
+    (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.current_weight || 0]),
+  );
+  proposalSession.simulation = null;
+  proposalSession.source = "current";
+}
+
+function loadSystemProposalSession(artifact) {
+  proposalSession.weights = Object.fromEntries(
+    (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.proposed_weight || 0]),
+  );
+  proposalSession.simulation = null;
+  proposalSession.source = "system";
+}
+
+function invalidateProposalSimulation() {
+  proposalSession.simulation = null;
+}
+
+function sessionProposedWeight(strategyId, fallback = 0) {
+  return proposalSession.weights[strategyId] ?? fallback;
+}
+
+function refreshProposalStatusViews(artifact) {
+  renderAllocationEditor(artifact);
+  renderSimulationResult(artifact);
+  renderAllocationBeforeAfterStrip(artifact);
+  renderApprovalStatusBar(artifact);
+  renderAllocationAnalysisPanels(artifact);
+  renderAllocationPersistentChecks(artifact);
+  renderDecisionStatusLines(artifact);
+  renderRebalancePreview(artifact);
+  renderDailyReport(artifact);
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  const statusEl = document.getElementById("decisionAuthorityStatus");
+  if (statusEl) {
+    if (proposal.status === "No rebalance proposed") {
+      statusEl.textContent = "No allocation change from current weights. Simulation not required.";
+    } else if (proposal.status === "Simulation required") {
+      statusEl.textContent = "Proposed weights differ from current allocation. Run simulation before recording a decision.";
+    } else if (!proposalSession.simulation) {
+      statusEl.textContent = "Human approval does not authorize execution. Simulate proposal before recording a decision.";
+    }
+  }
+}
+
+async function probeWorkstationApi() {
+  try {
+    const response = await fetch("/api/health", { cache: "no-store" });
+    setWorkstationMonitoring(response.ok, false);
+    return response.ok;
+  } catch {
+    setWorkstationMonitoring(false, true);
+    return false;
+  }
+}
+
 let localDecisionEvents = [];
 let monitorSort = { key: "daily_pnl", direction: "desc" };
 let simulationApiAvailable = null;
 let selectedLiteratureItem = null;
+let correlationUniverse = "allocated";
 
 const strategyCandidateShelf = [
   ["WQ Multi-Alpha ETF Basket", "101 Alphas", "SPY/QQQ/IWM/QUAL/VLUE/MTUM/USMV", "Ranked price-volume alpha blend", "Crowding, turnover, style reversal", "Prototype running"],
@@ -350,35 +558,71 @@ async function loadArtifact() {
 }
 
 function setActiveTab(tab) {
-  document.querySelectorAll(".tab-button").forEach((button) => {
+  document.querySelectorAll(".nav-rail button[data-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.tab === tab);
   });
   document.querySelectorAll(".tab-panel").forEach((panel) => {
     panel.classList.toggle("active", panel.dataset.tabPanel === tab);
   });
+  if (tab === "Daily Risk Report / Decision Log" && activeArtifact) {
+    renderDailyReport(activeArtifact);
+  }
   requestAnimationFrame(() => redrawAllCharts(activeArtifact));
 }
 
-function renderGlobalStatusBar(artifact = activeArtifact) {
-  const el = document.getElementById("globalStatusBar");
+function renderLeftNav() {
+  const nav = document.getElementById("navRail");
+  if (!nav) return;
+  let html = "";
+  let lastGroup = "";
+  NAV_SECTIONS.forEach((item, index) => {
+    if (item.group !== lastGroup) {
+      html += `<div class="nav-group-label">${item.group}</div>`;
+      lastGroup = item.group;
+    }
+    html += `<button type="button" class="${index === 0 ? "active" : ""}" data-tab="${item.tab}" title="${item.tab}">${icon(item.icon)}<span>${item.label}</span></button>`;
+  });
+  nav.innerHTML = html;
+  nav.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
+  installShellControls();
+}
+
+function renderTopHeader(artifact = activeArtifact) {
+  const el = document.getElementById("topbarMeta");
   if (!el || !artifact) return;
-  const headline = canonicalRiskHeadline(artifact);
-  const meta = artifact.build_metadata || {};
-  const quality = artifact.data_quality || {};
-  const stale = quality.stale === true;
+  const monitoring = formatMonitoringState(artifact);
   el.innerHTML = `
-    <span class="status-pill ${headline.blocking_breaches ? "breach" : headline.warnings ? "warn" : "ok"}">
-      ${headline.blocking_breaches || 0} breach · ${headline.warnings || 0} warn · ${headline.watch || 0} watch
-    </span>
-    <span>Operating since <strong>${investmentStart(artifact)}</strong></span>
-    <span>Market as of <strong>${meta.market_as_of || artifact.as_of_date || "n/a"}</strong></span>
-    <span class="status-muted">Build ${meta.build_id || "n/a"} · Retrieved ${meta.retrieval_timestamp || meta.generated_at || "n/a"}</span>
-    <span class="status-muted ${stale ? "stale" : ""}">${stale ? "Stale proxy data" : "Prototype model portfolio · not live fills"}</span>`;
+    <span class="mode-badge">Prototype Model Portfolio</span>
+    <span>As-of <strong>${artifact.as_of_date || "n/a"}</strong></span>
+    <span>Initial Model Capital <strong>${money(artifact.initial_capital || 0)}</strong></span>
+    <span>Monitored <strong>${artifact.strategy_count || 0}</strong></span>
+    <span>Market <strong>${monitoring.headerMarket}</strong></span>
+    <span>Data <strong class="${monitoring.tone || ""}">${monitoring.headerData}</strong></span>`;
+  renderSecondaryStatusStrip(artifact);
+}
+
+function renderSecondaryStatusStrip(artifact, meta = artifact?.build_metadata || {}, marketAsOf = meta.market_as_of || artifact?.as_of_date) {
+  const el = document.getElementById("secondaryStatusStrip");
+  if (!el) return;
+  const monitoring = formatMonitoringState(artifact);
+  const disclosure = artifact?.data_classification?.disclosure || "Prototype · ETF proxy · Not live fills";
+  el.innerHTML = `
+    <span title="${escapeHtml(disclosure)}">Build ${meta.build_id || "n/a"}</span>
+    <span>Retrieved ${meta.data_retrieved_at || meta.artifact_generated_at || "n/a"}</span>
+    <span>Operating since ${investmentStart(artifact)}</span>
+    <span>${monitoring.stripMonitoring} · ${monitoring.stripDataState}</span>
+    <span>Proxy as-of ${marketAsOf}</span>
+    <span>${disclosure.length > 90 ? `${disclosure.slice(0, 87)}…` : disclosure}</span>`;
+}
+
+function renderGlobalStatusBar() {
+  /* V2: metadata moved to topbar + secondary strip */
 }
 
 function installShellControls() {
+  const drawer = document.getElementById("riskDrawer");
   document.getElementById("toggleRiskDrawer")?.addEventListener("click", () => {
-    document.getElementById("riskDrawer")?.classList.toggle("collapsed");
+    drawer?.classList.toggle("collapsed");
   });
 }
 
@@ -416,11 +660,21 @@ function compareMetricDelta(before, after, lowerBetter, turnover) {
 }
 
 function renderTabs() {
-  const tabbar = document.getElementById("tabbar");
-  const tabIcons = ["portfolio", "line", "target", "risk", "layers", "activity", "shield", "layers", "line"];
-  tabbar.innerHTML = tabs.map((tab, index) => `<button class="tab-button ${index === 0 ? "active" : ""}" data-tab="${tab}">${icon(tabIcons[index])}<span>${index + 1}. ${tab}</span></button>`).join("");
-  document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
-  installShellControls();
+  renderLeftNav();
+}
+
+function renderAllocationBars(strategies = []) {
+  const el = document.getElementById("allocationBars");
+  if (!el) return;
+  const allocated = strategies.filter((strategy) => (strategy.current_weight || 0) > 0)
+    .sort((left, right) => (right.current_weight || 0) - (left.current_weight || 0));
+  const maxWeight = Math.max(...allocated.map((strategy) => strategy.current_weight || 0), 0.01);
+  el.innerHTML = allocated.slice(0, 10).map((strategy) => `
+    <div class="allocation-bar-row">
+      <span>${strategy.name}</span>
+      <div class="allocation-bar-track"><span class="allocation-bar-fill" style="width:${Math.min(100, (strategy.current_weight / maxWeight) * 100)}%"></span></div>
+      <strong class="col-pct">${pct(strategy.current_weight || 0)}</strong>
+    </div>`).join("") || "<p class='empty-state'>No allocated strategies.</p>";
 }
 
 function strategyRationale(strategy) {
@@ -432,9 +686,9 @@ function strategyRationale(strategy) {
   return strategy.hypothesis || "Monitor daily behavior versus hypothesis and limits.";
 }
 
-function strategyActionLabel(strategy) {
+function strategyActionLabel(strategy, proposedWeight = strategy.proposed_weight) {
   const action = strategy.final_action_after_double_check || strategy.recommended_action || "Review";
-  const change = (strategy.proposed_weight || 0) - (strategy.current_weight || 0);
+  const change = (proposedWeight ?? strategy.proposed_weight ?? 0) - (strategy.current_weight || 0);
   if (Math.abs(change) < 0.0001) return action;
   if (change > 0) return action.includes("Increase") ? action : "Increase Review";
   return action.includes("Reduce") ? action : "Reduce Review";
@@ -481,54 +735,52 @@ function oklchToHex() {
 function renderRebalancePreview(artifact) {
   const el = document.getElementById("rebalancePreviewTable");
   if (!el) return;
-  const rows = (artifact.strategies || []).filter((strategy) => strategy.current_weight > 0 || strategy.proposed_weight > 0);
-  el.innerHTML = `<tr><th>Strategy</th><th>Current</th><th>Proposed</th><th>Change</th><th>Action</th><th>Rationale</th></tr>` +
+  const rows = (artifact.strategies || []).filter((strategy) => {
+    const proposed = sessionProposedWeight(strategy.strategy_id, strategy.proposed_weight || 0);
+    return (strategy.current_weight || 0) > 0 || proposed > 0;
+  });
+  el.innerHTML = `<tr><th>Strategy</th><th>Current</th><th>Proposed</th><th>Change</th><th>Risk Impact</th><th>Est. Cost</th><th>Action</th><th>Gate</th><th>Human</th></tr>` +
     rows.map((strategy) => {
-      const change = (strategy.proposed_weight || 0) - (strategy.current_weight || 0);
+      const proposed = sessionProposedWeight(strategy.strategy_id, strategy.proposed_weight || 0);
+      const change = proposed - (strategy.current_weight || 0);
+      const cost = Math.abs(change) * artifact.initial_capital * 0.0005;
+      const gate = proposalSession.simulation?.checks?.find((c) => c.status === "breach")
+        || strategy.decision_review?.checks?.find((c) => c.status === "breach");
       return `<tr>
         <td><button class="table-link" data-open-strategy="${strategy.strategy_id}"><strong>${strategy.name}</strong></button></td>
-        <td>${pct(strategy.current_weight || 0, 1)}</td>
-        <td>${pct(strategy.proposed_weight || 0, 1)}</td>
-        <td class="${cls(change)}">${pct(change, 1)}</td>
-        <td>${statusBadge(strategyActionLabel(strategy))}</td>
-        <td class="wrap-cell">${strategyRationale(strategy)}</td>
+        <td class="col-pct">${pct(strategy.current_weight || 0, 1)}</td>
+        <td class="col-pct">${pct(proposed, 1)}</td>
+        <td class="${cls(change)} col-pct">${pct(change, 1)}</td>
+        <td class="wrap-cell">${proposalSession.simulation ? "See Allocation simulation" : "Simulation required for impact"}</td>
+        <td class="col-num">${money(cost)}</td>
+        <td class="col-status">${statusBadge(strategyActionLabel(strategy, proposed))}</td>
+        <td class="col-status">${statusBadge(gate ? "blocked" : "clear")}</td>
+        <td class="col-status">${statusBadge(strategy.human_approval_required ? "required" : "n/a")}</td>
       </tr>`;
     }).join("");
   el.querySelectorAll("[data-open-strategy]").forEach((button) => button.addEventListener("click", () => {
     setActiveTab("Allocation & Rebalance");
-    renderDrawer(artifact.strategies.find((strategy) => strategy.strategy_id === button.dataset.openStrategy), artifact);
+    openStrategyReview(artifact.strategies.find((strategy) => strategy.strategy_id === button.dataset.openStrategy), artifact);
   }));
 }
 
-function canonicalNonOkChecks(artifact = activeArtifact) {
-  const scopes = artifact?.risk_status_summary?.scopes || {};
-  const checks = [];
-  Object.values(scopes).forEach((scope) => {
-    (scope.checks || []).forEach((check) => {
-      if (!["ok", "not_evaluated"].includes(check.status)) checks.push(check);
-    });
-  });
-  const seen = new Set();
-  return checks.filter((check) => {
-    const id = check.check_id || check.limit_id || `${check.scope}:${check.metric}`;
-    if (seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
+function canonicalNonOkChecks(artifact = activeArtifact, filter = "current_model") {
+  return groupedCanonicalIssues(artifact, filter === "all" ? "all" : filter);
 }
 
 function renderCommandRiskLimits(artifact) {
   const el = document.getElementById("commandRiskLimitsTable");
   if (!el) return;
   const checks = canonicalNonOkChecks(artifact).slice(0, 10);
-  el.innerHTML = `<tr><th>Metric</th><th>Current</th><th>Limit</th><th>Util.</th><th>Status</th></tr>` +
+  el.innerHTML = `<tr><th>Subject</th><th>Metric</th><th>Current</th><th>Limit</th><th>Util.</th><th>Status</th></tr>` +
     checks.map((check) => `<tr>
-      <td>${humanize(check.metric)}</td>
+      <td class="wrap-cell">${escapeHtml(formatIssueSubjectLabel(check, artifact))}</td>
+      <td>${humanizeMetricLabel(check.metric, artifact)}</td>
       <td>${typeof check.current_value === "number" ? num(check.current_value, 3) : humanize(check.current_value)}</td>
       <td>${typeof check.breach_threshold === "number" ? num(check.breach_threshold, 3) : humanize(check.breach_threshold)}</td>
       <td>${check.utilization != null ? pct(check.utilization, 0) : "—"}</td>
       <td>${statusBadge(check.status)}</td>
-    </tr>`).join("") || `<tr><td colspan="5">All configured limits within range on allocated scope.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="6">All configured limits within range on allocated scope.</td></tr>`;
 }
 
 function renderCommandCorrelationMini(artifact) {
@@ -551,36 +803,34 @@ function renderCommandCorrelationMini(artifact) {
 function renderCommandMarketMini(artifact) {
   const el = document.getElementById("commandMarketMini");
   if (!el) return;
-  el.innerHTML = `<tr><th>Proxy</th><th>Last</th><th>Daily</th><th>Read</th></tr>` +
-    (artifact.market_monitor || []).slice(0, 8).map((row) => `<tr>
+  el.innerHTML = `<tr><th>Proxy</th><th>Last</th><th>Daily</th><th class="interpretation-cell">Read</th></tr>` +
+    (artifact.market_monitor || []).slice(0, 6).map((row) => `<tr>
       <td>${row.ticker}</td>
-      <td>${Number(row.last || 0).toFixed(2)}</td>
-      <td class="${cls(row.daily_return || 0)}">${pct(row.daily_return || 0, 2)}</td>
-      <td class="wrap-cell">${row.risk_interpretation}</td>
+      <td class="col-num">${Number(row.last || 0).toFixed(2)}</td>
+      <td class="col-pct ${cls(row.daily_return || 0)}">${pct(row.daily_return || 0, 2)}</td>
+      <td class="interpretation-cell wrap-cell">${row.risk_interpretation}</td>
     </tr>`).join("");
 }
 
-function renderMonitorKpiGrid(artifact) {
-  const el = document.getElementById("monitorKpiGrid");
+function renderMonitorKpiStrip(artifact) {
+  const el = document.getElementById("monitorKpiStrip");
   if (!el) return;
   const strategies = artifact.strategies || [];
   const allocated = strategies.filter((strategy) => strategy.current_weight > 0);
   const warnings = allocated.filter((strategy) => ["watch", "warning"].includes(strategy.live_risk_status || strategy.risk_status)).length;
   const breaches = allocated.filter((strategy) => (strategy.live_risk_status || strategy.risk_status) === "breach").length;
-  const avgSharpe = allocated.reduce((sum, strategy) => sum + (strategy.sharpe || 0), 0) / Math.max(allocated.length, 1);
-  const avgTurnover = allocated.reduce((sum, strategy) => sum + (strategy.turnover?.annualized_turnover || 0), 0) / Math.max(allocated.length, 1);
-  const pending = strategies.filter((strategy) => strategy.human_approval_required).length;
-  const avgCost = allocated.reduce((sum, strategy) => sum + (strategy.transaction_cost_drag || strategy.turnover?.annualized_cost_drag || 0), 0) / Math.max(allocated.length, 1);
-  const cards = [
-    ["Strategies Monitored", strategies.length, ""],
-    ["In Warning", warnings, pct(warnings / Math.max(strategies.length, 1), 0)],
-    ["Model Breaches", breaches, pct(breaches / Math.max(strategies.length, 1), 0)],
-    ["Avg Rolling Sharpe", num(avgSharpe), "Allocated set"],
-    ["Avg Turnover", `${num(avgTurnover, 1)}x`, "Annualized"],
-    ["Human Reviews Pending", pending, "Across registry"],
-    ["Avg Cost Drag", pct(avgCost, 2), "Annualized proxy"],
-  ];
-  el.innerHTML = cards.map(([label, value, sub]) => `<article class="kpi-card"><span>${label}</span><strong>${value}</strong><small>${sub}</small></article>`).join("");
+  const openReviews = countOpenDecisionReviews(artifact, localDecisionEvents);
+  el.innerHTML = compactKpiStrip([
+    ["Monitored", strategies.length, "", ""],
+    ["Allocated", allocated.length, "", ""],
+    ["Warnings", warnings, "", warnings ? "warning-text" : ""],
+    ["Allocated Strategy Breaches", breaches, "", breaches ? "negative" : ""],
+    ["Open Decision Reviews", String(openReviews), `Policy: ${strategies.length} strategies`, openReviews ? "warning-text" : ""],
+  ]);
+}
+
+function renderMonitorKpiGrid(artifact) {
+  renderMonitorKpiStrip(artifact);
 }
 
 function renderFactorKpiGrid(artifact) {
@@ -588,7 +838,7 @@ function renderFactorKpiGrid(artifact) {
   if (!el) return;
   const checks = (artifact.risk_limits?.factors?.checks || []).slice(0, 6);
   const cards = checks.map((check) => [
-    humanize(check.metric),
+    humanizeMetricLabel(check.metric, artifact),
     typeof check.current_value === "number" ? num(check.current_value, 2) : humanize(check.current_value),
     check.utilization != null ? `${pct(check.utilization, 0)} of limit` : humanize(check.status),
     check.status,
@@ -600,62 +850,147 @@ function renderFactorKpiGrid(artifact) {
   el.innerHTML = cards.map(([label, value, sub, status]) => `<article class="kpi-card"><span>${label}</span><strong class="${status === "breach" ? "negative" : status === "watch" ? "warning-text" : ""}">${value}</strong><small>${sub}</small></article>`).join("");
 }
 
-function renderCompareAllocationKpis(artifact) {
-  const el = document.getElementById("allocationKpis");
+function renderAllocationBeforeAfterStrip(artifact) {
+  const el = document.getElementById("allocationBeforeAfterStrip");
   if (!el) return;
-  const current = simulationResult?.metricsBefore || {
-    sharpe: artifact.risk_summary?.portfolio_sharpe || 0,
+  const current = proposalSession.simulation?.metricsBefore || {
+    sharpe: metricNumeric(operatingMetric(artifact, "portfolio_sharpe")) ?? artifact.risk_summary?.portfolio_sharpe ?? 0,
     volatility: artifact.risk_summary?.portfolio_volatility || 0,
     var99: artifact.risk_summary?.portfolio_var_99 || 0,
     es95: artifact.risk_summary?.portfolio_expected_shortfall_95 || 0,
     maxDrawdown: artifact.risk_summary?.portfolio_max_drawdown || 0,
   };
-  const proposed = simulationResult?.metrics || {
-    sharpe: artifact.risk_summary_proposed?.portfolio_sharpe || current.sharpe,
-    volatility: artifact.risk_summary_proposed?.portfolio_volatility || current.volatility,
-    var99: artifact.risk_summary_proposed?.portfolio_var_99 || current.var99,
-    es95: artifact.risk_summary_proposed?.portfolio_expected_shortfall_95 || current.es95,
-    maxDrawdown: artifact.risk_summary_proposed?.portfolio_max_drawdown || current.maxDrawdown,
-  };
+  const proposed = proposalSession.simulation?.metrics || current;
   const corrSummary = artifact.correlation?.summary || {};
-  const turnover = simulationResult?.turnover ?? 0;
+  const turnover = proposalSession.simulation?.turnover ?? 0;
+  const total = Object.values(proposalSession.weights).reduce((sum, v) => sum + Number(v || 0), 0);
+  const cash = 1 - total;
+  const unchanged = proposalIsUnchanged(artifact, proposalSession.weights);
   const metrics = [
-    ["Sharpe (TTM)", current.sharpe, proposed.sharpe, false],
-    ["Volatility (Ann.)", current.volatility, proposed.volatility, true],
-    ["VaR 99%", current.var99, proposed.var99, true],
-    ["Expected Shortfall 95%", current.es95, proposed.es95, true],
-    ["Max Drawdown", current.maxDrawdown, proposed.maxDrawdown, true],
-    ["Avg |Correlation|", corrSummary.average_abs_correlation || 0, corrSummary.average_abs_correlation || 0, true],
+    ["Sharpe", current.sharpe, proposed.sharpe, false, false],
+    ["Volatility", current.volatility, proposed.volatility, true, true],
+    ["VaR 99%", current.var99, proposed.var99, true, true],
+    ["ES 95%", current.es95, proposed.es95, true, true],
+    ["Max DD", current.maxDrawdown, proposed.maxDrawdown, true, true],
+    ["Avg |Corr|", corrSummary.average_abs_correlation || 0, corrSummary.average_abs_correlation || 0, true, false],
+    ["Concentration", corrSummary.max_abs_correlation || 0, corrSummary.max_abs_correlation || 0, true, false],
+    ["Residual Cash", cash, cash, true, true],
+    ["Turnover", turnover, turnover, true, false],
+    ["Txn Cost", proposalSession.simulation?.estimatedCost ?? 0, proposalSession.simulation?.estimatedCost ?? 0, true, false],
   ];
-  el.innerHTML = metrics.map(([label, before, after, lowerBetter]) => {
-    const outcome = compareMetricDelta(before, after, lowerBetter, turnover);
-    const deltaText = outcome.delta != null
-      ? (lowerBetter ? pct(outcome.delta, 2) : num(outcome.delta))
-      : "";
-    return `<article class="compare-kpi-card">
-      <span class="label">${label}</span>
-      <strong class="current">${lowerBetter ? pct(before, 2) : num(before)} → ${lowerBetter ? pct(after, 2) : num(after)}</strong>
-      <div class="delta ${outcome.className}">${outcome.label}${deltaText ? ` (${deltaText})` : ""}</div>
-    </article>`;
-  }).join("");
+  el.innerHTML = `<div class="before-after-strip">${metrics.map(([label, before, after, lowerBetter, asPct]) => {
+    const m = metricDelta(before, after, { lowerBetter, asPct, turnover: unchanged ? 0 : turnover });
+    const avail = label.includes("Sharpe") && !operatingMetric(artifact, "portfolio_sharpe")?.available ? "N/A" : "";
+    return `<div class="before-after-metric"><span class="label">${label}</span><span class="ba-values">${avail || `${m.beforeText} → ${m.afterText}`}</span><span class="ba-delta ${m.className}">${unchanged ? "No change" : m.label}</span></div>`;
+  }).join("")}${unchanged ? `<div class="before-after-metric"><span class="label">Net improvement</span><span class="ba-values">—</span><span class="ba-delta neutral">No rebalance proposed</span></div>` : ""}</div>`;
+}
+
+function renderCompareAllocationKpis(artifact) {
+  renderAllocationBeforeAfterStrip(artifact);
+}
+
+function renderAllocationPersistentChecks(artifact) {
+  const el = document.getElementById("allocationPersistentChecks");
+  if (!el) return;
+  const total = Object.values(proposalSession.weights).reduce((sum, v) => sum + Number(v || 0), 0);
+  const cash = 1 - total;
+  const gateImpact = summarizeProposalGateImpact(proposalSession.simulation);
+  const currentBreaches = countCurrentPortfolioBreaches(artifact);
+  const reduceOnly = (artifact.strategies || []).filter((s) => {
+    const e = formatEligibilityDisplay(s);
+    return e.label.includes("reduce-only") || e.label.includes("under review");
+  }).length;
+  el.innerHTML = `
+    <span>Proposed weight <strong>${pct(total, 1)}</strong></span>
+    <span>Invested <strong>${pct(total, 1)}</strong></span>
+    <span>Residual cash <strong>${pct(cash, 1)}</strong></span>
+    <span>Reduce-only <strong>${reduceOnly}</strong></span>
+    <span>Current portfolio breaches <strong class="${currentBreaches ? "negative" : ""}">${currentBreaches}</strong></span>
+    <span>New proposal breaches <strong class="${gateImpact.newBreaches ? "negative" : ""}">${gateImpact.newBreaches}</strong></span>
+    <span>Worsened breaches <strong class="${gateImpact.worsened ? "warning-text" : ""}">${gateImpact.worsened}</strong></span>
+    <span>Improved/resolved <strong class="${gateImpact.improved ? "positive" : ""}">${gateImpact.improved}</strong></span>
+    <span>Proposal gate blockers <strong class="${gateImpact.blockers ? "negative" : ""}">${gateImpact.blockers}</strong></span>
+    <span>Turnover <strong>${pct(proposalSession.simulation?.turnover ?? 0, 1)}</strong></span>
+    <span>Txn cost <strong>${money(proposalSession.simulation?.estimatedCost ?? 0)}</strong></span>`;
+}
+
+function renderDecisionStatusLines(artifact) {
+  const el = document.getElementById("decisionStatusLines");
+  if (!el) return;
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  el.innerHTML = `
+    <div><strong>Proposal status:</strong> ${statusBadge(proposal.status)} — ${proposal.detail}</div>
+    <div><strong>Human approval:</strong> ${localDecisionEvents.at(-1)?.event || "Not recorded"}</div>
+    <div><strong>Execution authorization:</strong> disabled / not authorized</div>`;
+}
+
+function renderAllocationAnalysisPanels(artifact) {
+  const factorTable = document.getElementById("factorConcentrationTable");
+  const corrPanel = document.getElementById("correlationComparePanel");
+  const budget = document.getElementById("riskBudgetUsage");
+  const scenarioTable = document.getElementById("scenarioImpactTable");
+  const currentExp = proposalSession.simulation?.factorExposureBefore || artifact.factors?.portfolio_factor_exposure_current || {};
+  const proposedExp = proposalSession.simulation?.factorExposureAfter || artifact.factors?.portfolio_factor_exposure_proposed || artifact.factors?.portfolio_factor_exposure_current || {};
+  const factorChecks = artifact.risk_limits?.factors?.checks || [];
+  if (factorTable) {
+    const keys = [...new Set([...Object.keys(currentExp), ...Object.keys(proposedExp)])].slice(0, 10);
+    factorTable.innerHTML = `<tr><th>Factor</th><th>Current</th><th>Proposed</th><th>Limit</th><th>Util. Before</th><th>Util. After</th><th>Δ</th></tr>` +
+      keys.map((factor) => {
+        const check = factorChecks.find((c) => c.metric === factor || humanizeFactor(c.metric, artifact) === humanizeFactor(factor, artifact));
+        const before = Number(currentExp[factor] || 0);
+        const after = Number(proposedExp[factor] || 0);
+        const utilBefore = check?.utilization ?? Math.abs(before);
+        const utilAfter = check?.utilization ?? Math.abs(after);
+        return `<tr><td>${humanizeFactor(factor, artifact)}</td><td>${num(before, 3)}</td><td>${num(after, 3)}</td><td>${check ? num(check.breach_threshold, 3) : "—"}</td><td>${utilizationBar(utilBefore, check?.status)}</td><td>${utilizationBar(utilAfter, check?.status)}</td><td class="${cls(after - before)}">${num(after - before, 3)}</td></tr>`;
+      }).join("");
+  }
+  const corr = artifact.correlation?.summary || {};
+  if (corrPanel) {
+    corrPanel.innerHTML = `
+      <p>Avg |correlation|: <strong>${num(corr.average_abs_correlation)}</strong> (before/after proxy)</p>
+      <p>Duplicate-risk pairs: <strong>${corr.breach_count || 0}</strong></p>
+      <p>Max |correlation|: <strong>${num(corr.max_abs_correlation)}</strong></p>`;
+  }
+  if (budget) {
+    const exposure = currentExp;
+    const maxAbs = Math.max(...Object.values(exposure).map((v) => Math.abs(Number(v) || 0)), 0.01);
+    budget.innerHTML = Object.entries(exposure).slice(0, 8).map(([factor, value]) => `<div><span>${humanizeFactor(factor, artifact)}</span><div class="bar"><span style="width:${clamp(Math.abs(value) / maxAbs * 100, 4, 100)}%"></span></div><strong>${num(value, 3)}</strong></div>`).join("");
+  }
+  if (scenarioTable) {
+    scenarioTable.innerHTML = `<tr><th>Scenario</th><th>Current</th><th>Proposed</th><th>Status</th></tr>` +
+      (artifact.factors?.scenario_shock_table || []).slice(0, 8).map((row) => `<tr><td>${row.scenario}</td><td class="negative">${pct(row.estimated_portfolio_impact || 0, 2)}</td><td class="negative">${pct(row.estimated_portfolio_impact || 0, 2)}</td><td>${statusBadge(row.risk_status)}</td></tr>`).join("");
+  }
 }
 
 function renderApprovalStatusBar(artifact) {
   const el = document.getElementById("approvalStatusBar");
   if (!el) return;
-  const decision = artifact.decision_review || {};
-  const cost = simulationResult?.estimatedCost ?? artifact.allocation?.estimated_transaction_cost ?? 0;
-  const gateBlockers = (simulationResult?.proposalGates || []).filter((gate) => gate.status === "breach");
-  const simBlockers = (simulationResult?.checks || []).filter((check) => check.status === "breach");
-  const blocked = gateBlockers.length || simBlockers.length;
-  const pending = artifact.allocation?.approval_required !== false || blocked;
-  el.className = `approval-status-bar ${pending ? "pending" : ""}`;
+  const cost = proposalSession.simulation?.estimatedCost ?? artifact.allocation?.estimated_transaction_cost ?? 0;
+  const gateImpact = summarizeProposalGateImpact(proposalSession.simulation);
+  const simHardBlockers = (proposalSession.simulation?.checks || []).filter((check) => check.status === "breach");
+  const currentBreaches = countCurrentPortfolioBreaches(artifact);
+  const unchanged = proposalIsUnchanged(artifact, proposalSession.weights);
+  const gateStatus = unchanged
+    ? "Proposal gate status: clear (no allocation change)"
+    : gateImpact.blockers
+      ? `Proposal gate status: blocked (${gateImpact.blockers} blocker${gateImpact.blockers === 1 ? "" : "s"})`
+      : "Proposal gate status: clear (no new or worsened blockers)";
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  const humanReview = proposal.status === "No rebalance proposed"
+    ? "Human review: monitoring acknowledgement only"
+    : proposal.status === "Simulation required"
+      ? "Human review: pending simulation"
+      : "Human review: required";
+  const blocked = !unchanged && (gateImpact.blockers > 0 || simHardBlockers.length > 0);
+  el.className = `approval-status-bar v2-approval-bar ${blocked ? "pending" : ""}`;
   el.innerHTML = `
-    <div><strong>Est. Transaction Cost</strong><div>${money(cost)}</div></div>
-    <div><strong>Optimizer</strong><div>${humanize(simulationResult?.optimizerLabel || artifact.rebalance_simulation?.official_optimizer?.optimizer_label, "Heuristic proposal")}</div></div>
-    <div><strong>System Conclusion</strong><div>${humanize(decision.final_decision, "Modify Then Human Review")}</div></div>
-    <div><strong>Proposal Gates</strong><div>${blocked ? statusBadge("blocked") : statusBadge("clear")} ${gateBlockers.length ? gateBlockers.map((g) => g.metric).join(", ") : "No hard gate blockers"}</div></div>
-    <div><strong>Human Approval</strong><div>${pending ? statusBadge("pending human approval") : statusBadge("ok")} · Execution not authorized</div></div>`;
+    <div><strong>Proposal Status</strong><div>${statusBadge(proposal.status)} ${proposal.detail}</div></div>
+    <div><strong>Est. Transaction Cost</strong><div>${money(proposal.status === "No rebalance proposed" ? 0 : cost)}</div></div>
+    <div><strong>Optimizer</strong><div>${humanize(proposalSession.simulation?.optimizerLabel || artifact.rebalance_simulation?.official_optimizer?.optimizer_label, "Heuristic proposal")}</div></div>
+    <div><strong>Proposal Gates</strong><div>${gateStatus}</div><small class="status-muted">Current portfolio breaches: ${currentBreaches}</small></div>
+    <div><strong>Governance</strong><div>${humanReview} · Execution authorization: disabled</div></div>`;
+  const approveBtn = document.getElementById("approveDecision");
+  if (approveBtn) approveBtn.disabled = blocked;
 }
 
 function renderAllocationSidePanels(artifact) {
@@ -679,15 +1014,15 @@ function renderAllocationSidePanels(artifact) {
 function renderAiRiskSummary(artifact, targetId = "aiRiskSummary") {
   const el = document.getElementById(targetId);
   if (!el) return;
-  const decision = artifact.decision_review || {};
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
   const recs = artifact.recommendations || [];
-  const impact = (decision.expected_impact?.risk_metric_changes || []).slice(0, 4);
+  const impact = (artifact.decision_review?.expected_impact?.risk_metric_changes || []).slice(0, 4);
   el.innerHTML = `
-    <p><strong>System conclusion:</strong> ${humanize(decision.final_decision, "Modify Then Human Review")}</p>
-    <ul>${recs.slice(0, 5).map((rec) => `<li>${rec.action}: ${rec.rationale}</li>`).join("")}</ul>
+    <p><strong>Proposal status:</strong> ${statusBadge(proposal.status)} — ${proposal.detail}</p>
+    <ul>${recs.slice(0, 5).map((rec) => `<li>${escapeHtml(humanizeUserFacingText(rec.action, artifact))}: ${escapeHtml(humanizeUserFacingText(rec.rationale, artifact))}</li>`).join("")}</ul>
     <p><strong>Expected metric shifts (official optimizer):</strong></p>
     <ul>${impact.map((metric) => `<li>${humanize(metric.metric)} ${num(metric.current, 3)} → ${num(metric.proposed, 3)} (${metric.expected_outcome})</li>`).join("") || "<li>Run simulation to refresh custom-weight impact.</li>"}</ul>
-    <p><strong>Double-check:</strong> ${decision.double_check_summary?.fail || 0} failed gates, ${decision.double_check_summary?.warning || 0} warnings.</p>`;
+    <p><strong>Current portfolio breaches:</strong> ${countCurrentPortfolioBreaches(artifact)} · <strong>Proposal gate blockers:</strong> ${summarizeProposalGateImpact(proposalSession.simulation).blockers}</p>`;
 }
 
 function renderRebalanceTradeList(artifact) {
@@ -705,19 +1040,20 @@ function renderRebalanceTradeList(artifact) {
 }
 
 function renderWorkstationPanels(artifact) {
-  drawAllocationDonut(document.getElementById("allocationDonutCanvas"), artifact.strategies || []);
+  renderAllocationBars(artifact.strategies || []);
+  renderContributorsDetractorsTables(artifact);
+  renderOperatingLedgerOrCharts(artifact);
+  renderRiskActionCenter(artifact);
   renderRebalancePreview(artifact);
-  renderCommandRiskLimits(artifact);
-  renderCommandCorrelationMini(artifact);
   renderCommandMarketMini(artifact);
-  renderMonitorKpiGrid(artifact);
+  renderCommandWatchlistPanels(artifact);
+  renderMonitorKpiStrip(artifact);
   renderFactorKpiGrid(artifact);
-  renderCompareAllocationKpis(artifact);
+  renderAllocationBeforeAfterStrip(artifact);
+  renderAllocationAnalysisPanels(artifact);
   renderApprovalStatusBar(artifact);
-  renderAllocationSidePanels(artifact);
-  renderAiRiskSummary(artifact, "aiRiskSummary");
-  renderAiRiskSummary(artifact, "commandAiSummary");
-  renderRebalanceTradeList(artifact);
+  renderDecisionStatusLines(artifact);
+  renderAllocationPersistentChecks(artifact);
 }
 
 function canvasScale(canvas) {
@@ -771,6 +1107,56 @@ function drawSparkline(canvas, values = [], color = "#1ac8ff") {
   ctx.beginPath();
   pathFromSeries(ctx, series, 0, 3, w, h - 6, min, max === min ? min + 1e-6 : max);
   ctx.stroke();
+}
+
+function drawOperatingPeriodCharts(series = {}) {
+  drawSingleMetricChart(document.getElementById("pnlCanvas"), series.cumulative_return || [], {
+    label: "Cumulative return",
+    color: "#1ac8ff",
+    format: (value) => pct(value, 2),
+  });
+  drawSingleMetricChart(document.getElementById("drawdownCanvas"), series.drawdown || [], {
+    label: "Drawdown",
+    color: "#ff5a4f",
+    format: (value) => pct(value, 2),
+  });
+}
+
+function drawSingleMetricChart(canvas, values = [], options = {}) {
+  if (!canvas) return;
+  const { ctx, w, h } = canvasScale(canvas);
+  const series = downsampleSeries((values || []).filter(Number.isFinite), Math.max(80, Math.floor(w * 1.1)));
+  ctx.clearRect(0, 0, w, h);
+  if (!series.length) {
+    ctx.fillStyle = "rgba(211, 234, 240, .72)";
+    ctx.font = "12px Inter, system-ui";
+    ctx.fillText("Operating-period series unavailable.", 12, 24);
+    return;
+  }
+  const pad = { l: 44, r: 16, t: 20, b: 22 };
+  const plotW = w - pad.l - pad.r;
+  const plotH = h - pad.t - pad.b;
+  const min = Math.min(...series, 0);
+  const max = Math.max(...series, 0.001);
+  ctx.strokeStyle = "rgba(160, 205, 218, .13)";
+  for (let i = 0; i <= 3; i += 1) {
+    const y = pad.t + (plotH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = options.color || "#1ac8ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  pathFromSeries(ctx, series, pad.l, pad.t, plotW, plotH, min, max);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(211, 234, 240, .72)";
+  ctx.font = "11px Inter, system-ui";
+  ctx.fillText(options.label || "Series", pad.l, 12);
+  ctx.textAlign = "right";
+  ctx.fillText(options.format ? options.format(series.at(-1) || 0) : num(series.at(-1) || 0), w - 8, 12);
+  ctx.textAlign = "left";
 }
 
 function drawDualAxisChart(canvas, series, options = {}) {
@@ -880,6 +1266,58 @@ function drawGrossNetEquityChart(canvas, dates, grossReturns, netReturns) {
   ctx.fillText("Net after 5 bps/side costs", pad.l + 150, 12);
 }
 
+function drawReturnDistributionChart(canvas, returns = []) {
+  if (!canvas) return;
+  const { ctx, w, h } = canvasScale(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const values = (returns || []).filter(Number.isFinite);
+  if (!values.length) {
+    drawDrawerChartMessage(canvas, "Chart unavailable — no strategy series supplied");
+    return;
+  }
+  const bins = 24;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const width = (max - min) || 1e-6;
+  const counts = Array.from({ length: bins }, () => 0);
+  values.forEach((value) => {
+    const idx = Math.min(bins - 1, Math.max(0, Math.floor(((value - min) / width) * bins)));
+    counts[idx] += 1;
+  });
+  const peak = Math.max(...counts, 1);
+  const pad = { l: 28, r: 8, t: 18, b: 18 };
+  ctx.fillStyle = "rgba(211, 234, 240, .72)";
+  ctx.font = "11px Inter, system-ui";
+  ctx.fillText("Daily return distribution", pad.l, 12);
+  counts.forEach((count, i) => {
+    const barW = (w - pad.l - pad.r) / bins - 2;
+    const x = pad.l + i * ((w - pad.l - pad.r) / bins);
+    const barH = (count / peak) * (h - pad.t - pad.b);
+    ctx.fillStyle = "rgba(26, 200, 255, 0.65)";
+    ctx.fillRect(x, h - pad.b - barH, barW, barH);
+  });
+}
+
+function researchDecisionLabel(backtest, walk = {}) {
+  const action = String(backtest?.action?.priority || backtest?.action?.label || "").toLowerCase();
+  if (action.includes("reject") || action.includes("pause")) return "Reject";
+  if (action.includes("redesign") || action.includes("modify")) return "Redesign";
+  if (action.includes("watch") || action.includes("research")) return "Keep Researching";
+  if ((walk.positive_windows || 0) >= (walk.number_of_windows || 1) * 0.5 && (backtest.net_metrics?.sharpe || 0) > 0.5) return "Eligible";
+  return "Keep Researching";
+}
+
+function populateResearchLabSelector(artifact) {
+  const select = document.getElementById("researchLabSelector");
+  if (!select) return;
+  const results = artifact?.literature_strategy_backtests?.results || [];
+  select.innerHTML = results.map((row, index) => `<option value="${index}">${escapeHtml(row.backtest?.name || `Strategy ${index + 1}`)}</option>`).join("");
+  select.onchange = () => {
+    const item = results[Number(select.value)];
+    if (item) renderResearchLabPanels({ ...item, _index: Number(select.value) });
+  };
+}
+
 function renderResearchLabPanels(item) {
   if (!item?.backtest) return;
   selectedLiteratureItem = item;
@@ -889,17 +1327,71 @@ function renderResearchLabPanels(item) {
   const gross = series.gross_returns || [];
   const net = series.net_returns || [];
   const dates = series.dates || [];
+  const packetSeries = backtest.risk_packet?.chart_series || {};
   const caption = document.getElementById("researchLabCaption");
   if (caption) {
-    caption.textContent = `${backtest.name} | ${backtest.literature_source || "literature prototype"} | ${dates[0] || "n/a"} to ${dates.at(-1) || "n/a"} | cost drag ${pct(backtest.turnover?.annualized_cost_drag || 0, 2)}`;
+    caption.textContent = `${backtest.name} | ${backtest.literature_source || "literature prototype"} | ${dates[0] || "n/a"} to ${dates.at(-1) || "n/a"}`;
+  }
+  const summary = document.getElementById("researchLabSummaryStrip");
+  if (summary) {
+    summary.innerHTML = `
+      <span>Net ann. return <strong>${pct(backtest.net_metrics?.annual_return || 0, 1)}</strong></span>
+      <span>Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong></span>
+      <span>Vol <strong>${pct(backtest.net_metrics?.annual_volatility || 0, 1)}</strong></span>
+      <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>
+      <span>Turnover <strong>${num(backtest.turnover?.annualized_turnover, 1)}x</strong></span>
+      <span>Cost drag <strong>${pct(backtest.turnover?.annualized_cost_drag || 0, 2)}</strong></span>
+      <span>OOS avg Sharpe <strong>${num(walk.average_test_sharpe)}</strong></span>
+      <span>Positive OOS windows <strong>${formatOosWindows(walk)}</strong></span>`;
   }
   drawGrossNetEquityChart(document.getElementById("backtestCanvas"), dates, gross, net);
+  drawDrawdownChart(document.getElementById("researchDrawdownCanvas"), packetSeries.drawdown || []);
+  drawRollingSharpeChart(document.getElementById("researchRollingCanvas"), packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || []);
+  drawReturnDistributionChart(document.getElementById("researchDistributionCanvas"), net);
+  const decision = document.getElementById("researchLabDecision");
+  if (decision) {
+    const label = researchDecisionLabel(backtest, walk);
+    decision.innerHTML = `<p>${statusBadge(label)} <strong>Research decision:</strong> ${label}</p><p class="status-muted">${escapeHtml(backtest.action?.interpretation || backtest.hypothesis || "Based on literature backtest evidence only.")}</p>`;
+  }
   document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
     (walk.windows || []).slice(-12).map((window) => `<tr><td>${window.train_start} → ${window.train_end}</td><td>${window.test_start} → ${window.test_end}</td><td>${num(window.train_sharpe)}</td><td>${num(window.test_sharpe)}</td><td class="${cls(window.test_return || 0)}">${pct(window.test_return || 0, 2)}</td><td class="negative">${pct(window.test_max_drawdown || 0, 2)}</td></tr>`).join("") ||
     "<tr><td colspan='6'>Walk-forward windows unavailable.</td></tr>";
   document.querySelectorAll("[data-literature-strategy]").forEach((row) => {
     row.classList.toggle("selected", Number(row.dataset.literatureStrategy) === (item._index ?? -1));
   });
+  const selector = document.getElementById("researchLabSelector");
+  if (selector && item._index != null) selector.value = String(item._index);
+  const packet = backtest.risk_packet || {};
+  if (packet.summary_statistics || (walk.windows || []).length) {
+    renderLiteratureChecklist(backtest, packet, walk);
+  } else {
+    renderResearchChecklistUnavailable("No-look-ahead checklist unavailable for this literature prototype. Risk packet or walk-forward evidence is missing.");
+  }
+}
+
+function renderResearchChecklistUnavailable(message) {
+  const el = document.getElementById("researchChecklist");
+  if (!el) return;
+  el.innerHTML = `<p class="status-muted">${escapeHtml(message || "No-look-ahead checklist unavailable. Select a literature prototype with validated research evidence.")}</p>`;
+}
+
+function renderResearchChecklistHtml(checklist) {
+  const el = document.getElementById("researchChecklist");
+  if (!el) return;
+  if (!checklist?.length) {
+    renderResearchChecklistUnavailable();
+    return;
+  }
+  el.innerHTML = checklist.map((section) => `
+    <section class="check-section">
+      <header>
+        <h3>${section.title}</h3>
+        <span class="badge ${section.status.includes("Pending") ? "warning" : section.status.includes("Partial") ? "warning" : "ok"}">${section.status}</span>
+      </header>
+      <ul>${section.items.map((item) => `<li>${item}</li>`).join("")}</ul>
+      <p><strong>Analyst prompt:</strong> ${section.prompt}</p>
+    </section>
+  `).join("");
 }
 
 function mean(values) {
@@ -1135,221 +1627,201 @@ function drawRollingSeries(canvas, values) {
   ctx.stroke();
 }
 
-function openStrategyReview(strategy, artifact) {
-  if (!strategy) return;
-  activeStrategy = strategy;
-  activeArtifact = artifact;
-  const returns = strategy.risk_packet?.chart_series?.returns || [];
-  const stats = distributionStats(returns);
-  const current = artifact.allocation.current_weights[strategy.strategy_id] || strategy.target_weight;
-  const proposed = artifact.allocation.proposed_weights[strategy.strategy_id] || current;
-  const change = proposed - current;
-  document.getElementById("dialogStrategyId").textContent = strategy.strategy_id;
-  document.getElementById("dialogStrategyName").textContent = strategy.name;
-  document.getElementById("dialogStrategyMeta").textContent = `${strategy.strategy_type} / ${strategy.status} / ${strategy.backtest_status}`;
-  document.getElementById("dialogDecisionBadge").textContent = Math.abs(change) < 0.0001 ? "Keep" : change > 0 ? "Increase Review" : "Reduce Review";
-  document.getElementById("reviewKpis").innerHTML = [
-    ["Ann. Return", pct(stats.annReturn, 2), "neutral"],
-    ["Ann. Vol", pct(stats.annVol, 2), "neutral"],
-    ["Sharpe", stats.sharpe.toFixed(2), "neutral"],
-    ["Sortino", stats.sortino.toFixed(2), "neutral"],
-    ["Win Rate", pct(stats.winRate, 1), "neutral"],
-    ["Skew", stats.skew.toFixed(2), stats.skew < -0.5 ? "warning-text" : "neutral"],
-    ["Kurtosis", stats.kurt.toFixed(2), stats.kurt > 4 ? "warning-text" : "neutral"],
-    ["Max DD", pct(stats.maxDrawdown, 2), "negative"],
-  ].map(([label, value, klass]) => `<article class="kpi-card"><span>${label}</span><strong class="${klass}">${value}</strong></article>`).join("");
-  document.getElementById("tailRiskPanel").innerHTML = [
-    ["95% VaR", stats.var95],
-    ["99% VaR", stats.var99],
-    ["95% Expected Shortfall", stats.es95],
-    ["Worst Day", stats.worst],
-    ["Best Day", stats.best],
-  ].map(([label, value]) => `<div><span>${label}</span><strong class="${value < 0 ? "negative" : "positive"}">${pct(value, 2)}</strong></div>`).join("");
-  document.getElementById("factorReviewPanel").innerHTML = ["Equity Beta", "Rates Duration", "Credit/Liquidity", "USD/FX", "Volatility"].map((label, idx) => {
-    const exposure = Object.values(strategy.factor_exposure?.latest || {})[idx] || 0;
-    return `<div><span>${label}</span><div class="bar"><span style="width:${Math.abs(exposure) * 100}%"></span></div><strong class="${exposure < 0 ? "negative" : "positive"}">${exposure.toFixed(2)}</strong></div>`;
-  }).join("");
-  document.getElementById("decisionPacket").innerHTML = `
-    <p><strong>Allocation:</strong> ${pct(current)} current -> ${pct(proposed)} proposed, ${pct(change, 2)} change.</p>
-    <p><strong>Cost estimate:</strong> ${money(Math.abs(change) * artifact.initial_capital * 0.0005)} using 5 bps per side.</p>
-    <p><strong>Failure modes:</strong> ${strategy.failure_modes.join("; ")}</p>
-    <p><strong>Proxy universe:</strong> ${(strategy.proxy_universe || []).join(", ") || "Pending liquid proxy mapping"}.</p>
-    <p><strong>Risk analyst question:</strong> Is recent drawdown normal behavior, regime headwind, factor crowding, cost decay, signal decay, or data failure?</p>
-    <p><strong>Data note:</strong> Diagnostics use the validated return series attached to the strategy risk packet.</p>
-  `;
-  renderEmptyLiteraturePacket();
-  renderRiskChecklist(strategy, stats, current, proposed, change);
-  drawDistribution(document.getElementById("distributionCanvas"), returns);
-  drawReturnAndDrawdown(document.getElementById("detailReturnCanvas"), stats);
-  drawRolling(document.getElementById("rollingCanvas"), returns);
-  const dialog = document.getElementById("strategyDialog");
-  if (!dialog.open) dialog.showModal();
+const DRAWER_CHART_UNAVAILABLE = "Chart unavailable — no strategy series supplied";
+
+function strategyChartSeries(strategy) {
+  const series = strategy?.risk_packet?.chart_series || {};
+  return {
+    dates: series.dates || [],
+    returns: series.returns || [],
+    cumulative_return: series.cumulative_return || [],
+    drawdown: series.drawdown || [],
+    rolling_sharpe: series.rolling_63d_sharpe || series.rolling_sharpe || [],
+  };
+}
+
+function chartHasFiniteValues(values) {
+  return (values || []).some((value) => Number.isFinite(Number(value)));
+}
+
+function cumulativeFromReturns(returns) {
+  let wealth = 1;
+  return (returns || []).map((value) => {
+    wealth *= 1 + (Number(value) || 0);
+    return wealth - 1;
+  });
+}
+
+function literatureBacktestForStrategy(strategy, artifact = activeArtifact) {
+  return (artifact?.literature_strategy_backtests?.results || []).find(
+    (row) => row.backtest?.strategy_id === strategy?.strategy_id,
+  )?.backtest;
+}
+
+function grossNetCumulativeSeries(strategy, artifact, length) {
+  const returnSeries = literatureBacktestForStrategy(strategy, artifact)?.return_series;
+  if (!returnSeries?.gross_returns?.length || !returnSeries?.net_returns?.length) return null;
+  const sliceLen = length || returnSeries.net_returns.length;
+  return {
+    gross: cumulativeFromReturns(returnSeries.gross_returns.slice(-sliceLen)),
+    net: cumulativeFromReturns(returnSeries.net_returns.slice(-sliceLen)),
+  };
+}
+
+function drawDrawerChartMessage(canvas, message = DRAWER_CHART_UNAVAILABLE) {
+  if (!canvas) return;
+  const { ctx, w, h } = canvasScale(canvas);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "rgba(211, 234, 240, .72)";
+  ctx.font = "11px Inter, system-ui";
+  ctx.fillText(message, 12, Math.max(24, h / 2));
+}
+
+function drawDrawerLineChart(canvas, values, options = {}) {
+  if (!canvas) return;
+  if (!chartHasFiniteValues(values)) {
+    drawDrawerChartMessage(canvas, options.emptyMessage || DRAWER_CHART_UNAVAILABLE);
+    return;
+  }
+  drawSingleMetricChart(
+    canvas,
+    (values || []).map((value) => Number(value)).filter(Number.isFinite),
+    {
+      label: options.label || "Series",
+      color: options.color || "#1ac8ff",
+      format: options.format || ((value) => num(value, 2)),
+    },
+  );
+}
+
+function drawCumulativeReturnChart(canvas, values, options = {}) {
+  drawDrawerLineChart(canvas, values, {
+    label: options.label || "Net cumulative return",
+    color: options.color || "#1ac8ff",
+    format: (value) => pct(value, 2),
+    emptyMessage: options.emptyMessage,
+  });
+}
+
+function drawDrawdownChart(canvas, values) {
+  drawDrawerLineChart(canvas, values, {
+    label: "Drawdown",
+    color: "#ff5a4f",
+    format: (value) => pct(value, 2),
+  });
+}
+
+function drawRollingSharpeChart(canvas, values) {
+  const rolling = (values || []).map((value) => (value == null ? NaN : Number(value))).filter(Number.isFinite);
+  drawDrawerLineChart(canvas, rolling, {
+    label: "Rolling Sharpe (63D)",
+    color: "#f5c542",
+    format: (value) => num(value, 2),
+  });
+}
+
+function drawGrossNetCumulativeChart(canvas, gross, net) {
+  if (!canvas) return;
+  const { ctx, w, h } = canvasScale(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const grossSeries = downsampleSeries((gross || []).filter(Number.isFinite), Math.max(80, Math.floor(w * 1.1)));
+  const netSeries = downsampleSeries((net || []).filter(Number.isFinite), Math.max(80, Math.floor(w * 1.1)));
+  if (!grossSeries.length && !netSeries.length) {
+    drawDrawerChartMessage(canvas);
+    return;
+  }
+  const pad = { l: 44, r: 16, t: 24, b: 22 };
+  const plotW = w - pad.l - pad.r;
+  const plotH = h - pad.t - pad.b;
+  const combined = [...grossSeries, ...netSeries];
+  const min = Math.min(...combined, 0);
+  const max = Math.max(...combined, 0.001);
+  ctx.strokeStyle = "rgba(160, 205, 218, .13)";
+  for (let i = 0; i <= 3; i += 1) {
+    const y = pad.t + (plotH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(211, 234, 240, .72)";
+  ctx.font = "11px Inter, system-ui";
+  ctx.fillText("Gross vs net cumulative return", pad.l, 12);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#9fd8ff";
+  ctx.fillText("● Gross", w - pad.r, 12);
+  ctx.fillStyle = "#1ac8ff";
+  ctx.fillText("● Net", w - pad.r - 58, 12);
+  ctx.textAlign = "left";
+  if (grossSeries.length) {
+    ctx.strokeStyle = "#9fd8ff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    pathFromSeries(ctx, grossSeries, pad.l, pad.t, plotW, plotH, min, max);
+    ctx.stroke();
+  }
+  if (netSeries.length) {
+    ctx.strokeStyle = "#1ac8ff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    pathFromSeries(ctx, netSeries, pad.l, pad.t, plotW, plotH, min, max);
+    ctx.stroke();
+  }
+}
+
+function drawerChartBlock(title, canvasId, legendHtml = "") {
+  return `<section class="drawer-chart-block">
+    <div class="drawer-chart-head"><strong>${title}</strong>${legendHtml ? `<span class="drawer-chart-legend">${legendHtml}</span>` : ""}</div>
+    <canvas id="${canvasId}" class="drawer-canvas compact" width="380" height="110"></canvas>
+  </section>`;
+}
+
+function paintDrawerViewCharts(strategy, view, artifact = activeArtifact) {
+  const series = strategyChartSeries(strategy);
+  if (view === "overview") {
+    drawCumulativeReturnChart(document.getElementById("drawerOverviewCumCanvas"), series.cumulative_return, {
+      label: "Net cumulative performance",
+    });
+    drawDrawdownChart(document.getElementById("drawerOverviewDdCanvas"), series.drawdown);
+    return;
+  }
+  if (view === "performance") {
+    const grossNet = grossNetCumulativeSeries(strategy, artifact, series.cumulative_return.length);
+    if (grossNet) {
+      drawGrossNetCumulativeChart(
+        document.getElementById("drawerPerfGrossNetCanvas"),
+        grossNet.gross,
+        grossNet.net,
+      );
+    } else {
+      drawCumulativeReturnChart(
+        document.getElementById("drawerPerfGrossNetCanvas"),
+        series.cumulative_return,
+        { label: "Net cumulative return (gross series unavailable)" },
+      );
+    }
+    drawDrawdownChart(document.getElementById("drawerPerfDrawdownCanvas"), series.drawdown);
+    drawRollingSharpeChart(document.getElementById("drawerPerfRollingSharpeCanvas"), series.rolling_sharpe);
+  }
 }
 
 function openLiteratureStrategyReview(item, artifact) {
   const backtest = item.backtest;
   const walk = item.walk_forward || {};
-  const packet = backtest.risk_packet || {};
-  const summary = packet.summary_statistics || {};
-  const distribution = packet.distribution_shape || {};
-  const tail = packet.tail_risk || {};
-  const drawdown = packet.drawdown_behavior || {};
-  const benchmark = packet.comparison_vs_benchmark || {};
-  const series = packet.chart_series || {};
-  const returns = (series.returns || []).filter((value) => Number.isFinite(value));
-  const action = backtest.action || {};
-  document.getElementById("dialogStrategyId").textContent = backtest.strategy_id;
-  document.getElementById("dialogStrategyName").textContent = backtest.name;
-  document.getElementById("dialogStrategyMeta").textContent = `${backtest.literature_source} / ${backtest.rebalance} / yfinance ETF proxy`;
-  document.getElementById("dialogDecisionBadge").textContent = action.action || "Review";
-  document.getElementById("reviewKpis").innerHTML = [
-    ["Ann. Return", pct(summary.annual_return || 0, 2), "neutral"],
-    ["Ann. Vol", pct(summary.annual_volatility || 0, 2), "neutral"],
-    ["Sharpe", num(summary.sharpe), "neutral"],
-    ["Sortino", num(summary.sortino), "neutral"],
-    ["Calmar", num(summary.calmar), "neutral"],
-    ["Win Rate", pct(summary.win_rate || 0, 1), "neutral"],
-    ["Skew", num(distribution.skewness), distribution.skewness < -0.5 ? "warning-text" : "neutral"],
-    ["Max DD", pct(drawdown.max_drawdown || 0, 2), "negative"],
-  ].map(([label, value, klass]) => `<article class="kpi-card"><span>${label}</span><strong class="${klass}">${value}</strong></article>`).join("");
-  document.getElementById("tailRiskPanel").innerHTML = [
-    ["95% VaR", tail.var_95],
-    ["99% VaR", tail.var_99],
-    ["95% ES", tail.expected_shortfall_95],
-    ["99% ES", tail.expected_shortfall_99],
-    ["Worst Day", summary.worst_day],
-    ["Best Day", summary.best_day],
-  ].map(([label, value]) => `<div><span>${label}</span><strong class="${value < 0 ? "negative" : "positive"}">${pct(value || 0, 2)}</strong></div>`).join("");
-  document.getElementById("factorReviewPanel").innerHTML = [
-    ["SPY Beta", benchmark.beta || 0],
-    ["SPY Corr", benchmark.correlation || 0],
-    ["Alpha Ann.", benchmark.alpha_annualized || 0],
-    ["Tracking Error", benchmark.tracking_error || 0],
-    ["Info Ratio", benchmark.information_ratio || 0],
-  ].map(([label, value]) => `
-    <div>
-      <span>${label}</span>
-      <div class="bar"><span style="width:${Math.min(100, Math.abs(value) * 80)}%"></span></div>
-      <strong class="${value < 0 ? "negative" : "positive"}">${label.includes("Ann") || label.includes("Error") ? pct(value, 2) : num(value)}</strong>
-    </div>
-  `).join("");
-  document.getElementById("decisionPacket").innerHTML = `
-    <p><strong>Hypothesis:</strong> ${backtest.hypothesis}</p>
-    <p><strong>Signal:</strong> ${backtest.signal_summary}</p>
-    <p><strong>Universe:</strong> ${backtest.universe.join(", ")}</p>
-    <p><strong>Action:</strong> ${action.action || "Review"} / ${action.reason_code || "pending"}.</p>
-    <p><strong>Interpretation:</strong> ${action.interpretation || ""}</p>
-    <p><strong>WFO:</strong> ${walk.status || "pending"}, average test Sharpe ${num(walk.average_test_sharpe)}, positive windows ${pct(walk.positive_window_rate || 0, 0)}.</p>
-  `;
-  renderLiteratureMetricPacket(packet, backtest, walk);
-  renderLiteratureChecklist(backtest, packet, walk);
-  drawDistribution(document.getElementById("distributionCanvas"), returns);
-  drawSeriesReturnAndDrawdown(document.getElementById("detailReturnCanvas"), series);
-  drawRollingSeries(document.getElementById("rollingCanvas"), series.rolling_63d_sharpe || []);
-  const dialog = document.getElementById("strategyDialog");
-  if (!dialog.open) dialog.showModal();
+  const strategy = (artifact?.strategies || []).find((s) => s.strategy_id === backtest?.strategy_id)
+    || (artifact?.strategies || [])[0];
+  if (strategy) openStrategyReview(strategy, artifact);
+  const caption = document.getElementById("researchLabCaption");
+  if (caption && backtest) {
+    caption.textContent = `${backtest.name} | ${backtest.literature_source || "literature"} | WFO avg Sharpe ${num(walk.average_test_sharpe)} | ${walk.status || "pending"}`;
+  }
+  renderResearchLabPanels(item);
 }
 
 function renderEmptyLiteraturePacket() {
   ["literatureDetailSummary", "literatureRegimeBreakdown", "literatureBenchmarkComparison", "literatureWorstDays"].forEach((id) => {
     document.getElementById(id).innerHTML = "<tr><td>Open a literature prototype to view real yfinance-backed diagnostics.</td></tr>";
   });
-}
-
-function renderRiskChecklist(strategy, stats, current, proposed, change) {
-  const checklist = [
-    {
-      title: "1. Summary Statistics",
-      status: "Calculated",
-      items: [
-        `Annual return ${pct(stats.annReturn, 2)}, annual volatility ${pct(stats.annVol, 2)}, Sharpe ${stats.sharpe.toFixed(2)}.`,
-        `Sortino ${stats.sortino.toFixed(2)}, win rate ${pct(stats.winRate, 1)}, best day ${pct(stats.best, 2)}, worst day ${pct(stats.worst, 2)}.`,
-        `Skew ${stats.skew.toFixed(2)} and kurtosis ${stats.kurt.toFixed(2)} flag whether returns hide left-tail or fat-tail risk.`,
-      ],
-      prompt: "Is performance broad-based, or does it depend on a few extreme positive days?",
-    },
-    {
-      title: "2. Distribution Shape",
-      status: "Charted",
-      items: [
-        "Review histogram, density shape, QQ plot when available, and outlier summary.",
-        "Look for long left tail, clustered near-zero returns, and unusual outlier bars.",
-        "Treat non-normal shape as a warning that simple volatility may understate risk.",
-      ],
-      prompt: "Does the distribution look like steady compensation or hidden crash exposure?",
-    },
-    {
-      title: "3. Tail Risk",
-      status: "Calculated",
-      items: [
-        `95% VaR ${pct(stats.var95, 2)}, 99% VaR ${pct(stats.var99, 2)}, 95% Expected Shortfall ${pct(stats.es95, 2)}.`,
-        "Review worst 5 and worst 10 periods once real return history is connected.",
-        "Compare tail loss with portfolio stress days to see whether the strategy fails when protection is needed.",
-      ],
-      prompt: "If the strategy enters its worst 5% outcomes, is the loss acceptable for its allocation?",
-    },
-    {
-      title: "4. Drawdown Behavior",
-      status: "Charted",
-      items: [
-        `Max drawdown ${pct(stats.maxDrawdown, 2)} and current drawdown ${pct(stats.currentDrawdown, 2)}.`,
-        "Use cumulative return and underwater curves to see whether losses are sudden or slow.",
-        "Add drawdown duration, recovery time, and number of drawdown episodes when real history is connected.",
-      ],
-      prompt: "Is the current drawdown normal, regime-driven, or evidence of strategy decay?",
-    },
-    {
-      title: "5. Time Stability",
-      status: "Partial",
-      items: [
-        "Review rolling Sharpe, rolling volatility, rolling drawdown, rolling win rate, and rolling correlation.",
-        "Compare recent behavior with full-history behavior and walk-forward expectations.",
-        "Watch for rising volatility, falling hit rate, or correlation increasing during stress.",
-      ],
-      prompt: "Is performance persistent, or did the strategy work only in one historical window?",
-    },
-    {
-      title: "6. Regime Breakdown",
-      status: "Pending real regime labels",
-      items: [
-        "Split returns by VIX high/low, equity up/down, rates up/down, credit widening/tightening, USD up/down, and risk-on/risk-off.",
-        "For each regime, compare mean return, volatility, Sharpe, max drawdown, hit rate, and tail loss.",
-        "Use regime results to decide whether a current loss is expected behavior or a warning sign.",
-      ],
-      prompt: "Is today's market regime favorable, unfavorable, or dangerous for this strategy?",
-    },
-    {
-      title: "7. Comparison Vs Benchmark / Strategies",
-      status: "Pending full strategy matrix",
-      items: [
-        "Compare beta, alpha, tracking error, information ratio, and correlation to benchmark.",
-        "Compare correlation and factor overlap with active strategies.",
-        "Estimate marginal risk contribution and diversification benefit before increasing allocation.",
-      ],
-      prompt: "Is this independent alpha, useful diversification, or duplicated exposure?",
-    },
-    {
-      title: "Decision",
-      status: "Human review required",
-      items: [
-        `Current allocation ${pct(current)}, proposed allocation ${pct(proposed)}, change ${pct(change, 2)}.`,
-        `Failure modes: ${strategy.failure_modes.join("; ")}.`,
-        "Decision choices: keep, increase review, reduce, hedge, pause, retire, or reject.",
-      ],
-      prompt: "What decision can be defended from the evidence, and what limitation should be disclosed?",
-    },
-  ];
-
-  document.getElementById("riskChecklist").innerHTML = checklist.map((section) => `
-    <section class="check-section">
-      <header>
-        <h3>${section.title}</h3>
-        <span class="badge ${section.status.includes("Pending") ? "warning" : section.status.includes("Partial") ? "warning" : "ok"}">${section.status}</span>
-      </header>
-      <ul>${section.items.map((item) => `<li>${item}</li>`).join("")}</ul>
-      <p><strong>Analyst prompt:</strong> ${section.prompt}</p>
-    </section>
-  `).join("");
 }
 
 function renderLiteratureMetricPacket(packet, backtest, walk) {
@@ -1484,16 +1956,7 @@ function renderLiteratureChecklist(backtest, packet, walk) {
       prompt: "What action can we defend to the boss from evidence, not from hope?",
     },
   ];
-  document.getElementById("riskChecklist").innerHTML = checklist.map((section) => `
-    <section class="check-section">
-      <header>
-        <h3>${section.title}</h3>
-        <span class="badge ${section.status.includes("Pending") ? "warning" : "ok"}">${section.status}</span>
-      </header>
-      <ul>${section.items.map((item) => `<li>${item}</li>`).join("")}</ul>
-      <p><strong>Analyst prompt:</strong> ${section.prompt}</p>
-    </section>
-  `).join("");
+  renderResearchChecklistHtml(checklist);
 }
 
 function renderCandidateStrategies() {
@@ -1515,6 +1978,7 @@ function renderLiteratureStrategies(snapshot) {
   const results = snapshot.results || [];
   if (!results.length) {
     document.getElementById("literatureStrategyTable").innerHTML = "<tr><td>No literature strategy backtest yet. Run refresh_platform.py.</td></tr>";
+    renderResearchChecklistUnavailable("No literature strategy backtests loaded. No-look-ahead checklist unavailable until refresh_platform.py generates research evidence.");
     return;
   }
   document.getElementById("literatureStrategyTable").innerHTML = "<tr><th>Prototype</th><th>Source</th><th>Net Sharpe</th><th>Ann. Return</th><th>Max DD</th><th>Cost Drag</th><th>WFO</th><th>Avg Test Sharpe</th><th>Positive Windows</th><th>Action</th><th>Reason</th></tr>" +
@@ -1616,86 +2080,167 @@ function positionSummary(strategy) {
 }
 
 function renderKpis(artifact) {
+  renderCommandKpiStrip(artifact);
+  renderAllocationBeforeAfterStrip(artifact);
+}
+
+function renderCommandKpiStrip(artifact) {
+  const el = document.getElementById("commandKpiStrip");
+  if (!el) return;
   const series = portfolioSeriesForDisplay(artifact);
-  const start = investmentStart(artifact);
-  const portfolioReturns = series.returns || [];
   const cumulative = series.cumulative_return || [];
   const dailyPnlMetric = operatingPnlMetric(artifact, "daily_return");
   const cumPnlMetric = operatingPnlMetric(artifact, "cumulative_return");
-  const latestReturn = metricNumeric(dailyPnlMetric) ?? portfolioReturns.at(-1) ?? 0;
   const latestCum = metricNumeric(cumPnlMetric) ?? cumulative.at(-1) ?? 0;
-  const aumNow = artifact.initial_capital * (1 + latestCum);
-  const sparkCum = cumulative.slice(-Math.min(48, cumulative.length));
+  const latestReturn = metricNumeric(dailyPnlMetric) ?? series.returns?.at(-1) ?? 0;
+  const marks = artifact.intraday_marks || {};
+  const estimatedNav = marks.estimated_model_nav;
+  const estimatedIntradayPnl = marks.estimated_intraday_pnl;
+  const aumNow = estimatedNav ?? artifact.initial_capital * (1 + latestCum);
   const headline = canonicalRiskHeadline(artifact);
-  const kpis = [
-    ["AUM", money(aumNow), cls(latestCum), "portfolio", sparkCum.length ? sparkCum : [0, latestCum]],
-    ["Daily PnL", money(latestReturn * artifact.initial_capital), cls(latestReturn), "dollar", portfolioReturns.slice(-Math.min(24, portfolioReturns.length))],
-    ["Cumulative PnL", money(latestCum * artifact.initial_capital), cls(latestCum), "line", sparkCum.length ? sparkCum : [0, latestCum]],
-    ["Sharpe", formatOperatingMetric(operatingMetric(artifact, "portfolio_sharpe")), "neutral", "target", sparkCum.length ? sparkCum : portfolioReturns.slice(-24)],
-    ["Volatility", formatOperatingMetric(operatingMetric(artifact, "portfolio_volatility"), { asPct: true }), "neutral", "activity", portfolioReturns.map(Math.abs).slice(-24)],
-    ["Max Drawdown", formatOperatingMetric(operatingMetric(artifact, "portfolio_max_drawdown"), { asPct: true }), "negative", "risk", series.drawdown?.slice(-Math.min(48, series.drawdown?.length || 0)) || []],
-    ["1D 99% VaR", formatOperatingMetric(operatingMetric(artifact, "portfolio_var_99"), { asPct: true }), "warning-text", "shield", portfolioReturns.slice(-24)],
-    ["Expected Shortfall", formatOperatingMetric(operatingMetric(artifact, "portfolio_expected_shortfall_95"), { asPct: true }), "warning-text", "risk", portfolioReturns.slice(-24)],
-    ["Risk Status", `${headline.blocking_breaches || 0} breach / ${headline.warnings || 0} warn`, headline.blocking_breaches ? "negative" : "warning-text", "risk", portfolioReturns.slice(-24)],
-  ];
-  document.getElementById("portfolioKpis").innerHTML = kpis.map((item, idx) => `
-    <article class="kpi-card">
-      <span>${icon(item[3])}${item[0]}</span>
-      <strong class="${item[2]}">${item[1]}</strong>
-      <small>${idx < 3 ? `Operating period since ${start}` : idx === kpis.length - 1 ? "Canonical scoped model limits" : `Operating period · min obs not met if N/A`}</small>
-      <canvas width="120" height="28" data-spark="${idx}"></canvas>
-    </article>`).join("");
-  document.querySelectorAll("[data-spark]").forEach((canvas, idx) => {
-    canvas.__sparkValues = kpis[idx][4];
-    canvas.__sparkColor = idx >= 5 ? "#ff5a4f" : "#1ac8ff";
-    drawSparkline(canvas, canvas.__sparkValues, canvas.__sparkColor);
+  const issueCounts = countIssueCategories(artifact);
+  const breached = issueCounts.breached_controls;
+  const dq = artifact.data_quality || {};
+  const intradayDq = dq.intraday || marks.data_quality || {};
+  el.innerHTML = compactKpiStrip([
+    [estimatedNav ? "Est. Model NAV (proxy)" : "Current Model NAV", money(aumNow), estimatedNav ? "Intraday proxy mark · not realized" : `Operating since ${investmentStart(artifact)}`, cls(latestCum)],
+    [estimatedIntradayPnl != null ? "Est. Intraday PnL" : "Daily PnL", money(estimatedIntradayPnl ?? latestReturn * artifact.initial_capital), estimatedIntradayPnl != null ? "Estimated from proxy bars" : formatOperatingMetric(dailyPnlMetric), cls(estimatedIntradayPnl ?? latestReturn)],
+    ["Operating Cum. PnL", money(latestCum * artifact.initial_capital), formatOperatingMetric(cumPnlMetric), cls(latestCum)],
+    ["Current Drawdown", formatOperatingMetric(operatingMetric(artifact, "portfolio_max_drawdown"), { asPct: true }), "", "negative"],
+    ["Volatility", formatOperatingMetric(operatingMetric(artifact, "portfolio_volatility"), { asPct: true }), "Operating period", ""],
+    ["VaR 99%", formatOperatingMetric(operatingMetric(artifact, "portfolio_var_99"), { asPct: true }), "", "warning-text"],
+    ["Exp. Shortfall", formatOperatingMetric(operatingMetric(artifact, "portfolio_expected_shortfall_95"), { asPct: true }), "", "warning-text"],
+    ["Breached Controls", String(breached), `${issueCounts.current_model_issues} current-model issues`, breached ? "negative" : ""],
+    ["Data Quality", humanize(intradayDq.freshness || dq.overall_status || "monitor"), intradayDq.freshness ? "Intraday proxy" : dq.stale ? "Stale proxy" : "Proxy OK", intradayDq.freshness === "Stale" || intradayDq.freshness === "Failed" ? "warning-text" : ""],
+  ]);
+}
+
+function renderOperatingLedgerOrCharts(artifact) {
+  const series = portfolioSeriesForDisplay(artifact);
+  const obs = (series.returns || []).length;
+  const wrap = document.getElementById("operatingLedgerWrap");
+  const pnlCanvas = document.getElementById("pnlCanvas");
+  const ddPanel = document.getElementById("operatingDrawdownPanel");
+  const capital = artifact.initial_capital || 0;
+  if (obs < 5 && wrap) {
+    wrap.innerHTML = `<div class="table-viewport short operating-ledger-viewport"><div class="table-scroll"><table class="data-table dense operating-ledger-table"><tr><th>Date</th><th>Daily Return</th><th>Daily PnL</th><th>Model NAV</th><th>Cumulative Return</th><th>Drawdown</th></tr>
+      ${(series.dates || []).slice(-obs).map((date, i) => {
+        const idx = series.dates.length - obs + i;
+        const dailyReturn = series.returns[idx] || 0;
+        const cumReturn = series.cumulative_return?.[idx] || 0;
+        return `<tr><td>${date}</td><td class="${cls(dailyReturn)}">${pct(dailyReturn, 2)}</td><td class="${cls(dailyReturn)}">${money(dailyReturn * capital)}</td><td>${money(capital * (1 + cumReturn))}</td><td>${pct(cumReturn, 2)}</td><td class="negative">${pct(series.drawdown?.[idx] || 0, 2)}</td></tr>`;
+      }).join("")}</table></div></div>`;
+    if (pnlCanvas) pnlCanvas.style.display = "none";
+    if (ddPanel) ddPanel.style.display = "none";
+  } else {
+    if (wrap) wrap.innerHTML = "";
+    if (pnlCanvas) pnlCanvas.style.display = "block";
+    if (ddPanel) ddPanel.style.display = "";
+    drawOperatingPeriodCharts(series);
+  }
+}
+
+function renderContributorsDetractorsTables(artifact) {
+  const strategies = (artifact.strategies || []).filter((s) => s.current_weight > 0);
+  const positive = [...strategies].filter((s) => (s.daily_pnl || 0) > 0).sort((a, b) => (b.daily_pnl || 0) - (a.daily_pnl || 0)).slice(0, 6);
+  const negative = [...strategies].filter((s) => (s.daily_pnl || 0) < 0).sort((a, b) => (a.daily_pnl || 0) - (b.daily_pnl || 0)).slice(0, 6);
+  const row = (s) => {
+    const driver = s.risk_manager_question_answered?.why || s.hypothesis || "—";
+    const shortDriver = driver.length > 48 ? `${driver.slice(0, 45)}…` : driver;
+    return `<tr><td>${s.name}</td><td class="col-num ${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td><td class="col-pct">${pct(s.current_weight || 0)}</td><td class="wrap-cell" title="${escapeHtml(driver)}">${escapeHtml(shortDriver)}</td></tr>`;
+  };
+  const ct = document.getElementById("contributorsTable");
+  const dt = document.getElementById("detractorsTable");
+  if (ct) ct.innerHTML = `<tr><th>Strategy</th><th>Daily PnL</th><th>Alloc.</th><th>Driver</th></tr>${positive.map(row).join("") || "<tr><td colspan='4'>No contributors today.</td></tr>"}`;
+  if (dt) dt.innerHTML = `<tr><th>Strategy</th><th>Daily PnL</th><th>Alloc.</th><th>Driver</th></tr>${negative.map(row).join("") || "<tr><td colspan='4'>No detractors today.</td></tr>"}`;
+}
+
+function renderRiskActionCenter(artifact) {
+  const el = document.getElementById("riskActionTable");
+  if (!el) return;
+  const checks = canonicalNonOkChecks(artifact, riskActionFilter);
+  el.innerHTML = `<tr><th>Subject</th><th>Scope</th><th>Issue</th><th>Current</th><th>Threshold</th><th>Util.</th><th>Action</th><th>Review</th></tr>` +
+    checks.slice(0, 16).map((check) => `<tr>
+      <td class="wrap-cell">${escapeHtml(formatIssueSubjectLabel(check, artifact))}</td>
+      <td>${humanize(check.scope)}</td>
+      <td class="wrap-cell">${humanizeMetricLabel(check.metric, artifact)}</td>
+      <td class="col-num">${typeof check.current_value === "number" ? num(check.current_value, 3) : humanize(check.current_value)}</td>
+      <td class="col-num">${typeof check.breach_threshold === "number" ? num(check.breach_threshold, 3) : humanize(check.breach_threshold)}</td>
+      <td>${check.utilization != null ? utilizationBar(check.utilization, check.status) : "—"}</td>
+      <td class="wrap-cell">${escapeHtml(check.required_action || check.action || "Review")}</td>
+      <td class="col-status">${statusBadge(check.severity || check.status)}</td>
+    </tr>`).join("") || `<tr><td colspan="8">No active issues in ${humanize(riskActionFilter)} view.</td></tr>`;
+  document.querySelectorAll("#riskActionFilters [data-risk-filter]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.riskFilter === riskActionFilter);
+    button.onclick = () => {
+      riskActionFilter = button.dataset.riskFilter;
+      renderRiskActionCenter(artifact);
+    };
   });
-  renderCompareAllocationKpis(artifact);
+}
+
+function renderCommandWatchlistPanels(artifact) {
+  const recs = artifact.recommendations || [];
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  const workflowView = deriveWorkflowPresentation(artifact, proposal);
+  document.getElementById("commandWatchlist").innerHTML = recs.slice(0, 5).map((rec) => `<p>${statusBadge(rec.priority || "watch")} <strong>${escapeHtml(humanizeUserFacingText(rec.action, artifact))}</strong> — ${escapeHtml(humanizeUserFacingText(rec.rationale, artifact))}</p>`).join("") || emptyState("No watchlist items.");
+  const dq = artifact.data_quality || {};
+  document.getElementById("commandDataQuality").innerHTML = `
+    <p><strong>Active proposal:</strong> ${statusBadge(proposal.status)} ${proposal.detail}</p>
+    <p><strong>Missing series:</strong> ${(dq.missing_return_series || []).length || 0}</p>
+    <p><strong>Common window:</strong> ${dq.common_portfolio_risk_window_observations || 0} obs</p>
+    <p><strong>Governance:</strong> ${humanize(workflowView.workflowStatus, "monitoring")}</p>
+    <p><strong>Open decision reviews:</strong> ${countOpenDecisionReviews(artifact, localDecisionEvents)} · Approval policy applies to ${artifact.strategy_count || 0} strategies</p>`;
 }
 
 function renderTables(artifact) {
   const strategies = artifact.strategies || [];
-  document.getElementById("allocationTable").innerHTML = `<tr><th>Strategy</th><th>Alloc.</th></tr>` +
-    strategies.filter((s) => s.current_weight > 0).map((s) => `<tr><td><button class="table-link" data-open-strategy="${s.strategy_id}">${s.name}</button></td><td>${pct(s.current_weight || 0)}</td></tr>`).join("");
+  const allocationTable = document.getElementById("allocationTable");
+  if (allocationTable) {
+    allocationTable.innerHTML = `<tr><th>Strategy</th><th>Alloc.</th></tr>` +
+      strategies.filter((s) => s.current_weight > 0).map((s) => `<tr><td><button class="table-link" data-open-strategy="${s.strategy_id}">${s.name}</button></td><td>${pct(s.current_weight || 0)}</td></tr>`).join("");
+  }
+  const strategyTable = document.getElementById("strategyTable");
+  if (strategyTable) {
+    const performanceHeader = "<tr><th>#</th><th>Strategy</th><th>Type</th><th>Status</th><th>Current</th><th>Proposed</th><th>Daily PnL</th><th>Daily Ret</th><th>Op. Sharpe</th><th>Historical Sharpe</th><th>Vol</th><th>Current DD</th><th>Model Risk</th><th>Action</th></tr>";
+    strategyTable.innerHTML = performanceHeader + strategies.map((s, idx) => {
+      const live = s.current_weight > 0;
+      const opSharpe = s.since_investment?.sharpe;
+      const opSharpeText = opSharpe?.available === false || opSharpe?.value == null
+        ? `N/A (${opSharpe?.observations || 0}/${opSharpe?.minimum_observations || "?"} obs)`
+        : num(typeof opSharpe === "object" ? opSharpe.value : opSharpe);
+      return `<tr class="${live ? "" : "research-only-row"}" data-strategy="${s.strategy_id}">
+      <td>${idx + 1}</td><td><button class="table-link" data-open-strategy="${s.strategy_id}"><strong>${s.name}</strong></button></td><td>${s.strategy_type}</td>
+      <td>${live ? statusBadge("model allocated") : statusBadge("research only")}</td>
+      <td>${pct(s.current_weight || 0)}</td><td>${pct(sessionProposedWeight(s.strategy_id, s.proposed_weight || 0))}</td>
+      <td class="${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td>
+      <td class="${cls(s.daily_return || 0)}">${pct(s.daily_return || 0, 2)}</td>
+      <td>${live ? opSharpeText : "—"}</td>
+      <td>${num(s.sharpe)}</td><td>${pct(s.volatility || 0, 1)}</td>
+      <td class="negative">${pct(s.current_drawdown || s.max_drawdown || 0, 1)}</td>
+      <td>${statusBadge(live ? (s.live_risk_status || s.risk_status) : "not applicable")}</td><td>${statusBadge(s.final_action_after_double_check || s.recommended_action)}</td>
+    </tr>`;
+    }).join("");
+    strategyTable.querySelectorAll("[data-open-strategy]").forEach((button) => button.addEventListener("click", () => {
+      openStrategyReview(strategies.find((row) => row.strategy_id === button.dataset.openStrategy), artifact);
+      setActiveTab("Strategy Monitor");
+    }));
+  }
 
-  const performanceHeader = "<tr><th>#</th><th>Strategy</th><th>Type</th><th>Status</th><th>Current</th><th>Proposed</th><th>Daily PnL</th><th>Daily Ret</th><th>Op. Sharpe</th><th>Historical Sharpe</th><th>Vol</th><th>Current DD</th><th>Model Risk</th><th>Action</th></tr>";
-  const performanceRows = strategies.map((s, idx) => {
-    const live = s.current_weight > 0;
-    const opSharpe = s.since_investment?.sharpe;
-    const opSharpeText = opSharpe?.available === false || opSharpe?.value == null
-      ? `N/A (${opSharpe?.observations || 0}/${opSharpe?.minimum_observations || "?"} obs)`
-      : num(typeof opSharpe === "object" ? opSharpe.value : opSharpe);
-    return `<tr class="${live ? "" : "research-only-row"}" data-strategy="${s.strategy_id}">
-    <td>${idx + 1}</td><td><button class="table-link" data-open-strategy="${s.strategy_id}"><strong>${s.name}</strong></button><small>${positionSummary(s)}</small></td><td>${s.strategy_type}</td>
-    <td>${live ? statusBadge("model allocated") : statusBadge("research only")}</td>
-    <td>${pct(s.current_weight || 0)}</td><td>${pct(s.proposed_weight || 0)}</td>
-    <td class="${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td>
-    <td class="${cls(s.daily_return || 0)}">${pct(s.daily_return || 0, 2)}</td>
-    <td>${live ? opSharpeText : "—"}</td>
-    <td>${num(s.sharpe)}</td><td>${pct(s.volatility || 0, 1)}</td>
-    <td class="negative">${pct(s.current_drawdown || s.max_drawdown || 0, 1)}</td>
-    <td>${statusBadge(live ? (s.live_risk_status || s.risk_status) : "not applicable")}</td><td>${statusBadge(s.final_action_after_double_check || s.recommended_action)}</td>
-  </tr>`;
-  }).join("");
-  document.getElementById("strategyTable").innerHTML = performanceHeader + performanceRows;
-  document.querySelectorAll("#strategyTable [data-open-strategy]").forEach((button) => button.addEventListener("click", () => {
-    const strategy = artifact.strategies.find((row) => row.strategy_id === button.dataset.openStrategy);
-    renderDrawer(strategy, artifact);
-    setActiveTab("Strategy Monitor");
-  }));
-
+  populateMonitorFilters(strategies);
   const monitorSortValue = (strategy, key) => {
     if (key === "name") return strategy.name || "";
+    if (key === "family") return strategy.strategy_type || "";
     if (key === "turnover") return strategy.turnover?.annualized_turnover || 0;
+    if (key === "mtd") return strategy.mtd_return || 0;
+    if (key === "cost_drag") return strategy.transaction_cost_drag || strategy.turnover?.annualized_cost_drag || 0;
     return strategy[key] ?? 0;
   };
   const sortedStrategies = [...strategies].sort((left, right) => {
     const a = monitorSortValue(left, monitorSort.key);
     const b = monitorSortValue(right, monitorSort.key);
     if (typeof a === "string" || typeof b === "string") {
-      return monitorSort.direction === "asc"
-        ? String(a).localeCompare(String(b))
-        : String(b).localeCompare(String(a));
+      return monitorSort.direction === "asc" ? String(a).localeCompare(String(b)) : String(b).localeCompare(String(a));
     }
     return monitorSort.direction === "asc" ? a - b : b - a;
   });
@@ -1703,38 +2248,72 @@ function renderTables(artifact) {
     const active = monitorSort.key === key ? ` sorted-${monitorSort.direction}` : "";
     return `<th><button type="button" class="table-sort${active}" data-sort-key="${key}">${label}</button></th>`;
   };
-  const monitorHeader = `<tr>${sortableHeader("Strategy", "name")}<th>Eligibility</th>${sortableHeader("Cur.", "current_weight")}${sortableHeader("Prop.", "proposed_weight")}<th>Position</th>${sortableHeader("Daily PnL", "daily_pnl")}${sortableHeader("MTD", "mtd_pnl")}${sortableHeader("YTD", "ytd_pnl")}${sortableHeader("Sharpe", "sharpe")}${sortableHeader("Roll", "rolling_sharpe")}${sortableHeader("Vol", "volatility")}${sortableHeader("Current DD", "current_drawdown")}${sortableHeader("Turnover", "turnover")}<th>Signal</th><th>Model Risk</th><th>Research Quality</th><th>Final Review</th></tr>`;
-  document.getElementById("monitorTable").innerHTML = monitorHeader + sortedStrategies.map((s) => `<tr data-strategy="${s.strategy_id}" data-risk="${s.current_weight > 0 ? (s.live_risk_status || s.risk_status) : "not-applicable"}" data-allocated="${s.current_weight > 0 ? "active" : "research"}" data-search="${`${s.name} ${s.strategy_type} ${positionSummary(s)}`.toLowerCase()}">
-    <td><strong>${s.name}</strong><small>${s.strategy_type}</small></td><td>${statusBadge(s.allocation_eligibility?.label || s.allocation_eligibility?.status)}</td><td>${pct(s.current_weight || 0)}</td><td>${pct(s.proposed_weight || 0)}</td>
-    <td>${positionSummary(s)}</td><td class="${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td><td class="${cls(s.mtd_pnl || 0)}">${money(s.mtd_pnl || 0)}</td>
-    <td class="${cls(s.ytd_pnl || 0)}">${money(s.ytd_pnl || 0)}</td><td>${num(s.sharpe)}</td><td>${num(s.rolling_sharpe)}</td><td>${pct(s.volatility || 0, 1)}</td>
-    <td class="negative">${pct(s.current_drawdown || 0, 1)}</td><td>${num(s.turnover?.annualized_turnover, 1)}x</td><td>${s.signal_status}</td>
-    <td>${statusBadge(s.current_weight > 0 ? (s.live_risk_status || s.risk_status) : "not applicable")}</td><td>${statusBadge(s.research_quality_status || s.research_status)}</td><td>${statusBadge(s.final_action_after_double_check)}</td>
-  </tr>`).join("");
-  document.querySelectorAll("#monitorTable [data-sort-key]").forEach((button) => button.addEventListener("click", () => {
+  const monitorHeader = `<tr>${sortableHeader("Strategy", "name")}<th>Family</th><th>Lifecycle</th><th class="col-pct">Current</th><th class="col-pct">Proposed</th><th>Eligibility</th>${sortableHeader("Daily PnL", "daily_pnl")}<th>MTD</th><th>Hist. Sharpe</th><th>Roll. Sharpe</th><th>Vol</th>${sortableHeader("Current DD", "current_drawdown")}<th>Turnover</th><th>Cost Drag</th><th>Model Risk</th><th>Research</th><th class="wrap-cell">Required Action</th></tr>`;
+  const monitorTable = document.getElementById("monitorTable");
+  if (!monitorTable) return;
+  monitorTable.innerHTML = monitorHeader + sortedStrategies.map((s) => {
+    const elig = formatEligibilityDisplay(s);
+    const live = s.current_weight > 0;
+    return `<tr data-strategy="${s.strategy_id}" data-risk="${live ? (s.live_risk_status || s.risk_status) : "not-applicable"}" data-allocated="${live ? "active" : "research"}" data-family="${(s.strategy_type || "").toLowerCase()}" data-action="${(s.final_action_after_double_check || s.recommended_action || "").toLowerCase()}" data-search="${`${s.name} ${s.strategy_type} ${positionSummary(s)}`.toLowerCase()}">
+    <td><strong>${s.name}</strong></td>
+    <td>${s.strategy_type || "—"}</td>
+    <td class="col-status">${statusBadge(live ? "allocated" : "research")}</td>
+    <td class="col-pct">${pct(s.current_weight || 0)}</td>
+    <td class="col-pct">${pct(sessionProposedWeight(s.strategy_id, s.proposed_weight || 0))}</td>
+    <td class="col-status" title="${escapeHtml(elig.detail)}">${statusBadge(elig.label)}</td>
+    <td class="col-num ${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td>
+    <td class="col-pct ${cls(s.mtd_return || 0)}">${pct(s.mtd_return || 0, 2)}</td>
+    <td class="col-num">${num(s.sharpe)}</td>
+    <td class="col-num">${num(s.rolling_sharpe)}</td>
+    <td class="col-pct">${pct(s.volatility || 0, 1)}</td>
+    <td class="col-pct negative">${pct(s.current_drawdown || 0, 1)}</td>
+    <td class="col-num">${num(s.turnover?.annualized_turnover, 1)}x</td>
+    <td class="col-pct">${pct(s.transaction_cost_drag || s.turnover?.annualized_cost_drag || 0, 2)}</td>
+    <td class="col-status">${statusBadge(live ? (s.live_risk_status || s.risk_status) : "not applicable")}</td>
+    <td class="col-status">${statusBadge(s.research_quality_status || s.research_status)}</td>
+    <td class="wrap-cell">${statusBadge(s.final_action_after_double_check || s.recommended_action || "Review")}</td>
+  </tr>`;
+  }).join("");
+  monitorTable.querySelectorAll("[data-sort-key]").forEach((button) => button.addEventListener("click", () => {
     const key = button.dataset.sortKey;
     if (monitorSort.key === key) monitorSort.direction = monitorSort.direction === "asc" ? "desc" : "asc";
-    else {
-      monitorSort.key = key;
-      monitorSort.direction = key === "name" ? "asc" : "desc";
-    }
+    else { monitorSort.key = key; monitorSort.direction = key === "name" ? "asc" : "desc"; }
     renderTables(artifact);
     installStrategyMonitorControls(artifact);
   }));
-
-  document.querySelectorAll("[data-strategy]").forEach((row) => row.addEventListener("click", () => {
+  monitorTable.querySelectorAll("tr[data-strategy]").forEach((row) => row.addEventListener("click", () => {
     const selected = strategies.find((item) => item.strategy_id === row.dataset.strategy);
-    document.querySelectorAll("#monitorTable tr[data-strategy]").forEach((item) => item.classList.toggle("selected", item === row));
-    renderDrawer(selected, artifact);
+    monitorTable.querySelectorAll("tr[data-strategy]").forEach((item) => item.classList.toggle("selected", item === row));
+    openStrategyReview(selected, artifact);
   }));
-  document.querySelectorAll("[data-open-strategy]").forEach((row) => row.addEventListener("click", () => {
+  document.querySelectorAll("[data-open-strategy]").forEach((row) => row.addEventListener("click", (event) => {
+    event.stopPropagation();
     const selected = strategies.find((item) => item.strategy_id === row.dataset.openStrategy);
     setActiveTab("Strategy Monitor");
-    renderDrawer(selected, artifact);
-    document.querySelectorAll("#monitorTable tr[data-strategy]").forEach((item) => item.classList.toggle("selected", item.dataset.strategy === selected.strategy_id));
+    openStrategyReview(selected, artifact);
+    monitorTable.querySelectorAll("tr[data-strategy]").forEach((item) => item.classList.toggle("selected", item.dataset.strategy === selected?.strategy_id));
   }));
+}
 
-  initializeSimulation(artifact);
+function populateMonitorFilters(strategies) {
+  const familyFilter = document.getElementById("strategyFamilyFilter");
+  const actionFilter = document.getElementById("strategyActionFilter");
+  if (familyFilter && familyFilter.options.length <= 1) {
+    [...new Set(strategies.map((s) => s.strategy_type).filter(Boolean))].forEach((family) => {
+      const opt = document.createElement("option");
+      opt.value = family.toLowerCase();
+      opt.textContent = family;
+      familyFilter.appendChild(opt);
+    });
+  }
+  if (actionFilter && actionFilter.options.length <= 1) {
+    [...new Set(strategies.map((s) => s.final_action_after_double_check || s.recommended_action).filter(Boolean))].forEach((action) => {
+      const opt = document.createElement("option");
+      opt.value = action.toLowerCase();
+      opt.textContent = action;
+      actionFilter.appendChild(opt);
+    });
+  }
 }
 
 function quantile(values, q) {
@@ -1831,7 +2410,7 @@ function officialSimulationFromArtifact(artifact, targetWeights) {
 }
 
 function updateWeightTotalsOnly() {
-  const total = Object.values(simulatedWeights).reduce((sum, value) => sum + Number(value || 0), 0);
+  const total = Object.values(proposalSession.weights).reduce((sum, value) => sum + Number(value || 0), 0);
   const cash = 1 - total;
   const totalState = document.getElementById("weightTotalState");
   if (!totalState) return;
@@ -1840,110 +2419,116 @@ function updateWeightTotalsOnly() {
 }
 
 function renderAllocationEditor(artifact) {
-  const total = Object.values(simulatedWeights).reduce((sum, value) => sum + Number(value || 0), 0);
+  const total = Object.values(proposalSession.weights).reduce((sum, value) => sum + Number(value || 0), 0);
   const cash = 1 - total;
   const totalState = document.getElementById("weightTotalState");
-  totalState.className = total > 1.00001 ? "negative" : total < 0 ? "negative" : "positive";
-  totalState.textContent = `Invested ${pct(total, 1)} | Cash ${pct(cash, 1)}`;
-  document.getElementById("allocationEditorTable").innerHTML = "<tr><th>Strategy</th><th>Eligibility</th><th>Model Risk</th><th>Current</th><th>Proposed</th><th>Change</th><th>Trade $</th><th>Est. Cost</th><th>Action</th><th>Rationale</th></tr>" +
+  if (totalState) {
+    totalState.className = total > 1.00001 ? "negative weight-total-state" : "positive weight-total-state";
+    totalState.textContent = `Invested ${pct(total, 1)} · Residual cash ${pct(cash, 1)}`;
+  }
+  const table = document.getElementById("allocationEditorTable");
+  if (!table) return;
+  table.innerHTML = "<tr><th>Strategy</th><th>Lifecycle</th><th>Eligibility</th><th>Current</th><th>Proposed</th><th>Change</th><th>Direction</th><th>Trade $</th><th>Est. Cost</th><th>Risk Contrib.</th><th>Action</th><th>Rationale</th></tr>" +
     (artifact.strategies || []).map((strategy) => {
       const current = strategy.current_weight || 0;
-      const target = simulatedWeights[strategy.strategy_id] || 0;
+      const target = proposalSession.weights[strategy.strategy_id] || 0;
       const change = target - current;
+      const elig = formatEligibilityDisplay({ ...strategy, proposed_weight: target });
       const disabled = !strategy.allocation_eligibility?.eligible && current === 0;
-      return `<tr>
-        <td><button class="table-link" data-open-strategy="${strategy.strategy_id}"><strong>${strategy.name}</strong></button><small>${positionSummary(strategy)}</small></td>
-        <td>${statusBadge(strategy.allocation_eligibility?.label || strategy.allocation_eligibility?.status)}</td><td>${statusBadge(current > 0 ? (strategy.live_risk_status || strategy.risk_status) : "not applicable")}</td><td>${pct(current, 1)}</td>
-        <td><input class="weight-input" data-weight-id="${strategy.strategy_id}" type="number" min="0" max="15" step="0.1" value="${(target * 100).toFixed(1)}" ${disabled ? "disabled" : ""} aria-label="${strategy.name} target weight">%</td>
-        <td class="${cls(change)}">${pct(change, 1)}</td><td class="${cls(change)}">${money(change * artifact.initial_capital)}</td><td>${money(Math.abs(change) * artifact.initial_capital * .0005)}</td>
-        <td>${statusBadge(strategyActionLabel({ ...strategy, proposed_weight: target }))}</td>
+      const reduceOnly = current > 0 && !strategy.allocation_eligibility?.eligible;
+      const maxWeight = reduceOnly ? current : 0.25;
+      return `<tr data-strategy-row="${strategy.strategy_id}">
+        <td><button class="table-link" data-open-strategy="${strategy.strategy_id}"><strong>${strategy.name}</strong></button></td>
+        <td class="col-status">${statusBadge(current > 0 ? "allocated" : "research")}</td>
+        <td class="col-status" title="${escapeHtml(elig.detail)}">${statusBadge(elig.label)}</td>
+        <td class="col-pct">${pct(current, 1)}</td>
+        <td><div class="weight-adj"><button type="button" data-weight-delta="${strategy.strategy_id}" data-delta="-0.005" ${disabled ? "disabled" : ""}>−</button><input class="weight-input" data-weight-id="${strategy.strategy_id}" type="number" min="0" max="${(maxWeight * 100).toFixed(1)}" step="0.1" value="${(target * 100).toFixed(1)}" ${disabled ? "disabled" : ""}>%<button type="button" data-weight-delta="${strategy.strategy_id}" data-delta="0.005" ${disabled || (reduceOnly && target >= current - 1e-6) ? "disabled" : ""}>+</button></div></td>
+        <td class="${cls(change)} col-pct">${pct(change, 1)}</td>
+        <td class="col-status">${change > 0.0001 ? "Buy" : change < -0.0001 ? "Sell" : "Hold"}</td>
+        <td class="col-num ${cls(change)}">${money(change * artifact.initial_capital)}</td>
+        <td class="col-num">${money(Math.abs(change) * artifact.initial_capital * 0.0005)}</td>
+        <td class="col-pct">${pct(strategy.risk_contribution || 0, 1)}</td>
+        <td class="col-status">${statusBadge(strategyActionLabel({ ...strategy, proposed_weight: target }))}</td>
         <td class="wrap-cell">${strategyRationale(strategy)}</td>
       </tr>`;
     }).join("");
-  document.querySelectorAll("[data-weight-id]").forEach((input) => input.addEventListener("input", () => {
-    simulatedWeights[input.dataset.weightId] = Math.max(0, Number(input.value || 0) / 100);
+  table.querySelectorAll("[data-weight-id]").forEach((input) => input.addEventListener("input", () => {
+    const strategy = artifact.strategies.find((s) => s.strategy_id === input.dataset.weightId);
+    let val = Math.max(0, Number(input.value || 0) / 100);
+    if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) val = Math.min(val, strategy.current_weight);
+    proposalSession.weights[input.dataset.weightId] = val;
+    proposalSession.source = "custom";
+    invalidateProposalSimulation();
     updateWeightTotalsOnly();
+    refreshProposalStatusViews(artifact);
   }));
-  document.querySelectorAll("#allocationEditorTable [data-open-strategy]").forEach((button) => button.addEventListener("click", () => {
-    renderDrawer(artifact.strategies.find((strategy) => strategy.strategy_id === button.dataset.openStrategy), artifact);
+  table.querySelectorAll("[data-weight-delta]").forEach((button) => button.addEventListener("click", () => {
+    const id = button.dataset.weightDelta;
+    const delta = Number(button.dataset.delta || 0);
+    const strategy = artifact.strategies.find((s) => s.strategy_id === id);
+    let next = Math.max(0, (proposalSession.weights[id] || 0) + delta);
+    if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) next = Math.min(next, strategy.current_weight);
+    proposalSession.weights[id] = Math.min(next, 0.25);
+    proposalSession.source = "custom";
+    invalidateProposalSimulation();
+    renderAllocationEditor(artifact);
+    refreshProposalStatusViews(artifact);
+  }));
+  table.querySelectorAll("[data-open-strategy]").forEach((button) => button.addEventListener("click", () => {
+    openStrategyReview(artifact.strategies.find((strategy) => strategy.strategy_id === button.dataset.openStrategy), artifact);
     setActiveTab("Strategy Monitor");
   }));
 }
 
 function renderSimulationResult(artifact) {
-  const current = simulationResult?.metricsBefore || {
-    sharpe: artifact.risk_summary?.portfolio_sharpe || 0,
-    volatility: artifact.risk_summary?.portfolio_volatility || 0,
-    var99: artifact.risk_summary?.portfolio_var_99 || 0,
-    es95: artifact.risk_summary?.portfolio_expected_shortfall_95 || 0,
-    maxDrawdown: artifact.risk_summary?.portfolio_max_drawdown || 0,
-  };
-  const proposed = simulationResult?.metrics || current;
-  const rows = [
-    ["Sharpe", current.sharpe, proposed.sharpe, false],
-    ["Volatility", current.volatility, proposed.volatility, true],
-    ["VaR 99%", current.var99, proposed.var99, true],
-    ["ES 95%", current.es95, proposed.es95, true],
-    ["Max Drawdown", current.maxDrawdown, proposed.maxDrawdown, true],
-  ];
-  const turnover = simulationResult?.turnover ?? 0;
-  document.getElementById("riskBeforeAfter").innerHTML = rows.map(([label, before, after, percentage]) => {
-    const outcome = compareMetricDelta(before, after, label !== "Sharpe", turnover);
-    return `<div><span>${label}</span><div class="metric-comparison"><strong>${percentage ? pct(before, 2) : num(before)}</strong><span>to</span><strong class="${outcome.className}">${percentage ? pct(after, 2) : num(after)}</strong></div><small class="${outcome.className}">${outcome.label}</small></div>`;
-  }).join("");
-  const checks = simulationResult?.checks || [];
-  const gates = simulationResult?.proposalGates || [];
-  const sourceNote = simulationResult?.source === "python_rebalance_simulation"
+  const el = document.getElementById("simulationChecks");
+  if (!el) return;
+  const checks = proposalSession.simulation?.checks || [];
+  const gates = proposalSession.simulation?.proposalGates || [];
+  const sourceNote = proposalSession.simulation?.source === "python_rebalance_simulation"
     ? "Backend-tested Python simulation."
-    : "Artifact-embedded official optimizer result.";
-  const optimizerNote = simulationResult?.optimizerLabel
-    ? `<p class="simulation-source">Optimizer: ${humanize(simulationResult.optimizerLabel)}</p>`
-    : "";
-  const factorKeys = [...new Set([
-    ...Object.keys(simulationResult?.factorExposureBefore || {}),
-    ...Object.keys(simulationResult?.factorExposureAfter || {}),
-  ])].slice(0, 6);
-  const factorHtml = factorKeys.length
-    ? `<div class="factor-sim-grid">${factorKeys.map((factor) => `<div><span>${humanize(factor)}</span><strong>${num(simulationResult.factorExposureBefore[factor], 3)} → ${num(simulationResult.factorExposureAfter[factor], 3)}</strong></div>`).join("")}</div>`
-    : "";
+    : proposalSession.simulation ? "Artifact-embedded official optimizer result." : "Run simulation to refresh checks.";
   const cashSemantics = artifact.factors?.cash_semantics || {};
-  const cashHtml = Number.isFinite(simulationResult?.cashWeight)
-    ? `<p>${cashSemantics.residual_cash_display_label || "Unallocated residual cash"} after simulation: <strong>${pct(simulationResult.cashWeight, 1)}</strong> · TBill/liquidity proxy exposure tracked separately in Factors tab.</p>`
+  const cashHtml = Number.isFinite(proposalSession.simulation?.cashWeight)
+    ? `<p>${cashSemantics.residual_cash_display_label || "Unallocated residual cash"}: <strong>${pct(proposalSession.simulation.cashWeight, 1)}</strong> · Treasury-bill / liquidity proxy tracked separately.</p>`
     : "";
-  const gateHtml = gates.length
-    ? `<div class="proposal-gates">${gates.map((gate) => `<p>${statusBadge(gate.status)} <strong>${humanize(gate.metric || gate.gate)}</strong><br>${gate.text || gate.required_action || ""}</p>`).join("")}</div>`
-    : "";
-  document.getElementById("simulationChecks").innerHTML = `${optimizerNote}<p class="simulation-source">${sourceNote}</p>${cashHtml}${gateHtml}${factorHtml}` +
-    checks.map((check) => `<p>${statusBadge(check.status)} <strong>${check.metric}</strong><br>${check.text}</p>`).join("");
+  el.innerHTML = `<p class="simulation-source">${sourceNote}</p>${cashHtml}` +
+    gates.map((gate) => `<p>${statusBadge(gate.status)} <strong>${humanizeMetricLabel(gate.metric || gate.gate, artifact)}</strong> — ${gate.text || gate.required_action || ""}</p>`).join("") +
+    checks.map((check) => `<p>${statusBadge(check.status)} <strong>${humanizeMetricLabel(check.metric, artifact)}</strong> — ${check.text}</p>`).join("") || emptyState("No simulation checks yet.");
+  renderAllocationBeforeAfterStrip(artifact);
 }
 
 async function runSimulation(artifact) {
-  let payload = officialSimulationFromArtifact(artifact, simulatedWeights);
-  if (!payload && await ensureSimulationApi(artifact, simulatedWeights)) {
+  if (proposalIsUnchanged(artifact, proposalSession.weights)) {
+    proposalSession.simulation = null;
+    refreshProposalStatusViews(artifact);
+    const statusEl = document.getElementById("decisionAuthorityStatus");
+    if (statusEl) statusEl.textContent = "No allocation change from current weights. Simulation not required.";
+    return true;
+  }
+  let payload = officialSimulationFromArtifact(artifact, proposalSession.weights);
+  if (!payload && await ensureSimulationApi(artifact, proposalSession.weights)) {
     try {
-      payload = await fetchBackendSimulation(artifact, simulatedWeights);
+      payload = await fetchBackendSimulation(artifact, proposalSession.weights);
     } catch {
       payload = null;
     }
   }
   if (!payload) {
-    simulationResult = null;
+    proposalSession.simulation = null;
+    refreshProposalStatusViews(artifact);
     document.getElementById("decisionAuthorityStatus").textContent = "Simulation unavailable. Start scripts/run_workstation_server.py for custom weights or regenerate the dashboard artifact.";
     return false;
   }
-  simulationResult = payload;
-  renderAllocationEditor(artifact);
-  renderSimulationResult(artifact);
-  renderCompareAllocationKpis(artifact);
-  renderApprovalStatusBar(artifact);
-  renderAllocationSidePanels(artifact);
-  document.getElementById("decisionAuthorityStatus").textContent = `Simulation completed (${payload.source}). Turnover ${pct(payload.turnover, 1)}, estimated cost ${money(payload.estimatedCost)}. Human approval is still required; execution remains disabled.`;
+  proposalSession.simulation = payload;
+  refreshProposalStatusViews(artifact);
+  const statusEl = document.getElementById("decisionAuthorityStatus");
+  if (statusEl) statusEl.textContent = `Simulation completed (${payload.source}). Turnover ${pct(payload.turnover, 1)}, estimated cost ${money(payload.estimatedCost)}. Human approval is still required; execution remains disabled.`;
   return true;
 }
 
 function initializeSimulation(artifact) {
-  simulatedWeights = Object.fromEntries((artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.current_weight || 0]));
-  simulationResult = null;
+  initProposalSession(artifact);
   renderAllocationEditor(artifact);
 }
 
@@ -1959,7 +2544,7 @@ function renderDailyExplanation(artifact) {
     <div class="explanation-headline"><div><span>Net daily PnL</span><strong class="${cls(net)}">${money(net)}</strong></div><div><span>Protection delivered</span><strong class="positive">${money(gains)}</strong></div><div><span>Loss offset ratio</span><strong>${losses ? pct(gains / losses, 1) : "n/a"}</strong></div><div><span>Allocated live breaches</span><strong class="positive">0</strong></div></div>
     <div class="explanation-grid">
       <section><h4>What happened</h4><p>${negative.length} allocated strategies lost money, while ${positive.length} strategies delivered positive offsets. Diversification worked partially, but the offsets covered only ${losses ? pct(gains / losses, 1) : "0%"} of gross losses.</p></section>
-      <section><h4>Why risk remains</h4><p>${factorBreaches.map((check) => `${humanize(check.metric)} ${num(check.current_value, 3)} vs limit ${num(check.breach_threshold, 3)}`).join("; ") || "No factor hard breach."} Historical research drawdowns are shown separately and are not live breaches.</p></section>
+      <section><h4>Why risk remains</h4><p>${factorBreaches.map((check) => `${humanizeMetricLabel(check.metric, artifact)} ${num(check.current_value, 3)} vs limit ${num(check.breach_threshold, 3)}`).join("; ") || "No factor hard breach."} Historical research drawdowns are shown separately and are not live breaches.</p></section>
       <section><h4>Required action</h4><p>Do not add capital simply because a strategy lost. Simulate reductions that lower breached factor exposure, preserve the strategies that offset the selloff, and approve only after the before/after risk and transaction-cost trade-off is documented.</p></section>
     </div>`;
 }
@@ -1970,7 +2555,7 @@ function renderRealMatrix(id, rows, factors, mode = "exposure") {
   const colWidth = mode === "correlation" ? "minmax(52px, 1fr)" : "minmax(66px, 1fr)";
   el.style.gridTemplateColumns = `minmax(140px, 1.8fr) repeat(${factors.length}, ${colWidth})`;
   const shortLabel = (label) => {
-    const text = String(label || "").replaceAll("_", " ");
+    const text = humanizeFactor(String(label || "").replaceAll("_", " "), activeArtifact);
     return text.length > 22 ? `${text.slice(0, 20)}…` : text;
   };
   const headers = `<div class="cell matrix-label">Strategy</div>${factors.map((factor) => `<div class="cell matrix-label" title="${factor}">${shortLabel(factor)}</div>`).join("")}`;
@@ -1993,25 +2578,8 @@ function renderRealMatrix(id, rows, factors, mode = "exposure") {
 
 function renderCardsAndMatrices(artifact) {
   const strategies = artifact.strategies || [];
-  const contributors = strategies.filter((strategy) => strategy.current_weight > 0).sort((a, b) => (b.daily_pnl || 0) - (a.daily_pnl || 0));
-  const positive = contributors.filter((strategy) => (strategy.daily_pnl || 0) > 0);
-  const negative = contributors.filter((strategy) => (strategy.daily_pnl || 0) < 0);
-  document.getElementById("contributors").innerHTML = positive.map((s) => {
-    const util = Math.min(100, Math.abs(s.daily_pnl || 0) / Math.max(artifact.initial_capital * 0.002, 1) * 100);
-    return `<div class="row-card"><span>${s.name}<small>${positionSummary(s)}</small><small class="usage-bar-wrap"><span class="usage-bar"><span style="width:${util}%"></span></span></small></span><strong class="positive">${money(s.daily_pnl || 0)}</strong></div>`;
-  }).join("") || "<p class='empty-state'>No strategy offset today's loss.</p>";
-  document.getElementById("detractors").innerHTML = negative.reverse().map((s) => {
-    const util = Math.min(100, Math.abs(s.daily_pnl || 0) / Math.max(artifact.initial_capital * 0.002, 1) * 100);
-    return `<div class="row-card"><span>${s.name}<small>${positionSummary(s)}</small><small class="usage-bar-wrap"><span class="usage-bar"><span style="width:${util}%"></span></span></small></span><strong class="negative">${money(s.daily_pnl || 0)}</strong></div>`;
-  }).join("") || "<p class='empty-state'>No allocated strategy loss today.</p>";
-  renderDailyExplanation(artifact);
-
-  const checks = canonicalNonOkChecks(artifact);
-  document.getElementById("alertList").innerHTML = checks.slice(0, 8).map((check) => `<p>${statusBadge(check.status)} <strong>${humanize(check.metric)}</strong><br>${check.explanation}</p>`).join("");
-  const recs = artifact.recommendations || [];
-  renderRecommendationPanels(recs);
-
-  document.getElementById("riskBeforeAfter").innerHTML = (artifact.decision_review?.expected_impact?.risk_metric_changes || []).map((metric) => `<div><span>${metric.metric.replace("portfolio_", "")}</span><div class="bar"><span style="width:${metric.expected_outcome === "improved" ? 72 : 38}%"></span></div><strong>${num(metric.current, 3)} → ${num(metric.proposed, 3)}</strong></div>`).join("");
+  renderContributorsDetractorsTables(artifact);
+  renderRecommendationPanels(artifact.recommendations || []);
   const factorRows = artifact.factors?.strategy_by_factor_matrix || [];
   const factorNames = (artifact.factors?.factor_contribution_to_risk || []).slice(0, 6).map((row) => row.factor);
   renderRealMatrix("factorMatrix", factorRows, factorNames);
@@ -2020,14 +2588,33 @@ function renderCardsAndMatrices(artifact) {
   renderFactorExposureBars("riskFactorBars", artifact.factors?.portfolio_factor_exposure_current, artifact);
   renderFactorNotes(artifact);
   renderNewsRiskSummary(artifact.news_risk);
-
-  const corrRows = artifact.correlation?.matrix || [];
+  const allocatedIds = new Set(strategies.filter((strategy) => strategy.current_weight > 0).map((strategy) => strategy.strategy_id));
+  const universeSelect = document.getElementById("correlationUniverse");
+  if (universeSelect) {
+    universeSelect.value = correlationUniverse;
+    universeSelect.onchange = () => {
+      correlationUniverse = universeSelect.value;
+      renderCardsAndMatrices(artifact);
+    };
+  }
+  const corrRowsAll = artifact.correlation?.matrix || [];
+  const corrRows = correlationUniverse === "allocated"
+    ? corrRowsAll.filter((row) => allocatedIds.has(row.strategy_id))
+    : corrRowsAll;
   const corrNames = corrRows.map((row) => row.strategy_id);
   const normalizedCorr = corrRows.map((row) => {
     const out = { strategy: row.name };
-    row.values.forEach((value) => { out[value.strategy_id] = value.correlation; });
+    row.values.forEach((value) => {
+      if (corrNames.includes(value.strategy_id)) out[value.strategy_id] = value.correlation;
+    });
     return out;
   });
+  const matrixTitle = document.getElementById("correlationMatrixTitle");
+  if (matrixTitle) {
+    matrixTitle.textContent = correlationUniverse === "allocated"
+      ? `Allocated ${corrRows.length}-Strategy Correlation Matrix`
+      : `All-Research ${corrRows.length}-Strategy Correlation Matrix`;
+  }
   renderRealMatrix("correlationMatrix", normalizedCorr, corrNames, "correlation");
   const corrSummary = artifact.correlation?.summary || {};
   document.getElementById("correlationSummary").innerHTML = [
@@ -2039,21 +2626,34 @@ function renderCardsAndMatrices(artifact) {
     ["Hedge relationships", corrSummary.hedge_relationship_count || 0],
     ["Limit", num(corrSummary.limit)],
   ].map(([label, value]) => drawerMetric(label, value)).join("");
-  document.getElementById("correlationPairs").innerHTML = "<tr><th>Left Strategy</th><th>Right Strategy</th><th>Correlation</th><th>Status</th><th>Allocation Read</th></tr>" +
-    [...(corrSummary.breaches || []), ...(corrSummary.hedge_relationships || [])].map((pair) => `<tr><td>${pair.left_name}</td><td>${pair.right_name}</td><td class="${pair.correlation >= pair.limit ? "negative" : "positive"}">${num(pair.correlation)}</td><td>${statusBadge(pair.status)}</td><td>${pair.correlation > 0 ? "Compare research quality; block or redesign the weaker duplicate." : "Validate hedge stability, stress behavior, carry cost, and basis risk."}</td></tr>`).join("");
+  document.getElementById("correlationPairs").innerHTML = "<tr><th>Left Strategy</th><th>Right Strategy</th><th class='col-num'>Correlation</th><th class='col-status'>Status</th><th class='wrap-cell'>Allocation Read</th></tr>" +
+    [...(corrSummary.breaches || []), ...(corrSummary.hedge_relationships || [])].map((pair) => `<tr><td>${pair.left_name}</td><td>${pair.right_name}</td><td class="col-num ${pair.correlation >= pair.limit ? "negative" : "positive"}">${num(pair.correlation)}</td><td class="col-status">${statusBadge(pair.status)}</td><td class="wrap-cell">${pair.correlation > 0 ? "Compare research quality; block or redesign the weaker duplicate." : "Validate hedge stability, stress behavior, carry cost, and basis risk."}</td></tr>`).join("");
   document.getElementById("riskContribution").innerHTML = (artifact.factors?.factor_contribution_to_risk || []).slice(0, 8).map((row) => `<div><span>${humanizeFactor(row.factor, artifact)}</span><div class="bar"><span style="width:${clamp(row.risk_share * 100, 2, 100)}%"></span></div><strong>${pct(row.risk_share, 1)}</strong></div>`).join("");
 }
 
 function renderStaticTables(artifact) {
   document.getElementById("scenarioTable").innerHTML = "<tr><th>Scenario</th><th>Estimated Impact</th><th>Status</th><th>Main Drivers</th></tr>" +
-    (artifact.factors?.scenario_shock_table || []).map((row) => `<tr><td>${row.scenario}</td><td class="${cls(row.estimated_portfolio_impact || 0)}">${pct(row.estimated_portfolio_impact || 0, 2)}</td><td>${statusBadge(row.risk_status)}</td><td>${(row.drivers || []).slice(0, 3).map((driver) => driver.factor).join(" / ")}</td></tr>`).join("");
-  document.getElementById("factorLimitAlerts").innerHTML = (artifact.risk_limits?.factors?.checks || []).filter((check) => check.status !== "ok").map((check) => `<p>${statusBadge(check.status)} <strong>${check.metric}</strong><br>Current ${num(check.current_value, 3)}, limit ${num(check.breach_threshold, 3)}. ${check.action}</p>`).join("");
+    (artifact.factors?.scenario_shock_table || []).map((row) => `<tr><td>${row.scenario}</td><td class="${cls(row.estimated_portfolio_impact || 0)}">${pct(row.estimated_portfolio_impact || 0, 2)}</td><td>${statusBadge(row.risk_status)}</td><td>${(row.drivers || []).slice(0, 3).map((driver) => humanizeFactor(driver.factor, artifact)).join(" / ")}</td></tr>`).join("");
+  document.getElementById("factorLimitAlerts").innerHTML = (artifact.risk_limits?.factors?.checks || []).filter((check) => check.status !== "ok").map((check) => `<p>${statusBadge(check.status)} <strong>${humanizeMetricLabel(check.metric, artifact)}</strong><br>Current ${num(check.current_value, 3)}, limit ${num(check.breach_threshold, 3)}. ${check.action}</p>`).join("");
 
   const marketRows = artifact.market_monitor || [];
-  document.getElementById("marketTable").innerHTML = "<tr><th>Market</th><th>Current</th><th>Daily Move</th><th>Status</th><th>Risk Interpretation</th></tr>" +
-    marketRows.map((row) => `<tr><td>${row.ticker}</td><td>${Number(row.last || 0).toFixed(2)}</td><td class="${cls(row.daily_return || 0)}">${pct(row.daily_return || 0, 2)}</td><td>${statusBadge(row.status)}</td><td>${row.risk_interpretation}</td></tr>`).join("");
-  document.getElementById("newsTable").innerHTML = "<tr><th>Severity</th><th>Topic</th><th>Headline</th><th>Risk Interpretation</th><th>Review</th></tr>" +
-    (artifact.news_risk?.items || []).map((item) => `<tr><td>${statusBadge(item.severity)}</td><td>${item.topic}</td><td>${item.headline}</td><td>${item.risk_interpretation}</td><td>${item.human_review ? "Required" : "Monitor"}</td></tr>`).join("");
+  document.getElementById("marketTable").innerHTML = "<tr><th>Market</th><th class='col-num'>Current</th><th class='col-pct'>Daily Move</th><th class='col-status'>Status</th><th class='interpretation-cell'>Risk Interpretation</th></tr>" +
+    marketRows.map((row) => `<tr><td>${row.ticker}</td><td class="col-num">${Number(row.last || 0).toFixed(2)}</td><td class="col-pct ${cls(row.daily_return || 0)}">${pct(row.daily_return || 0, 2)}</td><td class="col-status">${statusBadge(row.status)}</td><td class="interpretation-cell">${row.risk_interpretation}</td></tr>`).join("");
+  document.getElementById("newsTable").innerHTML = "<tr><th>Severity</th><th>Source</th><th>Published</th><th>Headline</th><th>Affected</th><th>Relevance</th><th>Review</th></tr>" +
+    (artifact.news_risk?.items || []).map((item) => {
+      const interpretation = item.risk_interpretation || "";
+      const headline = item.headline || "";
+      const cleanInterpretation = interpretation.startsWith(headline) ? interpretation.slice(headline.length).replace(/^[\s:—-]+/, "") : interpretation;
+      return `<tr>
+        <td class="col-status">${statusBadge(item.severity)}</td>
+        <td>${escapeHtml(item.source || artifact.news_risk?.source || "proxy")}</td>
+        <td>${escapeHtml(item.published_at || item.as_of || "n/a")}</td>
+        <td class="wrap-cell">${escapeHtml(headline)}</td>
+        <td class="wrap-cell">${escapeHtml((item.affected_strategies || item.affected_factors || [item.topic]).filter(Boolean).join(", ") || "General monitor")}</td>
+        <td class="wrap-cell">${escapeHtml(cleanInterpretation || item.topic || "Monitor")}</td>
+        <td class="col-status">${item.human_review ? "Required" : "Monitor"}</td>
+      </tr>`;
+    }).join("");
 
   const selected = artifact.strategies?.[0];
   document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
@@ -2061,20 +2661,10 @@ function renderStaticTables(artifact) {
   renderLiteratureStrategies(artifact.literature_strategy_backtests || {});
   renderCandidateStrategies();
   renderReplicationClone(artifact.replication_clone || {});
-
-  const workflow = artifact.decision_workflow || {};
-  const stages = [
-    ["1. PM Proposal", workflow.stage_1_proposal?.status, workflow.stage_1_proposal?.proposal_owner],
-    ["2. Independent Risk Review", workflow.stage_2_independent_risk_review?.status, workflow.stage_2_independent_risk_review?.system_conclusion],
-    ["3. Decision Authority", workflow.stage_3_decision_authority?.status, workflow.stage_3_decision_authority?.system_recommended_outcome],
-    ["4. Execution & Monitoring", workflow.stage_4_execution_and_monitoring?.execution_status, workflow.stage_4_execution_and_monitoring?.realized_outcome_status],
-  ];
-  document.getElementById("governanceFlow").innerHTML = stages.map(([title, status, detail]) => `<div class="governance-stage"><strong>${title}</strong>${statusBadge(status)}<span>${detail || "unassigned"}</span></div>`).join("");
-  const review = artifact.decision_review || {};
-  document.getElementById("dailyRiskMemo").innerHTML = `<p><strong>System conclusion:</strong> ${review.final_decision}</p><p><strong>Why:</strong> ${review.double_check_summary?.fail || 0} failed gates, ${review.double_check_summary?.warning || 0} warnings. Expected impact confidence is ${review.expected_impact?.confidence || "low"}.</p><p><strong>Current workflow:</strong> ${workflow.workflow_status || "pending"}.</p><p class="status-muted"><strong>Audit limitation:</strong> Decision events recorded in this browser session are stored in localStorage only; server-side audit persistence is not implemented.</p>`;
-  document.getElementById("decisionAuthorityStatus").textContent = `System recommendation: ${workflow.stage_3_decision_authority?.system_recommended_outcome || "pending"}. Human decision: ${workflow.stage_3_decision_authority?.decision_outcome || "not recorded"}. Execution authorized: ${workflow.stage_3_decision_authority?.execution_authorized ? "yes" : "no"}.`;
-  document.getElementById("decisionLog").innerHTML = "<tr><th>Time</th><th>Actor</th><th>Event</th><th>Note</th></tr>" +
-    (workflow.audit_trail || []).map((event) => `<tr><td>${event.timestamp}</td><td>${event.actor}</td><td>${event.event}</td><td>${event.note}</td></tr>`).join("");
+  const decisionFootnote = document.getElementById("decisionAuthorityStatus");
+  if (decisionFootnote && !proposalSession.simulation) {
+    decisionFootnote.textContent = "Human approval does not authorize execution. Simulate proposal before recording a decision.";
+  }
 }
 
 function renderWorkflow(artifact) {
@@ -2082,7 +2672,7 @@ function renderWorkflow(artifact) {
   document.getElementById("workflowTable").innerHTML = "<tr><th>Strategy</th><th>Hypothesis</th><th>Data</th><th>Signal</th><th>Backtest</th><th>Walk-Fwd</th><th>Risk Limits</th><th>Registry</th><th>Model Alloc</th><th>Approval</th><th>Next Action</th></tr>" +
     artifact.strategies.map((s) => {
       const wf = s.workflow_gates || {};
-      const alloc = s.allocation_eligibility || {};
+      const elig = formatEligibilityDisplay(s);
       return `<tr>
         <td><strong>${s.name}</strong><small>${s.current_weight > 0 ? `Allocated ${pct(s.current_weight)}` : "Research only"}</small></td>
         <td class="wrap-cell">${s.hypothesis || "—"}</td>
@@ -2092,17 +2682,17 @@ function renderWorkflow(artifact) {
         <td>${gateBadge(wf.walk_forward || (s.walk_forward?.windows?.length ? "complete" : "pending"))}</td>
         <td>${gateBadge(s.current_weight > 0 ? (s.live_risk_status || s.risk_status) : (s.research_quality_status || "research review"))}</td>
         <td>${gateBadge(wf.registry || s.registry_status || "registered")}</td>
-        <td>${gateBadge(alloc.eligible ? (s.current_weight > 0 ? "allocated" : "eligible") : alloc.status || "pending")}</td>
+        <td>${statusBadge(elig.label)}</td>
         <td>${s.human_approval_required ? gateBadge("required") : gateBadge("not required")}</td>
         <td>${statusBadge(s.final_action_after_double_check || s.recommended_action || "review")}</td>
       </tr>`;
     }).join("");
-  const workflowBanner = document.querySelector(".workflow");
+  const workflowBanner = document.getElementById("workflowFilters");
   if (workflowBanner) {
     workflowBanner.innerHTML = [
       "Hypothesis", "Data validation", "Signal", "Backtest", "Walk-forward",
-      "Risk limits", "Registry", "Model allocation eligibility", "Human approval",
-    ].map((label) => `<span>${label}</span>`).join("");
+      "Risk limits", "Registry", "Model allocation", "Human approval",
+    ].map((label) => `<span class="workflow-filter-chip">${label}</span>`).join("");
   }
 }
 
@@ -2140,7 +2730,7 @@ function renderRiskSidebar(artifact) {
     <p><span>History</span><strong>${quality.earliest_strategy_start || "n/a"} to ${quality.latest_strategy_end || "n/a"}</strong></p>
     <p><span>Common window</span><strong>${quality.common_portfolio_risk_window_observations || 0} days</strong></p>
     <p><span>Missing series</span><strong>${(quality.missing_return_series || []).length}</strong></p>`;
-  document.getElementById("headerRegime").textContent = "Disinflation / Risk-On but Fragile (proxy)";
+  document.getElementById("headerRegime")?.remove();
   renderLiveDataState(artifact);
   document.getElementById("macroRegimeLabel").textContent = "Strategy-specific regime diagnostics";
   document.getElementById("macroRegimeNote").textContent = "The current prototype evaluates equity, realized-volatility, credit, rates, and USD regimes. A single live macro regime label remains pending validated release-timed macro inputs.";
@@ -2155,7 +2745,7 @@ function renderDrawer(strategy, artifact) {
   const walk = strategy.walk_forward || {};
   const series = packet.chart_series || {};
   const current = strategy.current_weight || 0;
-  const proposed = strategy.proposed_weight || 0;
+  const proposed = sessionProposedWeight(strategy.strategy_id, strategy.proposed_weight || 0);
   document.getElementById("selectedStrategyName").textContent = strategy.name;
   document.getElementById("selectedStrategyType").textContent = `${strategy.strategy_type} | ${strategy.strategy_id}`;
   document.getElementById("drawerAlloc").textContent = pct(current);
@@ -2166,23 +2756,32 @@ function renderDrawer(strategy, artifact) {
   drawSeriesReturnAndDrawdown(document.getElementById("strategyCanvas"), series);
   const weightInput = document.getElementById("drawerWeightInput");
   if (weightInput) {
-    weightInput.value = Number(simulatedWeights[strategy.strategy_id] ?? proposed).toFixed(4);
+    weightInput.value = Number(proposalSession.weights[strategy.strategy_id] ?? proposed).toFixed(4);
     weightInput.disabled = !strategy.allocation_eligibility?.eligible && current === 0;
   }
-  renderDrawerView(strategy, activeDrawerView);
+  renderDrawerView(strategy, activeDrawerView, artifact);
+}
+
+function resetDrawerView() {
+  activeDrawerView = "overview";
+  document.querySelectorAll("#drawerTabs .drawer-tab").forEach((button) => {
+    button.classList.toggle("active", button.dataset.drawerView === "overview");
+  });
 }
 
 function installDrawerWeightControls(artifact) {
   const applyWeight = async (delta = 0) => {
     if (!activeStrategy) return;
     const input = document.getElementById("drawerWeightInput");
-    const base = Number(input?.value || simulatedWeights[activeStrategy.strategy_id] || activeStrategy.proposed_weight || 0);
+    const base = Number(input?.value || sessionProposedWeight(activeStrategy.strategy_id, activeStrategy.proposed_weight || 0));
     const next = Math.max(0, Math.min(0.25, base + delta));
-    simulatedWeights[activeStrategy.strategy_id] = next;
+    proposalSession.weights[activeStrategy.strategy_id] = next;
+    proposalSession.source = "custom";
     if (input) input.value = next.toFixed(4);
+    invalidateProposalSimulation();
     setActiveTab("Allocation & Rebalance");
     renderAllocationEditor(artifact);
-    await runSimulation(artifact);
+    refreshProposalStatusViews(artifact);
   };
   document.getElementById("drawerWeightUp")?.addEventListener("click", () => applyWeight(0.01));
   document.getElementById("drawerWeightDown")?.addEventListener("click", () => applyWeight(-0.01));
@@ -2190,10 +2789,12 @@ function installDrawerWeightControls(artifact) {
     if (!activeStrategy) return;
     const input = document.getElementById("drawerWeightInput");
     const next = Math.max(0, Math.min(0.25, Number(input?.value || 0)));
-    simulatedWeights[activeStrategy.strategy_id] = next;
+    proposalSession.weights[activeStrategy.strategy_id] = next;
+    proposalSession.source = "custom";
+    invalidateProposalSimulation();
     setActiveTab("Allocation & Rebalance");
     renderAllocationEditor(artifact);
-    await runSimulation(artifact);
+    refreshProposalStatusViews(artifact);
   });
   document.getElementById("drawerGoAllocation")?.addEventListener("click", () => {
     if (activeStrategy) {
@@ -2207,87 +2808,125 @@ function drawerMetric(label, value, tone = "") {
   return `<div class="drawer-metric"><span>${label}</span><strong class="${tone}">${value}</strong></div>`;
 }
 
-function renderDrawerView(strategy, view) {
+function drawerBodyMessage(message, tone = "status-muted") {
+  return `<div class="drawer-callout ${tone}"><p>${escapeHtml(message)}</p></div>`;
+}
+
+function renderDrawerView(strategy, view, artifact = activeArtifact) {
+  if (!strategy) return;
   activeDrawerView = view;
-  document.querySelectorAll("#drawerTabs button").forEach((button) => button.classList.toggle("active", button.dataset.drawerView === view));
-  const packet = strategy.risk_packet || {};
-  const summary = packet.summary_statistics || {};
-  const drawdown = packet.drawdown_behavior || {};
-  const tail = packet.tail_risk || {};
-  const walk = strategy.walk_forward || {};
-  const content = document.getElementById("drawerDetailContent");
-  if (view === "evidence") {
-    content.innerHTML = `<div class="drawer-section-grid">
-      ${drawerMetric("Backtest history", `${strategy.backtest_evidence?.years?.toFixed(1) || "0.0"} years`)}
-      ${drawerMetric("Observations", String(summary.observations || 0))}
-      ${drawerMetric("Net Sharpe", num(summary.sharpe))}
-      ${drawerMetric("Max historical DD", pct(drawdown.max_drawdown || 0, 1), "negative")}
-      ${drawerMetric("OOS windows", String(walk.number_of_windows || 0))}
-      ${drawerMetric("Average OOS Sharpe", num(walk.average_test_sharpe), cls(walk.average_test_sharpe || 0))}
-      ${drawerMetric("Positive OOS windows", pct(walk.positive_window_rate || 0, 0))}
-      ${drawerMetric("Research status", humanize(strategy.research_status))}
-    </div>
-    <div class="drawer-callout"><strong>Bias controls</strong><p>${strategy.bias_controls?.lookahead_bias || "Not documented"}</p><p>${strategy.bias_controls?.survivorship_bias || "Not documented"}</p><p>${strategy.bias_controls?.oos_walk_forward || "Not documented"}</p></div>`;
-  } else if (view === "limits") {
-    const checks = [...(strategy.risk_limit_checks || []), ...(strategy.research_quality_checks || [])];
-    content.innerHTML = `<div class="drawer-list">${checks.map((check) => `<div class="drawer-list-row"><div>${statusBadge(check.status)}<strong>${humanize(check.metric)}</strong><span>${check.explanation}</span></div><div><span>Current</span><strong>${typeof check.current_value === "number" ? num(check.current_value, 3) : humanize(check.current_value)}</strong><span>Limit ${typeof check.breach_threshold === "number" ? num(check.breach_threshold, 3) : humanize(check.breach_threshold)}</span></div></div>`).join("")}</div>`;
-  } else if (view === "positions") {
-    const positions = strategy.position_packet?.latest_positions || [];
-    content.innerHTML = `<div class="drawer-section-grid">
-      ${drawerMetric("Gross exposure", pct(strategy.position_packet?.latest_gross_exposure || 0, 1))}
-      ${drawerMetric("Net exposure", pct(strategy.position_packet?.latest_net_exposure || 0, 1))}
-      ${drawerMetric("Annualized turnover", `${num(strategy.turnover?.annualized_turnover, 1)}x`)}
-      ${drawerMetric("Annualized cost drag", pct(strategy.turnover?.annualized_cost_drag || 0, 2))}
-    </div><div class="drawer-list">${positions.map((position) => `<div class="drawer-list-row"><strong>${position.ticker}</strong><strong class="${cls(position.weight)}">${pct(position.weight, 1)}</strong></div>`).join("") || "<div class='drawer-callout'>No active positions.</div>"}</div>`;
-  } else if (view === "decision") {
-    const review = strategy.decision_review || {};
-    content.innerHTML = `<div class="drawer-callout decision-callout">${statusBadge(strategy.final_action_after_double_check)}<h3>${strategy.final_action_after_double_check}</h3><p>${strategy.allocation_eligibility?.reason || "Eligibility not documented."}</p></div>
-      <div class="drawer-section-grid">
-        ${drawerMetric("Current allocation", pct(strategy.current_weight || 0))}
-        ${drawerMetric("Proposed allocation", pct(strategy.proposed_weight || 0))}
-        ${drawerMetric("Trade side", strategy.rebalance_trade?.side || "HOLD")}
-        ${drawerMetric("Estimated cost", money(strategy.rebalance_trade?.estimated_cost || 0))}
-        ${drawerMetric("Allocation blocked", review.allocation_blocked ? "Yes" : "No", review.allocation_blocked ? "negative" : "positive")}
-        ${drawerMetric("Human approval", strategy.human_approval_required ? "Required" : "Not required")}
-      </div><div class="drawer-list">${(review.checks || []).map((check) => `<div class="drawer-list-row"><div>${statusBadge(check.status)}<strong>${humanize(check.gate)}</strong><span>${check.explanation}</span></div></div>`).join("")}</div>`;
-  } else {
-    const factors = strategy.factor_exposure?.latest || {};
-    const maxFactor = Math.max(...Object.values(factors).map((value) => Math.abs(value)), 0.01);
-    content.innerHTML = `<div class="drawer-section-grid">
-      ${drawerMetric("Current drawdown", pct(strategy.current_drawdown || 0, 1), "negative")}
-      ${drawerMetric("Latest rolling Sharpe", num(strategy.rolling_sharpe), cls(strategy.rolling_sharpe || 0))}
-      ${drawerMetric("99% VaR", pct(tail.var_99 || 0, 2), "negative")}
-      ${drawerMetric("95% Expected Shortfall", pct(tail.expected_shortfall_95 || 0, 2), "negative")}
-      ${drawerMetric("Model risk", strategy.current_weight > 0 ? humanize(strategy.live_risk_status || strategy.risk_status) : "Not applicable (research only)")}
+  document.querySelectorAll("#drawerTabs .drawer-tab").forEach((button) => button.classList.toggle("active", button.dataset.drawerView === view));
+  const content = document.getElementById("drawerBody");
+  if (!content) return;
+  content.innerHTML = `<p class="status-muted drawer-loading">Loading ${escapeHtml(view)}…</p>`;
+  try {
+    const packet = strategy.risk_packet || {};
+    const summary = packet.summary_statistics || {};
+    const drawdown = packet.drawdown_behavior || {};
+    const tail = packet.tail_risk || {};
+    const walk = strategy.walk_forward || {};
+    const live = strategy.current_weight > 0;
+    const elig = formatEligibilityDisplay(strategy);
+    let html = "";
+    if (view === "overview") {
+      html = `<div class="drawer-metric-grid">
+      ${drawerMetric("Current allocation", pct(strategy.current_weight || 0))}
+      ${drawerMetric("Proposed allocation", pct(sessionProposedWeight(strategy.strategy_id, strategy.proposed_weight || 0)))}
+      ${drawerMetric("Eligibility", elig.label)}
+      ${drawerMetric("Model risk", live ? humanize(strategy.live_risk_status || strategy.risk_status) : "Not applicable")}
       ${drawerMetric("Research quality", humanize(strategy.research_quality_status || strategy.research_status))}
-      ${drawerMetric("Allocation eligibility", humanize(strategy.allocation_eligibility?.status))}
+      ${drawerMetric("Recommended action", strategy.final_action_after_double_check || strategy.recommended_action)}
+      ${drawerMetric("Rolling Sharpe", num(strategy.rolling_sharpe), cls(strategy.rolling_sharpe || 0))}
+      ${drawerMetric("Volatility", pct(strategy.volatility || summary.annual_volatility || 0, 1))}
+      ${drawerMetric("Current drawdown", pct(strategy.current_drawdown || drawdown.current_drawdown || 0, 1), "negative")}
+      ${drawerMetric("Turnover", `${num(strategy.turnover?.annualized_turnover, 1)}x`)}
+      ${drawerMetric("Cost drag", pct(strategy.transaction_cost_drag || strategy.turnover?.annualized_cost_drag || 0, 2))}
     </div>
-    <div class="drawer-callout"><strong>What happened</strong><p>${strategy.risk_manager_question_answered?.what_happened || "Not available"}</p><strong>Why</strong><p>${strategy.risk_manager_question_answered?.why || "Not available"}</p></div>
-    <div class="mini-grid"><div><h4>Factor Exposure</h4><div class="mini-bars">${Object.entries(factors).slice(0, 6).map(([label, value]) => `<div><span>${humanize(label)}</span><div class="bar"><span style="width:${Math.min(100, Math.abs(value) / maxFactor * 100)}%"></span></div><strong class="${cls(value)}">${num(value)}</strong></div>`).join("")}</div></div><div><h4>Failure Modes</h4><ul>${(strategy.failure_modes || []).map((mode) => `<li>${mode}</li>`).join("")}</ul></div></div>`;
+    ${drawerChartBlock("Net cumulative performance", "drawerOverviewCumCanvas", '<span class="legend-dot net"></span> Net')}
+    ${drawerChartBlock("Drawdown", "drawerOverviewDdCanvas", '<span class="legend-dot drawdown"></span> Drawdown')}
+    <p class="status-muted">${elig.detail}</p>`;
+    } else if (view === "performance") {
+      html = `${drawerChartBlock("Gross vs net cumulative return", "drawerPerfGrossNetCanvas", '<span class="legend-dot gross"></span> Gross <span class="legend-dot net"></span> Net')}
+      ${drawerChartBlock("Drawdown", "drawerPerfDrawdownCanvas", '<span class="legend-dot drawdown"></span> Drawdown')}
+      ${drawerChartBlock("Rolling Sharpe (63D)", "drawerPerfRollingSharpeCanvas", '<span class="legend-dot sharpe"></span> 63D rolling')}
+      <div class="drawer-metric-grid">
+        ${drawerMetric("Gross Sharpe", num(strategy.gross_metrics?.sharpe || summary.sharpe))}
+        ${drawerMetric("Net Sharpe", num(strategy.net_metrics?.sharpe || summary.sharpe))}
+        ${drawerMetric("Max drawdown", pct(drawdown.max_drawdown || 0, 1), "negative")}
+        ${drawerMetric("OOS windows", String(walk.number_of_windows || 0))}
+      </div>`;
+    } else if (view === "risk") {
+      const factors = strategy.factor_exposure?.latest || {};
+      const maxFactor = Math.max(...Object.values(factors).map((v) => Math.abs(v)), 0.01);
+      html = `<div class="drawer-metric-grid">
+      ${drawerMetric("VaR 99%", pct(tail.var_99 || 0, 2), "negative")}
+      ${drawerMetric("ES 95%", pct(tail.expected_shortfall_95 || 0, 2), "negative")}
+      ${drawerMetric("Tail 2σ days", String(tail.left_tail_2sigma_count || 0))}
+      ${drawerMetric("Risk contribution", pct(strategy.risk_contribution || 0, 1))}
+      ${drawerMetric("Corr. to portfolio", num(packet.comparison_vs_benchmark?.correlation))}
+      ${drawerMetric("Avg |corr| others", num(packet.comparison_vs_other_strategies?.average_abs_correlation_to_others))}
+    </div><h4>Factor exposure</h4><div class="mini-bars">${Object.entries(factors).slice(0, 6).map(([label, value]) => `<div><span>${humanizeFactor(label, artifact)}</span><div class="bar"><span style="width:${Math.min(100, Math.abs(value) / maxFactor * 100)}%"></span></div><strong>${num(value)}</strong></div>`).join("")}</div>`;
+    } else if (view === "evidence") {
+      html = `<p><strong>Hypothesis:</strong> ${strategy.hypothesis || "—"}</p>
+      <p><strong>Data source:</strong> ${strategy.data_source || strategy.evidence_status || "—"}</p>
+      <p><strong>Backtest period:</strong> ${strategy.backtest_evidence?.years?.toFixed(1) || "0"} years · ${summary.observations || 0} obs</p>
+      <p><strong>Walk-forward:</strong> ${walk.number_of_windows || 0} windows · avg OOS Sharpe ${num(walk.average_test_sharpe)}</p>
+      <p><strong>Assumptions:</strong> ${strategy.bias_controls?.lookahead_bias || "—"}</p>
+      <p><strong>Limitations:</strong> ${(strategy.limitations || [strategy.bias_controls?.survivorship_bias]).filter(Boolean).join("; ") || "See research lab."}</p>`;
+    } else if (view === "limits") {
+      const checks = [...(strategy.risk_limit_checks || []), ...(strategy.research_quality_checks || [])];
+      html = checks.length
+        ? `<div class="table-viewport short"><div class="table-scroll"><table class="data-table dense"><tr><th>Metric</th><th>Current</th><th>Threshold</th><th>Util.</th><th>Status</th><th>Action</th></tr>
+      ${checks.map((check) => `<tr><td>${humanizeMetricLabel(check.metric, artifact)}</td><td>${typeof check.current_value === "number" ? num(check.current_value, 3) : humanize(check.current_value)}</td><td>${typeof check.breach_threshold === "number" ? num(check.breach_threshold, 3) : humanize(check.breach_threshold)}</td><td>${check.utilization != null ? utilizationBar(check.utilization, check.status) : "—"}</td><td>${statusBadge(check.status)}</td><td class="wrap-cell">${check.action || check.required_action || "—"}</td></tr>`).join("")}</table></div></div>`
+        : drawerBodyMessage("No configured risk-limit or research-quality checks for this strategy.");
+    } else if (view === "decision") {
+      html = `<div class="drawer-callout">${statusBadge(strategy.final_action_after_double_check)}<p>${strategyRationale(strategy)}</p></div>
+      <label>Decision<textarea id="drawerDecisionNote" rows="3" placeholder="Reviewer notes"></textarea></label>
+      <div class="decision-buttons compact-decision">
+        <button class="modify compact-btn" data-decision="Keep">Keep</button>
+        <button class="modify compact-btn" data-decision="Watch">Watch</button>
+        <button class="modify compact-btn" data-decision="Reduce">Reduce</button>
+        <button class="modify compact-btn" data-decision="Human Review">Human Review</button>
+      </div>
+      <p class="decision-footnote">Decisions recorded locally only. No execution authorized.</p>`;
+    } else {
+      html = drawerBodyMessage(`Unknown drawer view: ${view}.`);
+    }
+    content.innerHTML = html;
+    if (view === "overview") {
+      requestAnimationFrame(() => paintDrawerViewCharts(strategy, "overview", artifact));
+    } else if (view === "performance") {
+      requestAnimationFrame(() => paintDrawerViewCharts(strategy, "performance", artifact));
+    }
+  } catch (error) {
+    console.error("Drawer render failed:", error);
+    content.innerHTML = drawerBodyMessage(`Unable to render ${view} view. ${error?.message || "See console for details."}`, "negative");
   }
 }
 
 function installStrategyMonitorControls(artifact) {
-  const controls = ["strategySearch", "strategyAllocationFilter", "strategyRiskFilter"].map((id) => document.getElementById(id));
+  const controls = ["strategySearch", "strategyAllocationFilter", "strategyRiskFilter", "strategyFamilyFilter", "strategyActionFilter"].map((id) => document.getElementById(id)).filter(Boolean);
   const apply = () => {
-    const search = document.getElementById("strategySearch").value.trim().toLowerCase();
-    const allocation = document.getElementById("strategyAllocationFilter").value;
-    const risk = document.getElementById("strategyRiskFilter").value;
+    const search = document.getElementById("strategySearch")?.value.trim().toLowerCase() || "";
+    const allocation = document.getElementById("strategyAllocationFilter")?.value || "all";
+    const risk = document.getElementById("strategyRiskFilter")?.value || "all";
+    const family = document.getElementById("strategyFamilyFilter")?.value || "all";
+    const action = document.getElementById("strategyActionFilter")?.value || "all";
     let visible = 0;
     document.querySelectorAll("#monitorTable tr[data-strategy]").forEach((row) => {
       const show = (!search || row.dataset.search.includes(search))
         && (allocation === "all" || row.dataset.allocated === allocation)
-        && (risk === "all" || row.dataset.risk === risk);
+        && (risk === "all" || row.dataset.risk === risk)
+        && (family === "all" || row.dataset.family === family)
+        && (action === "all" || row.dataset.action.includes(action));
       row.hidden = !show;
       visible += show ? 1 : 0;
     });
     const allocated = artifact.strategies.filter((strategy) => strategy.current_weight > 0).length;
-    const eligible = artifact.strategies.filter((strategy) => strategy.allocation_eligibility?.eligible).length;
-    const modelBreaches = artifact.strategies.filter((strategy) => strategy.current_weight > 0 && strategy.live_risk_status === "breach").length;
-    document.getElementById("monitorSummary").innerHTML = `<span><strong>${visible}</strong> visible</span><span><strong>${allocated}</strong> model allocated</span><span><strong>${eligible}</strong> eligible</span><span class="${modelBreaches ? "negative" : "positive"}"><strong>${modelBreaches}</strong> allocated-model breaches</span>`;
+    const openReviews = countOpenDecisionReviews(artifact, localDecisionEvents);
+    document.getElementById("monitorSummary").innerHTML = `<span><strong>${visible}</strong> visible</span><span><strong>${allocated}</strong> allocated</span><span><strong>${openReviews}</strong> open reviews</span>`;
   };
   controls.forEach((control) => control.addEventListener(control.tagName === "INPUT" ? "input" : "change", apply));
-  document.querySelectorAll("#drawerTabs button").forEach((button) => button.addEventListener("click", () => renderDrawerView(activeStrategy, button.dataset.drawerView)));
   apply();
 }
 
@@ -2313,84 +2952,27 @@ function metricTableRows(packet, strategy) {
   ];
 }
 
-function renderStrategyChecklist(strategy, packet) {
-  const summary = packet.summary_statistics || {};
-  const tail = packet.tail_risk || {};
-  const drawdown = packet.drawdown_behavior || {};
-  const stability = packet.time_stability || {};
-  const benchmark = packet.comparison_vs_benchmark || {};
-  const sections = [
-    ["1. Summary Statistics", "attached", `Net Sharpe ${num(summary.sharpe)}, annual return ${pct(summary.annual_return || 0, 1)}, annual vol ${pct(summary.annual_volatility || 0, 1)}.`],
-    ["2. Distribution Shape", "attached", `Skew ${num(packet.distribution_shape?.skewness)}, excess kurtosis ${num(packet.distribution_shape?.excess_kurtosis)}. Check whether volatility understates tail risk.`],
-    ["3. Tail Risk", "attached", `99% VaR ${pct(tail.var_99 || 0, 2)}, 99% ES ${pct(tail.expected_shortfall_99 || 0, 2)}. Compare loss with allocation budget.`],
-    ["4. Drawdown Behavior", "attached", `Max DD ${pct(drawdown.max_drawdown || 0, 1)}, current DD ${pct(drawdown.current_drawdown || 0, 1)}, max duration ${drawdown.max_drawdown_duration_days || 0} days.`],
-    ["5. Time Stability", "attached", `Latest 63D Sharpe ${num(stability["63d"]?.latest_rolling_sharpe)}, 252D positive Sharpe rate ${pct(stability["252d"]?.positive_sharpe_rate || 0, 0)}.`],
-    ["6. Regime Breakdown", "attached", `Best: ${strategy.regime_fit?.best_regime || "n/a"} (${num(strategy.regime_fit?.best_regime_sharpe)}). Worst: ${strategy.regime_fit?.worst_regime || "n/a"} (${num(strategy.regime_fit?.worst_regime_sharpe)}).`],
-    ["7. Benchmark / Other Strategies", "attached", `SPY correlation ${num(benchmark.correlation)}; average absolute correlation to other strategies ${num(packet.comparison_vs_other_strategies?.average_abs_correlation_to_others)}.`],
-    ["8. Final Risk Manager Decision", strategy.decision_review?.allocation_blocked ? "blocked" : "human review", `${strategy.final_action_after_double_check}. Candidate action was ${strategy.decision_review?.candidate_action || strategy.recommended_action}.`],
-  ];
-  document.getElementById("riskChecklist").innerHTML = sections.map(([title, status, text]) => `
-    <section class="check-section"><header><h3>${title}</h3>${statusBadge(status)}</header><p>${text}</p></section>`).join("");
-}
-
 function openStrategyReview(strategy, artifact) {
   if (!strategy) return;
   activeStrategy = strategy;
   activeArtifact = artifact;
-  const packet = strategy.risk_packet || {};
-  const summary = packet.summary_statistics || {};
-  const distribution = packet.distribution_shape || {};
-  const tail = packet.tail_risk || {};
-  const drawdown = packet.drawdown_behavior || {};
-  const benchmark = packet.comparison_vs_benchmark || {};
-  const series = packet.chart_series || {};
-  const returns = (series.returns || []).filter(Number.isFinite);
-  const current = strategy.current_weight || 0;
-  const proposed = strategy.proposed_weight || 0;
-  document.getElementById("dialogStrategyId").textContent = strategy.strategy_id;
-  document.getElementById("dialogStrategyName").textContent = strategy.name;
-  document.getElementById("dialogStrategyMeta").textContent = `${strategy.strategy_type} | ${strategy.backtest_evidence?.data_source || "source unavailable"} | ${strategy.backtest_evidence?.start_date || "n/a"} to ${strategy.backtest_evidence?.end_date || "n/a"}`;
-  setBadgeElement(document.getElementById("dialogDecisionBadge"), strategy.final_action_after_double_check);
-  document.getElementById("reviewKpis").innerHTML = [
-    ["Ann. Return", pct(summary.annual_return || 0, 2), cls(summary.annual_return || 0)],
-    ["Ann. Vol", pct(summary.annual_volatility || 0, 2), "neutral"],
-    ["Sharpe", num(summary.sharpe), "neutral"],
-    ["Sortino", num(summary.sortino), "neutral"],
-    ["Calmar", num(summary.calmar), "neutral"],
-    ["Win Rate", pct(summary.win_rate || 0, 1), "neutral"],
-    ["Skew", num(distribution.skewness), distribution.skewness < -0.5 ? "warning-text" : "neutral"],
-    ["Max DD", pct(drawdown.max_drawdown || 0, 2), "negative"],
-  ].map(([label, value, klass]) => `<article class="kpi-card"><span>${label}</span><strong class="${klass}">${value}</strong></article>`).join("");
-  document.getElementById("tailRiskPanel").innerHTML = [
-    ["95% VaR", tail.var_95], ["99% VaR", tail.var_99], ["95% ES", tail.expected_shortfall_95],
-    ["99% ES", tail.expected_shortfall_99], ["Worst Day", summary.worst_day], ["Best Day", summary.best_day],
-  ].map(([label, value]) => `<div><span>${label}</span><strong class="${cls(value || 0)}">${pct(value || 0, 2)}</strong></div>`).join("");
-  const latestFactors = strategy.factor_exposure?.latest || {};
-  const factorMax = Math.max(...Object.values(latestFactors).map((value) => Math.abs(value)), 0.01);
-  document.getElementById("factorReviewPanel").innerHTML = Object.entries(latestFactors).map(([label, value]) => `
-    <div><span>${label.replaceAll("_", " ")}</span><div class="bar"><span style="width:${Math.min(100, Math.abs(value) / factorMax * 100)}%"></span></div><strong class="${cls(value)}">${num(value)}</strong></div>`).join("");
-  document.getElementById("decisionPacket").innerHTML = `
-    <p><strong>Hypothesis:</strong> ${strategy.hypothesis}</p>
-    <p><strong>Signal:</strong> ${strategy.signal_summary}</p>
-    <p><strong>Allocation and cost:</strong> ${pct(current)} current to ${pct(proposed)} proposed. ${strategy.rebalance_trade?.side || "HOLD"} ${money(strategy.rebalance_trade?.notional || 0)}, estimated cost ${money(strategy.rebalance_trade?.estimated_cost || 0)}.</p>
-    <p><strong>Double-check decision:</strong> ${strategy.final_action_after_double_check}. Allocation blocked: ${strategy.decision_review?.allocation_blocked ? "yes" : "no"}.</p>
-    <p><strong>Evidence:</strong> ${strategy.backtest_evidence?.years?.toFixed(1) || 0} years; ${strategy.walk_forward?.number_of_windows || 0} walk-forward windows; ${strategy.bias_controls?.oos_walk_forward || "OOS not documented"}.</p>
-    <p><strong>Limit status:</strong> ${strategy.risk_limit_summary?.breach || 0} breaches, ${strategy.risk_limit_summary?.warning || 0} warnings. Human approval required: ${strategy.human_approval_required ? "yes" : "no"}.</p>`;
-  document.getElementById("literatureDetailSummary").innerHTML = "<tr><th>Category</th><th>Metric</th><th>Value</th><th>Risk Manager Read</th></tr>" +
-    metricTableRows(packet, strategy).map(([category, metric, value, read]) => `<tr><td>${category}</td><td>${metric}</td><td>${value}</td><td>${read}</td></tr>`).join("");
-  const regimes = packet.regime_breakdown || {};
-  document.getElementById("literatureRegimeBreakdown").innerHTML = "<tr><th>Regime</th><th>Obs.</th><th>Return</th><th>Sharpe</th><th>Max DD</th><th>ES 95</th></tr>" +
-    Object.entries(regimes).map(([name, value]) => `<tr><td>${name.replaceAll("_", " ")}</td><td>${value.observations || 0}</td><td class="${cls(value.annual_return || 0)}">${pct(value.annual_return || 0, 1)}</td><td>${num(value.sharpe)}</td><td class="negative">${pct(value.max_drawdown || 0, 1)}</td><td class="negative">${pct(value.expected_shortfall_95 || 0, 2)}</td></tr>`).join("");
-  document.getElementById("literatureBenchmarkComparison").innerHTML = "<tr><th>Benchmark</th><th>Beta</th><th>Correlation</th><th>Alpha</th><th>Tracking Error</th><th>Info Ratio</th></tr>" +
-    `<tr><td>${benchmark.benchmark || "SPY"}</td><td>${num(benchmark.beta)}</td><td>${num(benchmark.correlation)}</td><td>${pct(benchmark.alpha_annualized || 0, 2)}</td><td>${pct(benchmark.tracking_error || 0, 2)}</td><td>${num(benchmark.information_ratio)}</td></tr>`;
-  document.getElementById("literatureWorstDays").innerHTML = "<tr><th>Date</th><th>Return</th><th>Risk Read</th></tr>" +
-    (tail.worst_10_days || []).map((day) => `<tr><td>${day.date}</td><td class="negative">${pct(day.return || 0, 2)}</td><td>Review event, regime, liquidity, and cross-strategy loss clustering.</td></tr>`).join("");
-  renderStrategyChecklist(strategy, packet);
-  drawDistribution(document.getElementById("distributionCanvas"), returns);
-  drawSeriesReturnAndDrawdown(document.getElementById("detailReturnCanvas"), series);
-  drawRollingSeries(document.getElementById("rollingCanvas"), series.rolling_63d_sharpe || []);
-  const dialog = document.getElementById("strategyDialog");
-  if (!dialog.open) dialog.showModal();
+  activeDrawerView = "overview";
+  const drawer = document.getElementById("strategyDrawer");
+  document.getElementById("drawerStrategyId").textContent = strategy.strategy_id;
+  document.getElementById("drawerStrategyName").textContent = strategy.name;
+  document.getElementById("drawerStrategyMeta").textContent = `${strategy.strategy_type} · ${strategy.backtest_evidence?.data_source || "proxy data"} · ${positionSummary(strategy)}`;
+  drawer?.classList.remove("collapsed");
+  renderDrawerView(strategy, "overview", artifact);
+}
+
+function installStrategyDrawerControls(artifact) {
+  document.getElementById("closeStrategyDrawer")?.addEventListener("click", () => {
+    document.getElementById("strategyDrawer")?.classList.add("collapsed");
+    resetDrawerView();
+  });
+  document.querySelectorAll("#drawerTabs .drawer-tab").forEach((button) => {
+    button.addEventListener("click", () => renderDrawerView(activeStrategy, button.dataset.drawerView, activeArtifact));
+  });
 }
 
 function escapeHtml(value) {
@@ -2401,35 +2983,57 @@ function escapeHtml(value) {
 
 function loadLocalDecisionEvents() {
   try {
-    localDecisionEvents = JSON.parse(localStorage.getItem("riskManagerDecisionEvents") || "[]").filter((event) => event.actor !== "Risk Manager QA");
+    localDecisionEvents = JSON.parse(localStorage.getItem("riskManagerDecisionEvents") || "[]");
   } catch {
     localDecisionEvents = [];
   }
 }
 
-function renderDecisionLog(artifact) {
+function renderReportDecisionLog(artifact) {
+  renderDecisionLog(artifact, true);
+}
+
+function renderDecisionLog(artifact, full = false) {
   const workflowEvents = artifact.decision_workflow?.audit_trail || [];
   const events = [...workflowEvents, ...localDecisionEvents].sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
-  document.getElementById("decisionLog").innerHTML = "<tr><th>Time</th><th>Actor</th><th>Event</th><th>Note</th></tr>" +
-    events.map((event) => `<tr><td>${escapeHtml(event.timestamp)}</td><td>${escapeHtml(event.actor)}</td><td>${statusBadge(event.event)}</td><td class="wrap-cell">${escapeHtml(event.note)}</td></tr>`).join("");
+  const header = full
+    ? "<tr><th>Time</th><th>Actor</th><th>Event</th><th>Decision</th><th>Note</th><th>Conditions</th><th>Execution authorized</th></tr>"
+    : "<tr><th>Time</th><th>Actor</th><th>Event</th><th>Note</th></tr>";
+  document.getElementById("decisionLog").innerHTML = header +
+    events.map((event) => full
+      ? `<tr>
+        <td>${escapeHtml(event.timestamp)}</td>
+        <td>${escapeHtml(event.actor)}</td>
+        <td>${statusBadge(event.event)}</td>
+        <td>${escapeHtml(event.event)}</td>
+        <td class="wrap-cell">${escapeHtml(event.note)}</td>
+        <td class="wrap-cell">${escapeHtml(event.conditions || "—")}</td>
+        <td>${event.execution_authorized ? "Yes" : "No"}</td>
+      </tr>`
+      : `<tr><td>${escapeHtml(event.timestamp)}</td><td>${escapeHtml(event.actor)}</td><td>${statusBadge(event.event)}</td><td class="wrap-cell">${escapeHtml(event.note)}</td></tr>`).join("");
 }
 
 async function recordDecision(artifact, action) {
-  const reviewer = document.getElementById("decisionReviewer").value.trim();
-  const note = document.getElementById("decisionNote").value.trim();
+  const reviewer = document.getElementById("decisionReviewer").value.trim()
+    || document.getElementById("reportDecisionReviewer")?.value?.trim()
+    || "";
+  const note = document.getElementById("decisionNote").value.trim()
+    || document.getElementById("reportDecisionNote")?.value?.trim()
+    || "";
   if (!reviewer || !note) {
     document.getElementById("decisionAuthorityStatus").textContent = "Reviewer and decision note are required before recording a human decision.";
     return;
   }
-  if (!simulationResult) {
+  const unchanged = proposalIsUnchanged(artifact, proposalSession.weights);
+  if (!proposalSession.simulation && !unchanged) {
     const simulated = await runSimulation(artifact);
-    if (!simulated || !simulationResult) {
+    if (!simulated || !proposalSession.simulation) {
       document.getElementById("decisionAuthorityStatus").textContent = "Cannot record a decision until a valid simulation is available.";
       return;
     }
   }
-  const blockers = simulationResult.checks.filter((check) => check.status === "breach");
-  const gateBlockers = (simulationResult.proposalGates || []).filter((gate) => gate.status === "breach");
+  const blockers = (proposalSession.simulation?.checks || []).filter((check) => check.status === "breach");
+  const gateBlockers = (proposalSession.simulation?.proposalGates || []).filter((gate) => gate.status === "breach");
   if (action === "Approved for execution review" && (blockers.length || gateBlockers.length)) {
     document.getElementById("decisionAuthorityStatus").textContent = `Approval blocked by ${blockers.length + gateBlockers.length} hard simulation or proposal gate checks. Modify or reject the proposal. Human approval does not authorize execution.`;
     return;
@@ -2439,40 +3043,247 @@ async function recordDecision(artifact, action) {
     actor: reviewer,
     event: action,
     note,
+    conditions: document.getElementById("decisionConditions")?.value?.trim() || document.getElementById("reportDecisionConditions")?.value?.trim() || "",
     execution_authorized: false,
-    simulated_weights: simulatedWeights,
-    simulation: {
-      turnover: simulationResult.turnover,
-      estimated_cost: simulationResult.estimatedCost,
+    simulated_weights: proposalSession.weights,
+    simulation: proposalSession.simulation ? {
+      turnover: proposalSession.simulation.turnover,
+      estimated_cost: proposalSession.simulation.estimatedCost,
       hard_breaches: blockers.map((check) => check.metric),
-    },
+    } : null,
   };
   localDecisionEvents.push(event);
   localStorage.setItem("riskManagerDecisionEvents", JSON.stringify(localDecisionEvents));
-  renderDecisionLog(artifact);
+  renderDecisionLog(artifact, true);
+  renderDailyReport(artifact);
   document.getElementById("decisionAuthorityStatus").textContent = `${action} recorded by ${reviewer}. No trade was executed; execution authorization remains disabled.`;
 }
 
-async function generateDailyReport(artifact) {
-  if (!simulationResult) {
-    const simulated = await runSimulation(artifact);
-    if (!simulated || !simulationResult) {
-      document.getElementById("generatedReport").innerHTML = "<section><h3>Report unavailable</h3><p>Daily report requires a valid rebalance simulation. Adjust weights or start scripts/run_workstation_server.py, then simulate again.</p></section>";
-      setActiveTab("Daily Risk Report / Decision Log");
-      return;
-    }
+function latestHumanDecision() {
+  return localDecisionEvents.at(-1) || null;
+}
+
+function reportNavEstimate(artifact) {
+  const marks = artifact.intraday_marks || {};
+  const cum = metricNumeric(operatingPnlMetric(artifact, "cumulative_return")) ?? artifact.portfolio_series?.cumulative_return?.at(-1) ?? 0;
+  const daily = metricNumeric(operatingPnlMetric(artifact, "daily_return")) ?? artifact.portfolio_series?.returns?.at(-1) ?? 0;
+  const nav = marks.estimated_model_nav ?? artifact.initial_capital * (1 + cum);
+  const dailyPnl = marks.estimated_intraday_pnl ?? daily * artifact.initial_capital;
+  return { nav, dailyPnl, cumPnl: cum * artifact.initial_capital, cumReturn: cum, dailyReturn: daily };
+}
+
+function renderReportStatusStrip(artifact) {
+  const el = document.getElementById("reportStatusStrip");
+  if (!el) return;
+  const proxyState = deriveCanonicalProxyDataState(artifact);
+  const est = reportNavEstimate(artifact);
+  const openReviews = countOpenDecisionReviews(artifact, localDecisionEvents);
+  const issueCounts = countIssueCategories(artifact);
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  el.innerHTML = `
+    <span>Report date <strong>${artifact.as_of_date || "n/a"}</strong></span>
+    <span>Current Model NAV <strong>${money(est.nav)}</strong></span>
+    <span>Daily PnL <strong class="${cls(est.dailyReturn)}">${money(est.dailyPnl)}</strong></span>
+    <span>Operating PnL <strong class="${cls(est.cumReturn)}">${money(est.cumPnl)}</strong></span>
+    <span>Proposal <strong>${escapeHtml(proposal.status)}</strong></span>
+    <span>Current-model issues <strong>${issueCounts.current_model_issues}</strong></span>
+    <span>Breached controls <strong class="${issueCounts.breached_controls ? "negative" : ""}">${issueCounts.breached_controls}</strong></span>
+    <span>Research quality <strong>${issueCounts.research_quality}</strong></span>
+    <span>Data quality <strong>${issueCounts.data_quality}</strong></span>
+    <span>Governance <strong>${issueCounts.governance}</strong></span>
+    <span>Open reviews <strong>${openReviews}</strong></span>
+    <span>Data state <strong class="${proxyState.tone || ""}">${proxyState.label}</strong></span>
+    <span>Execution <strong>Not authorized</strong></span>`;
+}
+
+function renderReportWorkflow(artifact) {
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  const workflowView = deriveWorkflowPresentation(artifact, proposal);
+  document.getElementById("governanceFlow").innerHTML = workflowView.stages.map((stage) => `
+    <div class="governance-stage">
+      <strong>${stage.title}</strong>
+      ${statusBadge(stage.statusLabel || stage.status)}
+      <span>Owner: ${escapeHtml(stage.owner || "n/a")}</span>
+      <span>Next: ${escapeHtml(stage.next || "Awaiting prior stage")}</span>
+    </div>`).join("");
+  const lastDecision = latestHumanDecision();
+  const humanDecisionLabel = proposal.status === "No rebalance proposed"
+    ? (lastDecision?.event || "Monitoring acknowledgement only")
+    : (lastDecision?.event || "Not recorded");
+  document.getElementById("reportHumanDecision").innerHTML = `
+    <p><strong>Proposal status:</strong> ${statusBadge(proposal.status)} — ${proposal.detail}</p>
+    <p><strong>Human approval status:</strong> ${escapeHtml(humanDecisionLabel)}</p>
+    <p><strong>Execution authorization:</strong> Not authorized</p>
+    <label>Reviewer<input id="reportDecisionReviewer" placeholder="Name or role" value="${escapeHtml(document.getElementById("decisionReviewer")?.value || "")}"></label>
+    <label>Decision
+      <select id="reportDecisionAction">
+        <option value="Approved for execution review">Approve</option>
+        <option value="Modification requested">Modify</option>
+        <option value="Proposal rejected">Reject</option>
+      </select>
+    </label>
+    <label>Rationale<textarea id="reportDecisionNote" rows="3" placeholder="Document rationale and conditions"></textarea></label>
+    <label>Conditions<input id="reportDecisionConditions" placeholder="Optional approval conditions"></label>
+    <label>Next monitoring action<input id="reportDecisionFollowUp" placeholder="What to monitor next"></label>
+    <div class="decision-buttons compact-decision">
+      <button type="button" class="approve compact-btn" id="reportRecordDecision">Record Decision</button>
+    </div>`;
+  document.getElementById("reportRecordDecision")?.addEventListener("click", () => {
+    document.getElementById("decisionReviewer").value = document.getElementById("reportDecisionReviewer").value;
+    document.getElementById("decisionNote").value = [
+      document.getElementById("reportDecisionNote").value,
+      document.getElementById("reportDecisionConditions").value ? `Conditions: ${document.getElementById("reportDecisionConditions").value}` : "",
+      document.getElementById("reportDecisionFollowUp").value ? `Follow-up: ${document.getElementById("reportDecisionFollowUp").value}` : "",
+    ].filter(Boolean).join(" | ");
+    recordDecision(artifact, document.getElementById("reportDecisionAction").value).then(() => renderDailyReport(artifact));
+  });
+}
+
+function renderReportIssuesTable(artifact) {
+  const el = document.getElementById("reportIssuesTable");
+  if (!el) return;
+  const checks = groupedCurrentPortfolioIssues(artifact).concat(groupedCanonicalIssues(artifact, "research")).slice(0, 20);
+  el.innerHTML = `<tr><th>Subject</th><th>Scope</th><th>Issue</th><th>Current</th><th>Threshold</th><th>Severity</th><th>Action</th><th>Review</th></tr>` +
+    checks.map((check) => `<tr>
+      <td class="wrap-cell">${escapeHtml(formatIssueSubjectLabel(check, artifact))}</td>
+      <td>${humanize(check.scope)}</td>
+      <td>${humanizeMetricLabel(check.metric, artifact)}</td>
+      <td class="col-num">${typeof check.current_value === "number" ? num(check.current_value, 3) : humanize(check.current_value)}</td>
+      <td class="col-num">${typeof check.breach_threshold === "number" ? num(check.breach_threshold, 3) : humanize(check.breach_threshold)}</td>
+      <td class="col-status">${statusBadge(check.status)}</td>
+      <td class="wrap-cell">${escapeHtml(check.required_action || check.action || "Review")}</td>
+      <td>${humanize(check.review_status || "Open")}</td>
+    </tr>`).join("") || `<tr><td colspan="8">No active strategy alerts or limit issues on current model scope.</td></tr>`;
+}
+
+function renderReportRebalancePanel(artifact) {
+  const el = document.getElementById("reportRebalancePanel");
+  if (!el) return;
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  if (proposal.status === "No rebalance proposed") {
+    el.innerHTML = `<div class="rebalance-summary-card">
+      <p><strong>No rebalance proposed</strong></p>
+      <p>Current allocation remains under monitoring</p>
+      <p>Transaction cost: ${money(0)}</p>
+      <p>Human decision status: ${escapeHtml(latestHumanDecision()?.event || "Not recorded")}</p>
+      <p>Execution authorization: Not authorized</p>
+    </div>`;
+    return;
   }
-  const allocated = (artifact.strategies || []).filter((strategy) => strategy.current_weight > 0);
-  const winners = allocated.filter((strategy) => strategy.daily_pnl > 0).sort((a, b) => b.daily_pnl - a.daily_pnl);
-  const losers = allocated.filter((strategy) => strategy.daily_pnl < 0).sort((a, b) => a.daily_pnl - b.daily_pnl);
-  const breaches = simulationResult.checks.filter((check) => check.status === "breach");
-  const warnings = simulationResult.checks.filter((check) => check.status === "warning");
+  if (proposal.status === "Simulation required") {
+    el.innerHTML = `<div class="rebalance-summary-card">
+      <p><strong>Simulation required</strong></p>
+      <p>Proposed weights differ from current allocation. Run simulation before human review.</p>
+      <p>Human decision status: ${escapeHtml(latestHumanDecision()?.event || "Not recorded")}</p>
+      <p>Execution authorization: Not authorized</p>
+    </div>`;
+    return;
+  }
+  const rows = (artifact.strategies || []).filter((s) => Math.abs((proposalSession.weights[s.strategy_id] || 0) - (s.current_weight || 0)) > 1e-6);
+  el.innerHTML = `<div class="rebalance-summary-card">
+    <p><strong>${proposal.status}</strong> · ${proposal.detail}</p>
+    <p>Estimated cost: ${money(proposalSession.simulation.estimatedCost || 0)} · Turnover: ${pct(proposalSession.simulation.turnover || 0, 1)}</p>
+    <p>Gate status: ${statusBadge(proposal.tone === "breach" ? "blocked" : proposal.tone === "warning" ? "watch" : "clear")}</p>
+    <p>Human decision: ${escapeHtml(latestHumanDecision()?.event || "Not recorded")} · Execution: Not authorized</p>
+  </div>
+  <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense"><tr><th>Strategy</th><th>Current</th><th>Proposed</th><th>Change</th><th>Est. cost</th></tr>
+    ${rows.map((s) => {
+      const current = s.current_weight || 0;
+      const proposed = proposalSession.weights[s.strategy_id] || 0;
+      const change = proposed - current;
+      return `<tr><td>${escapeHtml(s.name)}</td><td>${pct(current)}</td><td>${pct(proposed)}</td><td class="${cls(change)}">${pct(change)}</td><td>${money(Math.abs(change) * artifact.initial_capital * 0.0005)}</td></tr>`;
+    }).join("")}
+  </table></div></div>`;
+}
+
+function renderReportMonitoringPanel(artifact) {
+  const el = document.getElementById("reportMonitoringPanel");
+  if (!el) return;
+  const recs = artifact.recommendations || [];
+  const dq = artifact.data_quality || {};
+  el.innerHTML = `
+    <p><strong>Next-day watchlist</strong></p>
+    ${recs.slice(0, 4).map((rec) => `<p>${statusBadge(rec.priority)} ${escapeHtml(humanizeUserFacingText(rec.action, artifact))}</p>`).join("") || emptyState("No watchlist items.")}
+    <p><strong>Market events to monitor</strong></p>
+    ${(artifact.market_monitor || []).slice(0, 4).map((row) => `<p>${row.ticker}: ${escapeHtml(row.risk_interpretation || "Monitor proxy move")}</p>`).join("") || emptyState("No market proxy warnings.")}
+    <p><strong>Data issues to verify</strong></p>
+    <p>Missing series: ${(dq.missing_return_series || []).length} · Common window: ${dq.common_portfolio_risk_window_observations || 0} obs</p>
+    <p><strong>Follow-up owners</strong></p>
+    <p>Risk manager · Portfolio manager · Data operations (prototype local review)</p>`;
+}
+
+function renderReportDataQualityPanel(artifact) {
+  const el = document.getElementById("reportDataQualityPanel");
+  if (!el) return;
+  const dq = artifact.data_quality || {};
+  const proxy = deriveCanonicalProxyDataState(artifact);
+  const intraday = artifact.intraday_marks?.data_quality || dq.intraday || {};
+  el.innerHTML = `
+    <p><strong>Market proxy source:</strong> yfinance research proxy (${dq.source || "artifact"})</p>
+    <p><strong>Latest observation:</strong> ${artifact.live_market_as_of || intraday.latest_observation_ts_et || dq.latest_strategy_end || "n/a"}</p>
+    <p><strong>Retrieval time:</strong> ${artifact.build_metadata?.data_retrieved_at || artifact.live_refreshed_at || "n/a"}</p>
+    <p><strong>Data state:</strong> ${proxy.label} — ${proxy.detail}</p>
+    <p><strong>Missing / stale tickers:</strong> ${(intraday.missing_tickers || []).join(", ") || "None flagged"} / ${(intraday.stale_tickers || []).join(", ") || "None flagged"}</p>
+    <p><strong>Disclosure:</strong> ${escapeHtml(artifact.data_classification?.disclosure || "Prototype model portfolio; not live positions or fills.")}</p>
+    <p><strong>Model limitations:</strong> ${escapeHtml(dq.important_note || "Operating-period metrics may be unavailable with short history.")}</p>
+    <p><strong>Audit limitation:</strong> Decision events in this prototype are stored in browser localStorage only.</p>`;
+}
+
+function buildDailyMemoSections(artifact) {
+  const est = reportNavEstimate(artifact);
+  const allocated = (artifact.strategies || []).filter((s) => s.current_weight > 0);
+  const winners = allocated.filter((s) => (s.daily_pnl || 0) > 0).sort((a, b) => b.daily_pnl - a.daily_pnl);
+  const losers = allocated.filter((s) => (s.daily_pnl || 0) < 0).sort((a, b) => a.daily_pnl - b.daily_pnl);
+  const issues = groupedCurrentPortfolioIssues(artifact).slice(0, 5);
+  const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  const lastDecision = latestHumanDecision();
+  const regimeNote = (artifact.market_monitor || []).slice(0, 3).map((row) => `${row.ticker} ${pct(row.daily_return || 0, 2)}`).join("; ");
+  const allocationConclusion = proposal.status === "No rebalance proposed"
+    ? "No rebalance proposed. Current allocation remains under monitoring."
+    : proposal.status === "Simulation required"
+      ? "Weights differ from current allocation. Simulation required before human review."
+      : `${proposal.status}. ${proposal.detail}${proposalSession.simulation ? ` Estimated transaction cost ${money(proposalSession.simulation.estimatedCost || 0)}.` : ""}`;
+  return [
+    ["Executive risk conclusion", `${proposal.status}. ${proposal.detail}`],
+    ["Portfolio performance", `Current Model NAV ${money(est.nav)}; daily PnL ${money(est.dailyPnl)}; operating cumulative PnL ${money(est.cumPnl)}.`],
+    ["Main contributors and detractors", `Contributors: ${winners.slice(0, 3).map((s) => `${s.name} ${money(s.daily_pnl)}`).join(", ") || "none"}. Detractors: ${losers.slice(0, 3).map((s) => `${s.name} ${money(s.daily_pnl)}`).join(", ") || "none"}.`],
+    ["Market and proxy-regime context", regimeNote || "Market proxy monitor loaded from validated artifact / intraday snapshot."],
+    ["Current portfolio, factor, and correlation issues", issues.map((check) => `${formatIssueSubjectLabel(check, artifact)}: ${humanizeMetricLabel(check.metric, artifact)} (${check.status})`).join("; ") || "No grouped current-model issues beyond routine monitoring."],
+    ["Proposed allocation or no-rebalance conclusion", allocationConclusion],
+    ["Human decision and conditions", lastDecision ? `${lastDecision.event} by ${lastDecision.actor}: ${lastDecision.note}` : "Human decision not yet recorded in this session."],
+    ["Next monitoring actions", (artifact.recommendations || []).slice(0, 3).map((rec) => humanizeUserFacingText(rec.action, artifact)).join("; ") || "Continue operating-period monitoring and proxy-data quality checks."],
+    ["Data quality and limitations", `${formatMonitoringState(artifact).stripDataState}. ${artifact.data_classification?.disclosure || ""}`],
+  ];
+}
+
+function renderDailyMemo(artifact) {
+  const sections = buildDailyMemoSections(artifact);
+  const html = sections.map(([title, body]) => `<section><h3>${escapeHtml(title)}</h3><p>${escapeHtml(humanizeUserFacingText(body, artifact))}</p></section>`).join("");
+  document.getElementById("dailyRiskMemo").innerHTML = html;
   document.getElementById("generatedReport").innerHTML = `
-    <header><div><span>Daily risk report</span><h2>${artifact.as_of_date} Multi-Strategy Portfolio Review</h2></div>${statusBadge(breaches.length ? "modification required" : "human review")}</header>
-    <section class="report-metrics"><div><span>Daily PnL</span><strong class="${cls(artifact.portfolio_series?.returns?.at(-1) || 0)}">${money((artifact.portfolio_series?.returns?.at(-1) || 0) * artifact.initial_capital)}</strong></div><div><span>Portfolio Sharpe</span><strong>${num(artifact.risk_summary?.portfolio_sharpe)}</strong></div><div><span>Simulated Sharpe</span><strong>${num(simulationResult.metrics.sharpe)}</strong></div><div><span>Trade cost</span><strong>${money(simulationResult.estimatedCost)}</strong></div></section>
-    <section><h3>What happened</h3><p>${winners.length} allocated strategies delivered positive offsets and ${losers.length} lost money. Best protection: ${winners.slice(0, 3).map((strategy) => `${strategy.name} ${money(strategy.daily_pnl)}`).join(", ") || "none"}. Largest loss drivers: ${losers.slice(0, 3).map((strategy) => `${strategy.name} ${money(strategy.daily_pnl)}`).join(", ") || "none"}.</p></section>
-    <section><h3>Simulation and limits</h3><p>Turnover ${pct(simulationResult.turnover, 1)}, estimated transaction cost ${money(simulationResult.estimatedCost)}, simulated volatility ${pct(simulationResult.metrics.volatility, 2)}, VaR 99% ${pct(simulationResult.metrics.var99, 2)}, ES 95% ${pct(simulationResult.metrics.es95, 2)}, max drawdown ${pct(simulationResult.metrics.maxDrawdown, 2)}.</p><p>${breaches.length} hard checks and ${warnings.length} warnings remain. ${breaches.map((check) => check.metric).join(", ") || "No hard simulation breach."}</p></section>
-    <section><h3>Governance decision</h3><p>${localDecisionEvents.at(-1) ? `${escapeHtml(localDecisionEvents.at(-1).event)} by ${escapeHtml(localDecisionEvents.at(-1).actor)}: ${escapeHtml(localDecisionEvents.at(-1).note)}` : "Human decision not yet recorded."} Execution remains separate and unauthorized.</p></section>`;
+    <header class="report-print-header">
+      <h2>Daily Risk Report — ${artifact.as_of_date}</h2>
+      <p>Prototype model portfolio · Research proxy data · Not live positions or fills</p>
+      ${reportFrozenAt ? `<p>Frozen at ${reportFrozenAt}</p>` : ""}
+    </header>${html}`;
+  const caption = document.getElementById("reportPreviewCaption");
+  if (caption) caption.textContent = reportFrozenAt ? `Frozen ${reportFrozenAt}` : "Live preview from current artifact";
+}
+
+function renderDailyReport(artifact) {
+  renderReportStatusStrip(artifact);
+  renderDailyMemo(artifact);
+  renderReportWorkflow(artifact);
+  renderReportIssuesTable(artifact);
+  renderReportRebalancePanel(artifact);
+  renderReportDecisionLog(artifact);
+  renderReportMonitoringPanel(artifact);
+  renderReportDataQualityPanel(artifact);
+}
+
+async function generateDailyReport(artifact) {
+  reportFrozenAt = new Date().toLocaleString();
+  renderDailyReport(artifact);
   setActiveTab("Daily Risk Report / Decision Log");
 }
 
@@ -2489,14 +3300,12 @@ function installOperationalControls(artifact) {
   loadLocalDecisionEvents();
   renderDecisionLog(artifact);
   document.getElementById("useSystemProposal").addEventListener("click", async () => {
-    simulatedWeights = Object.fromEntries((artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.proposed_weight || 0]));
-    simulationResult = null;
-    renderAllocationEditor(artifact);
+    loadSystemProposalSession(artifact);
     await runSimulation(artifact);
   });
-  document.getElementById("resetWeights").addEventListener("click", async () => {
-    initializeSimulation(artifact);
-    await runSimulation(artifact);
+  document.getElementById("resetWeights").addEventListener("click", () => {
+    initProposalSession(artifact);
+    refreshProposalStatusViews(artifact);
   });
   document.getElementById("simulateWeights").addEventListener("click", () => runSimulation(artifact));
   const rebalanceJump = document.getElementById("openRebalanceTab");
@@ -2505,21 +3314,25 @@ function installOperationalControls(artifact) {
   document.getElementById("modifyDecision").addEventListener("click", () => recordDecision(artifact, "Modification requested"));
   document.getElementById("rejectDecision").addEventListener("click", () => recordDecision(artifact, "Proposal rejected"));
   document.getElementById("generateReport").addEventListener("click", () => generateDailyReport(artifact));
+  document.getElementById("addReportDecisionNote")?.addEventListener("click", () => {
+    setActiveTab("Daily Risk Report / Decision Log");
+    document.getElementById("reportDecisionNote")?.focus();
+  });
   document.getElementById("printReport").addEventListener("click", async () => {
-    await generateDailyReport(artifact);
+    if (!reportFrozenAt) generateDailyReport(artifact);
     setTimeout(() => window.print(), 100);
   });
   document.getElementById("exportJson").addEventListener("click", () => downloadBlob(`risk-decision-${artifact.as_of_date}.json`, "application/json", JSON.stringify({
     as_of_date: artifact.as_of_date,
-    simulated_weights: simulatedWeights,
-    simulation: simulationResult,
+    simulated_weights: proposalSession.weights,
+    simulation: proposalSession.simulation,
     decisions: localDecisionEvents,
     execution_authorized: false,
   }, null, 2)));
   document.getElementById("exportCsv").addEventListener("click", () => {
     const rows = [["strategy_id", "strategy", "current_weight", "target_weight", "change", "estimated_cost"]];
     (artifact.strategies || []).forEach((strategy) => {
-      const target = simulatedWeights[strategy.strategy_id] || 0;
+      const target = proposalSession.weights[strategy.strategy_id] || 0;
       const change = target - (strategy.current_weight || 0);
       rows.push([strategy.strategy_id, strategy.name, strategy.current_weight || 0, target, change, Math.abs(change) * artifact.initial_capital * .0005]);
     });
@@ -2529,15 +3342,15 @@ function installOperationalControls(artifact) {
 
 async function init() {
   renderTabs();
+  loadLocalDecisionEvents();
+  await probeWorkstationApi();
   let artifact = await loadArtifact();
   mergeLiveOverlay(artifact, await loadLiveOverlay());
   activeArtifact = artifact;
-  document.getElementById("asOfDate").textContent = artifact.as_of_date;
-  document.getElementById("capital").textContent = money(artifact.initial_capital);
-  document.getElementById("strategyCount").textContent = artifact.strategy_count;
+  initProposalSession(artifact);
+  renderTopHeader(artifact);
   renderKpis(artifact);
   renderHistoricalResearchContext(artifact);
-  renderGlobalStatusBar(artifact);
   renderTables(artifact);
   renderRiskSidebar(artifact);
   redrawAllCharts(artifact);
@@ -2545,20 +3358,17 @@ async function init() {
   renderWorkstationPanels(artifact);
   installOperationalControls(artifact);
   installLiveControls(artifact);
-  installDrawerWeightControls(artifact);
+  installIntradayPolling(artifact);
+  installStrategyMonitorControls(artifact);
+  installStrategyDrawerControls(artifact);
   installChartObservers(artifact);
   renderStaticTables(artifact);
   renderWorkflow(artifact);
-  renderDrawer(artifact.strategies[2] || artifact.strategies[0], artifact);
-  installStrategyMonitorControls(artifact);
-  await runSimulation(artifact);
-  document.getElementById("openStrategyReview").addEventListener("click", () => openStrategyReview(activeStrategy, activeArtifact));
-  document.getElementById("closeStrategyReview").addEventListener("click", () => document.getElementById("strategyDialog").close());
-  document.getElementById("strategyDialog").addEventListener("click", (event) => {
-    if (event.target.id === "strategyDialog") event.target.close();
-  });
+  renderTruthDisclosure(artifact);
+  populateResearchLabSelector(artifact);
   const litResults = artifact.literature_strategy_backtests?.results || [];
   if (litResults.length) renderResearchLabPanels({ ...litResults[0], _index: 0 });
+  refreshProposalStatusViews(artifact);
 }
 
 init();

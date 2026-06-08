@@ -15,7 +15,7 @@
 | 3 | `fix: strengthen backtest alignment and model-risk controls` | `b9c4ced` |
 | 4 | `refactor: rebuild institutional workstation shell` | `e736cf0` |
 | 5 | `refactor: rebuild nine-tab risk manager workflow` | `28dbf25` |
-| 6 | `test: complete workstation remediation QA` | `eb2f93c` |
+| 6 | `test: complete workstation remediation QA` | `031be28` |
 
 ## Major Financial-Logic Changes
 

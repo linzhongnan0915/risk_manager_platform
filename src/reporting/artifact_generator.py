@@ -1095,7 +1095,7 @@ def _generate_literature_dashboard_artifact(results: list[dict], output_path: st
     }
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    output.write_text(json.dumps(artifact, separators=(",", ":")), encoding="utf-8")
     return artifact
 
 
@@ -1511,7 +1511,7 @@ def generate_dashboard_artifact(
     }
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    output.write_text(json.dumps(artifact, separators=(",", ":")), encoding="utf-8")
     return artifact
 
 

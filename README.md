@@ -1,132 +1,90 @@
 # Risk Manager Platform
 
-## Start Here
+Prototype multi-strategy portfolio risk workstation for independent risk review, allocation simulation, and decision logging. This is **not** live fund data, not authorized execution, and not a retail dashboard.
+
+## Local Launch
+
+```powershell
+pip install -r requirements.txt
+python scripts/validate_deployment_artifact.py
+python scripts/run_workstation_server.py
+```
+
+Open: `http://127.0.0.1:8765/dashboard/index.html`
+
+Development / browser verification:
+
+```powershell
+pip install -r requirements-dev.txt
+playwright install chromium
+python -m pytest -q
+python scripts/verify_dashboard_browser.py --no-screenshots
+python scripts/verify_drawer_charts.py
+```
+
+## Render Deployment
+
+This repo ships as **one public Render Web Service** using the committed deployment seed artifact.
+
+| Item | Value |
+|------|-------|
+| Build command | `pip install -r requirements.txt && python scripts/validate_deployment_artifact.py` |
+| Start command | `python scripts/run_workstation_server.py --host 0.0.0.0 --port $PORT` |
+| Health check | `GET /api/health` |
+| Runtime | Python 3.12 (`render.yaml`) |
+| Bind address | `0.0.0.0:$PORT` via `HOST` / `PORT` env and CLI |
+
+Render configuration lives in `render.yaml`. The build **does not regenerate** the dashboard artifact. It validates the committed seed at `output/dashboard_artifact.json`.
+
+### Baseline artifact policy
+
+- `output/dashboard_artifact.json` is an intentional, validated deployment seed (20 strategies, literature results, chart series, portfolio return history).
+- Regenerating without ignored literature inputs can produce empty Research Lab / chart data; do not replace the seed casually in production deploys.
+- Compact JSON (`separators=(",", ":")`) is used for generation and deployment.
+- Runtime overlays (`live_overlay.json`, intraday snapshots, locks) remain gitignored.
+
+Validate locally:
+
+```powershell
+python scripts/validate_deployment_artifact.py
+```
+
+### Free-hosting / refresh limitation
+
+On Render free tier the service sleeps when idle. Intraday scheduler and manual refresh only run **while the service is running**. The UI labels this as **“Scheduler active while service is running”** and does not imply guaranteed 24×7 30-minute monitoring.
+
+When no valid intraday snapshot exists, the dashboard continues using the validated baseline artifact.
+
+### Prototype data disclosure
+
+- Strategy returns are literature-derived ETF-proxy backtests (`yfinance`), not boss live feeds.
+- Factor exposures use a transparent proxy model, not licensed Barra.
+- Human decision audit in this prototype is **browser localStorage only**.
+- Allocation execution remains **unauthorized**; simulation and governance gates are for review only.
+
+## APIs (same-origin)
+
+- `GET /api/health`
+- `GET /api/refresh/status`
+- `POST /api/refresh` (manual cooldown enforced)
+- `POST /api/simulate`
+- `GET /api/live-summary`
+- Static: `/dashboard/*`, `/output/dashboard_artifact.json`
+
+JSON/JS/CSS/HTML responses support `gzip` when `Accept-Encoding: gzip` is sent. Dashboard data uses `Cache-Control: no-store`.
+
+## Repository Docs
 
 - Current MVP state: `docs/PROJECT_STATE.md`
-- Weekend learning guide: `docs/WEEKEND_LEARNING_GUIDE.md`
-- Next actions: `docs/NEXT_ACTIONS.md`
+- Dashboard artifact contract: `data/config/dashboard_artifact_contract.json`
 - Requirements traceability: `docs/REQUIREMENTS_TRACEABILITY.md`
-- Dashboard artifact: `output/dashboard_artifact.json`
 
-Run the workstation (recommended: API-backed simulation server):
-
-```powershell
-python scripts/run_workstation_server.py
-```
-
-Then open `http://127.0.0.1:8765/dashboard/index.html`.
-
-Static-only fallback:
-
-```powershell
-python -m http.server 8765 --bind 127.0.0.1
-```
-
-## Primary Workflow
-
-The project-wide institutional workflow is documented and rendered here:
-
-- `docs/workflows/risk_manager_platform_workflow.md`
-- `output/workflows/risk_manager_platform_workflow.html`
-- `output/workflows/risk_manager_platform_workflow.png`
-
-The workflow separates Portfolio Management proposals, independent risk review, human decision authority, execution, and expectation-versus-realized monitoring.
-
-Created: 2026-06-05
-
-## Mission
-
-Build a multi-strategy portfolio risk management platform for a hedge fund / asset manager workflow.
-
-The platform starts from June 4, 2026 with USD 1,000,000 initial capital. It monitors 20 strategies today and is designed to scale to 30-40 strategies. It calculates strategy-level and portfolio-level risk/performance and helps the risk manager decide allocation changes.
-
-This is not a single-strategy dashboard and not a trader tick-by-tick terminal. It is a risk manager workstation for strategy monitoring, portfolio allocation, factor risk, backtesting, and decision logging.
-
-## What Is Real Today
-
-### Implemented and verified
-
-- 20-strategy registry with hypothesis, universe, signal, failure modes, and evidence metadata.
-- 10 allocated strategies and 10 research-only strategies at zero live weight.
-- Long-history ETF-proxy backtests from yfinance (`output/literature_strategy_backtests.json`).
-- Walk-forward out-of-sample evidence, transaction costs (5 bps buy / 5 bps sell), and strategy risk packets.
-- Portfolio risk, factor limits, correlation diagnostics, conservative optimizer proposal, and double-check governance.
-- Nine-tab institutional dashboard driven by `output/dashboard_artifact.json`.
-- Tested Python rebalance simulation (`src/allocation/rebalance_simulation.py`) embedded in the artifact and exposed through `POST /api/simulate` when using `scripts/run_workstation_server.py`.
-
-### Provisional / proxy research (not live fund data)
-
-- Strategy returns are literature-derived ETF-proxy backtests, not boss live strategy feeds.
-- Factor exposures use a transparent proxy model, not licensed Barra.
-- Risk limits in `data/config/risk_limits.yaml` are provisional research thresholds pending PM / risk approval.
-- News and some market context may still use sample snapshots when boss APIs are unavailable.
-
-## Non-Negotiable Standards
-
-- No look-ahead bias in backtests.
-- No automatic execution of allocation changes.
-- Human approval and audit trail required for every decision.
-- Research-quality failures are not live breaches.
-- Historical max drawdown is evidence; current live limits use current drawdown and configured thresholds.
-- Optimizer balances diversification, correlation, drawdown, turnover, cost, factor concentration, and limits. It does not blindly maximize Sharpe.
-
-## Generate Dashboard Artifact
+## Regenerate Artifact (local only)
 
 ```powershell
 python scripts/generate_dashboard_artifact.py
+python scripts/compact_dashboard_artifact.py
+python scripts/validate_deployment_artifact.py
 ```
 
-Output:
-
-```text
-output/dashboard_artifact.json
-```
-
-## API-Ready Refresh Workflow
-
-```powershell
-python scripts/refresh_platform.py
-```
-
-This runs yfinance pull, hedge fund replication clone, literature-derived strategy prototype backtests, and dashboard artifact generation.
-
-Writes:
-
-```text
-data/raw/yfinance_price_history.csv
-data/processed/market_price_history.csv
-output/market_snapshot.json
-output/dashboard_artifact.json
-output/literature_strategy_backtests.json
-```
-
-Recommendations are monitoring outputs only. Any real allocation change still requires human approval.
-
-## Open Dashboard
-
-The dashboard is a static HTML/CSS/JS shell that reads `output/dashboard_artifact.json`.
-
-Use the workstation server so custom weight edits can call the tested Python simulation API:
-
-```powershell
-python scripts/run_workstation_server.py
-```
-
-Opening `dashboard/index.html` through `file://` may block JSON loading in some browsers.
-
-## Run Tests And Validation
-
-```powershell
-python -m pytest -q
-python scripts/validate_framework.py
-python scripts/audit_dashboard_data_contract.py
-python scripts/generate_dashboard_artifact.py
-python scripts/verify_dashboard_browser.py
-```
-
-## Pending Boss / Production Inputs
-
-- Live strategy return feeds and position-level reconciliation.
-- Boss API market/news ingestion with lineage and timestamp controls.
-- Calibrated production risk limits and mandate-specific factor model.
-- Named users, role-based approval, and persistent server-side audit storage.
+Only commit a regenerated artifact after validation and visual/browser checks.
