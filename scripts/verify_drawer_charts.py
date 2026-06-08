@@ -64,6 +64,18 @@ def _run_drawer_checks() -> int:
         rows = page.locator("#monitorTable tr[data-strategy]:visible")
         rows.first.click()
         page.wait_for_selector("#strategyDrawer:not(.collapsed)", timeout=5000)
+        page.wait_for_function(
+            """() => {
+              const canvas = document.getElementById('drawerOverviewCumCanvas');
+              if (!canvas || !canvas.width) return false;
+              const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+              for (let i = 0; i < data.length; i += 4) {
+                if (data[i] || data[i + 1] || data[i + 2] || data[i + 3]) return true;
+              }
+              return false;
+            }""",
+            timeout=15000,
+        )
 
         checks["drawer_open_a"] = page.locator("#strategyDrawer:not(.collapsed)").count() == 1
         checks["overview_tab_active"] = (
@@ -120,6 +132,7 @@ def _run_drawer_checks() -> int:
 
         rows.nth(1).click()
         page.wait_for_selector("#strategyDrawer:not(.collapsed)", timeout=5000)
+        page.wait_for_selector("#drawerOverviewCumCanvas", timeout=15000)
         checks["drawer_open_b"] = True
         checks["overview_reset_on_b"] = (
             page.locator('#drawerTabs .drawer-tab.active[data-drawer-view="overview"]').count() == 1

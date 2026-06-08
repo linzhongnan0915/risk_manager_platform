@@ -586,7 +586,11 @@ const strategyCandidateShelf = [
 ];
 
 async function loadArtifact() {
-  const candidates = ["/output/dashboard_artifact.json", "../output/dashboard_artifact.json"];
+  const candidates = [
+    "/api/artifact/bootstrap",
+    "/output/dashboard_artifact.json",
+    "../output/dashboard_artifact.json",
+  ];
   for (const path of candidates) {
     try {
       const response = await fetch(path, { cache: "no-store" });
@@ -599,6 +603,106 @@ async function loadArtifact() {
   return fallbackArtifact;
 }
 
+let researchExtensionPromise = null;
+
+async function fetchResearchExtension() {
+  const candidates = ["/api/artifact/research", "/output/literature_strategy_backtests.json"];
+  for (const path of candidates) {
+    try {
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      if (path.includes("literature_strategy_backtests")) {
+        return { literature_strategy_backtests: payload };
+      }
+      return payload;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+async function ensureResearchExtension(artifact = activeArtifact) {
+  if (!artifact) return artifact;
+  const literature = artifact.literature_strategy_backtests || {};
+  if ((literature.results || []).length) return artifact;
+  if (!literature.lazy_load && !literature.results_count) return artifact;
+  if (!researchExtensionPromise) researchExtensionPromise = fetchResearchExtension();
+  const extension = await researchExtensionPromise;
+  if (extension?.literature_strategy_backtests) {
+    artifact.literature_strategy_backtests = extension.literature_strategy_backtests;
+  }
+  return artifact;
+}
+
+function mergeStrategyDetail(strategy, detail) {
+  if (!strategy || !detail) return strategy;
+  if (detail.position_packet) strategy.position_packet = detail.position_packet;
+  if (detail.risk_packet?.chart_series) {
+    strategy.risk_packet = { ...(strategy.risk_packet || {}), chart_series: detail.risk_packet.chart_series };
+  }
+  return strategy;
+}
+
+async function ensureStrategyDetail(strategy, artifact = activeArtifact) {
+  if (!strategy) return strategy;
+  if (strategy.position_packet || strategy.risk_packet?.chart_series) return strategy;
+  try {
+    const response = await fetch(
+      `/api/artifact/strategy-detail?strategy_id=${encodeURIComponent(strategy.strategy_id)}`,
+      { cache: "no-store" },
+    );
+    if (!response.ok) return strategy;
+    const detail = await response.json();
+    if (detail.ok === false) return strategy;
+    mergeStrategyDetail(strategy, detail);
+    const index = (artifact?.strategies || []).findIndex((row) => row.strategy_id === strategy.strategy_id);
+    if (index >= 0) mergeStrategyDetail(artifact.strategies[index], detail);
+  } catch {
+    return strategy;
+  }
+  return strategy;
+}
+
+function refreshResearchLabViews(artifact = activeArtifact) {
+  if (!artifact) return;
+  renderLiteratureStrategies(artifact.literature_strategy_backtests || {});
+  populateResearchLabSelector(artifact);
+  const litResults = artifact.literature_strategy_backtests?.results || [];
+  if (litResults.length) renderResearchLabPanels({ ...litResults[0], _index: 0 });
+}
+
+function scheduleSecondaryRender(artifact) {
+  const run = () => {
+    renderHistoricalResearchContext(artifact);
+    renderRiskSidebar(artifact);
+    renderCardsAndMatrices(artifact);
+    renderStaticTables(artifact);
+    renderWorkflow(artifact);
+    populateResearchLabSelector(artifact);
+    installIntradayPolling(artifact);
+  };
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(run, { timeout: 1200 });
+  } else {
+    requestAnimationFrame(run);
+  }
+}
+
+function scheduleResearchExtensionLoad(artifact) {
+  void ensureResearchExtension(artifact).then((updated) => {
+    if (!updated) return;
+    activeArtifact = updated;
+    refreshResearchLabViews(updated);
+    const selected = updated.strategies?.[0];
+    if (selected?.walk_forward?.windows?.length) {
+      document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
+        selected.walk_forward.windows.slice(-12).map((window) => `<tr><td>${window.train_start} → ${window.train_end}</td><td>${window.test_start} → ${window.test_end}</td><td>${num(window.train_sharpe)}</td><td>${num(window.test_sharpe)}</td><td class="${cls(window.test_return || 0)}">${pct(window.test_return || 0, 2)}</td><td class="negative">${pct(window.test_max_drawdown || 0, 2)}</td></tr>`).join("");
+    }
+  });
+}
+
 function setActiveTab(tab) {
   document.querySelectorAll(".nav-rail button[data-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.tab === tab);
@@ -608,6 +712,12 @@ function setActiveTab(tab) {
   });
   if (tab === "Daily Risk Report / Decision Log" && activeArtifact) {
     renderDailyReport(activeArtifact);
+  }
+  if (tab === "Backtesting & Research Lab" && activeArtifact) {
+    void ensureResearchExtension(activeArtifact).then((updated) => {
+      activeArtifact = updated;
+      refreshResearchLabViews(updated);
+    });
   }
   requestAnimationFrame(() => redrawAllCharts(activeArtifact));
 }
@@ -2874,17 +2984,37 @@ function renderDrawerView(strategy, view, artifact = activeArtifact) {
   document.querySelectorAll("#drawerTabs .drawer-tab").forEach((button) => button.classList.toggle("active", button.dataset.drawerView === view));
   const content = document.getElementById("drawerBody");
   if (!content) return;
-  content.innerHTML = `<p class="status-muted drawer-loading">Loading ${escapeHtml(view)}…</p>`;
-  try {
-    const packet = strategy.risk_packet || {};
-    const summary = packet.summary_statistics || {};
-    const drawdown = packet.drawdown_behavior || {};
-    const tail = packet.tail_risk || {};
-    const walk = strategy.walk_forward || {};
-    const live = strategy.current_weight > 0;
-    const elig = formatEligibilityDisplay(strategy);
-    let html = "";
-    if (view === "overview") {
+  const needsSeries = view === "overview" || view === "performance";
+  const paint = (resolvedStrategy) => {
+    content.innerHTML = `<p class="status-muted drawer-loading">Loading ${escapeHtml(view)}…</p>`;
+    try {
+      renderDrawerViewBody(resolvedStrategy, view, artifact, content);
+    } catch (error) {
+      console.error("Drawer render failed:", error);
+      content.innerHTML = drawerBodyMessage(`Unable to render ${view} view. ${error?.message || "See console for details."}`, "negative");
+    }
+  };
+  if (needsSeries && !strategy.risk_packet?.chart_series) {
+    content.innerHTML = `<p class="status-muted drawer-loading">Loading ${escapeHtml(view)}…</p>`;
+    void ensureStrategyDetail(strategy, artifact).then((detailed) => {
+      activeStrategy = detailed;
+      paint(detailed);
+    });
+    return;
+  }
+  paint(strategy);
+}
+
+function renderDrawerViewBody(strategy, view, artifact, content) {
+  const packet = strategy.risk_packet || {};
+  const summary = packet.summary_statistics || {};
+  const drawdown = packet.drawdown_behavior || {};
+  const tail = packet.tail_risk || {};
+  const walk = strategy.walk_forward || {};
+  const live = strategy.current_weight > 0;
+  const elig = formatEligibilityDisplay(strategy);
+  let html = "";
+  if (view === "overview") {
       html = `<div class="drawer-metric-grid">
       ${drawerMetric("Current allocation", pct(strategy.current_weight || 0))}
       ${drawerMetric("Proposed allocation", pct(sessionProposedWeight(strategy.strategy_id, strategy.proposed_weight || 0)))}
@@ -2945,18 +3075,14 @@ function renderDrawerView(strategy, view, artifact = activeArtifact) {
         <button class="modify compact-btn" data-decision="Human Review">Human Review</button>
       </div>
       <p class="decision-footnote">Decisions recorded locally only. No execution authorized.</p>`;
-    } else {
-      html = drawerBodyMessage(`Unknown drawer view: ${view}.`);
-    }
-    content.innerHTML = html;
-    if (view === "overview") {
-      requestAnimationFrame(() => paintDrawerViewCharts(strategy, "overview", artifact));
-    } else if (view === "performance") {
-      requestAnimationFrame(() => paintDrawerViewCharts(strategy, "performance", artifact));
-    }
-  } catch (error) {
-    console.error("Drawer render failed:", error);
-    content.innerHTML = drawerBodyMessage(`Unable to render ${view} view. ${error?.message || "See console for details."}`, "negative");
+  } else {
+    html = drawerBodyMessage(`Unknown drawer view: ${view}.`);
+  }
+  content.innerHTML = html;
+  if (view === "overview") {
+    requestAnimationFrame(() => paintDrawerViewCharts(strategy, "overview", artifact));
+  } else if (view === "performance") {
+    requestAnimationFrame(() => paintDrawerViewCharts(strategy, "performance", artifact));
   }
 }
 
@@ -3399,32 +3525,30 @@ function installOperationalControls(artifact) {
 async function init() {
   renderTabs();
   loadLocalDecisionEvents();
-  await probeWorkstationApi();
-  let artifact = await loadArtifact();
-  mergeLiveOverlay(artifact, await loadLiveOverlay());
+  document.body.classList.add("app-loading");
+  const [, artifact, overlay] = await Promise.all([
+    probeWorkstationApi(),
+    loadArtifact(),
+    loadLiveOverlay(),
+  ]);
+  mergeLiveOverlay(artifact, overlay);
   activeArtifact = artifact;
   initProposalSession(artifact);
   renderTopHeader(artifact);
   renderKpis(artifact);
-  renderHistoricalResearchContext(artifact);
   renderTables(artifact);
-  renderRiskSidebar(artifact);
-  redrawAllCharts(artifact);
-  renderCardsAndMatrices(artifact);
   renderWorkstationPanels(artifact);
+  redrawAllCharts(artifact);
+  renderTruthDisclosure(artifact);
   installOperationalControls(artifact);
   installLiveControls(artifact);
-  installIntradayPolling(artifact);
   installStrategyMonitorControls(artifact);
   installStrategyDrawerControls(artifact);
   installChartObservers(artifact);
-  renderStaticTables(artifact);
-  renderWorkflow(artifact);
-  renderTruthDisclosure(artifact);
-  populateResearchLabSelector(artifact);
-  const litResults = artifact.literature_strategy_backtests?.results || [];
-  if (litResults.length) renderResearchLabPanels({ ...litResults[0], _index: 0 });
   refreshProposalStatusViews(artifact);
+  document.body.classList.remove("app-loading");
+  scheduleSecondaryRender(artifact);
+  scheduleResearchExtensionLoad(artifact);
 }
 
 init();

@@ -22,6 +22,7 @@ import pandas as pd
 
 from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
+from src.market.artifact_bootstrap import build_bootstrap_artifact, build_research_extension, build_strategy_detail
 from src.market.demo_hosting import configure_yfinance_cache, demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
 from src.market.intraday_config import load_intraday_config, resolve_refresh_interval_minutes
 from src.market.intraday_refresh_service import (
@@ -72,8 +73,16 @@ def ensure_deployment_artifact(root: Path = PROJECT_ROOT) -> dict:
 class WorkstationHandler(BaseHTTPRequestHandler):
     server_root = PROJECT_ROOT
     deployment_artifact: dict | None = None
+    bootstrap_artifact_bytes: bytes | None = None
+    research_extension_bytes: bytes | None = None
     last_manual_refresh_at = 0.0
     refresh_cooldown_lock = threading.Lock()
+
+    @classmethod
+    def warm_artifact_caches(cls, artifact: dict) -> None:
+        cls.deployment_artifact = artifact
+        cls.bootstrap_artifact_bytes = _json_bytes(build_bootstrap_artifact(artifact))
+        cls.research_extension_bytes = _json_bytes(build_research_extension(artifact))
 
     def log_message(self, format: str, *args) -> None:
         return
@@ -101,6 +110,15 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             self.send_header("Pragma", "no-cache")
         self.end_headers()
         self.wfile.write(payload)
+
+    def _send_precomputed_json(self, body: bytes, *, status: int = 200) -> None:
+        self._write_response(
+            body,
+            status=status,
+            content_type="application/json",
+            cache_control="no-store, no-cache, must-revalidate",
+            compress=True,
+        )
 
     def _send_json(self, payload: dict, status: int = 200) -> None:
         body = _json_bytes(payload)
@@ -237,6 +255,30 @@ class WorkstationHandler(BaseHTTPRequestHandler):
                 self._send_json(self._live_summary_payload(refresh=False))
             except Exception as exc:
                 self._send_safe_error(exc, context="live-summary")
+            return
+        if parsed.path in {"/api/artifact/bootstrap", "/api/artifact/bootstrap/"}:
+            body = self.bootstrap_artifact_bytes
+            if body is None:
+                body = _json_bytes(build_bootstrap_artifact(self._load_artifact()))
+            self._send_precomputed_json(body)
+            return
+        if parsed.path in {"/api/artifact/research", "/api/artifact/research/"}:
+            body = self.research_extension_bytes
+            if body is None:
+                body = _json_bytes(build_research_extension(self._load_artifact()))
+            self._send_precomputed_json(body)
+            return
+        if parsed.path in {"/api/artifact/strategy-detail", "/api/artifact/strategy-detail/"}:
+            query = parse_qs(parsed.query or "")
+            strategy_id = (query.get("strategy_id") or [""])[0].strip()
+            if not strategy_id:
+                self._send_json({"ok": False, "error": "strategy_id required"}, status=400)
+                return
+            detail = build_strategy_detail(self._load_artifact(), strategy_id)
+            if detail is None:
+                self._send_json({"ok": False, "error": "strategy not found"}, status=404)
+                return
+            self._send_json({"ok": True, **detail})
             return
         if parsed.path in {"/api/refresh/status", "/api/refresh/status/"}:
             try:
@@ -424,7 +466,7 @@ def main(
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     configure_yfinance_cache(PROJECT_ROOT)
     artifact = ensure_deployment_artifact()
-    WorkstationHandler.deployment_artifact = artifact
+    WorkstationHandler.warm_artifact_caches(artifact)
 
     bind_host, bind_port = resolve_server_bind(host, port)
     if refresh_on_start and not is_demo_hosting():
@@ -451,7 +493,8 @@ def main(
     server = ThreadingHTTPServer((bind_host, bind_port), WorkstationHandler)
     print(f"Risk Manager workstation server running at http://{bind_host}:{bind_port}/dashboard/index.html")
     print(
-        "APIs: POST /api/simulate | GET /api/live-summary | GET /api/refresh/status | "
+        "APIs: POST /api/simulate | GET /api/live-summary | GET /api/artifact/bootstrap | "
+        "GET /api/artifact/research | GET /api/refresh/status | "
         "POST /api/refresh | GET /api/snapshot/latest"
     )
     server.serve_forever()

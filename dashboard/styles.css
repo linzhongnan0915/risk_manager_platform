@@ -2544,3 +2544,8 @@ body { font-size: 12px; }
   .nav-rail { flex-direction: row; flex-wrap: wrap; grid-column: 1; grid-row: auto; border-right: 0; border-bottom: 1px solid var(--line); max-height: 72px; }
   .secondary-status-strip { padding-left: 8px; }
 }
+
+body.app-loading .main-stage {
+  opacity: 0.72;
+  pointer-events: none;
+}
