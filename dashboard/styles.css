@@ -502,7 +502,50 @@ tr.research-only-row td:first-child strong::after {
 
 .monitor-kpi-grid,
 .factor-kpi-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.factor-section-note {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.factor-proxy-card {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
+.factor-proxy-card .factor-proxy-label {
+  cursor: help;
+}
+
+.factor-proxy-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.factor-proxy-direction {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.factor-proxy-limit {
+  line-height: 1.35;
+}
+
+.factor-proxy-card .badge {
+  justify-self: start;
+  margin-top: 2px;
+}
+
+.factor-proxy-card .util-bar {
+  margin-top: 2px;
 }
 
 .factor-grid {
@@ -1412,8 +1455,10 @@ h4 {
 }
 
 .badge.ok { color: var(--success); border-color: oklch(70% 0.18 150 / .62); background: oklch(20% 0.08 150 / .28); }
+.badge.watch { color: var(--warning); border-color: oklch(78% 0.17 82 / .45); background: oklch(22% 0.06 82 / .22); }
 .badge.warning { color: var(--warning); border-color: oklch(78% 0.17 82 / .62); background: oklch(24% 0.08 82 / .28); }
 .badge.breach { color: var(--danger); border-color: oklch(66% 0.19 28 / .62); background: oklch(24% 0.08 28 / .28); }
+.badge.neutral { color: var(--muted); border-color: oklch(55% 0.02 205 / .45); background: oklch(18% 0.02 205 / .28); }
 
 .alert-list p {
   border: 1px solid var(--line-soft);
