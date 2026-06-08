@@ -385,6 +385,27 @@ def evaluate_research_quality_limits(strategy: dict[str, Any], config: dict[str,
     return {"checks": checks, "summary": summarize_limit_status(checks), "category": "research_quality"}
 
 
+def _factor_not_modeled(
+    limit_id: str,
+    factor: str,
+    breach_threshold: float,
+    explanation: str,
+) -> dict[str, Any]:
+    return {
+        "limit_id": limit_id,
+        "scope": "portfolio_factor",
+        "metric": factor,
+        "current_value": None,
+        "watch_threshold": None,
+        "warning_threshold": None,
+        "breach_threshold": float(breach_threshold),
+        "utilization": None,
+        "status": "not_modeled",
+        "action": "Keep",
+        "explanation": explanation,
+    }
+
+
 def evaluate_factor_limits(factor_analytics: dict[str, Any], config: dict[str, Any] | None = None) -> dict[str, Any]:
     limits = config or load_risk_limits()
     factor_limits = limits["factor_limits"]
@@ -394,12 +415,25 @@ def evaluate_factor_limits(factor_analytics: dict[str, Any], config: dict[str, A
     for factor, threshold in factor_limits.items():
         if factor.startswith("max_") or factor == "cash_review_threshold":
             continue
+        if factor not in exposure:
+            checks.append(
+                _factor_not_modeled(
+                    f"FACTOR_{factor.upper()}",
+                    factor,
+                    threshold,
+                    (
+                        f"Portfolio {factor} proxy loading is absent from the current weighted proxy model; "
+                        "not treated as zero exposure."
+                    ),
+                )
+            )
+            continue
         checks.append(
             evaluate_max_limit(
                 f"FACTOR_{factor.upper()}",
                 "portfolio_factor",
                 factor,
-                exposure.get(factor, 0.0),
+                exposure[factor],
                 threshold,
                 "Reduce or hedge factor exposure",
                 f"Portfolio {factor} proxy exposure versus configured factor budget.",
@@ -589,15 +623,23 @@ def evaluate_evidence_limits(strategy: dict[str, Any], config: dict[str, Any] | 
 def summarize_limit_status(checks: list[dict[str, Any]]) -> dict[str, int]:
     summary = {"ok": 0, "watch": 0, "warning": 0, "breach": 0}
     for check in checks:
-        summary[check["status"]] += 1
+        status = check.get("status")
+        if status not in summary:
+            continue
+        summary[status] += 1
     return summary
 
 
 def worst_status(checks: list[dict[str, Any]]) -> str:
     order = {"ok": 0, "watch": 1, "warning": 2, "breach": 3}
-    if not checks:
+    evaluated = [
+        check["status"]
+        for check in checks
+        if check.get("status") not in {"not_evaluated", "not_modeled"}
+    ]
+    if not evaluated:
         return "ok"
-    return max((check["status"] for check in checks), key=lambda value: order[value])
+    return max(evaluated, key=lambda value: order[value])
 
 
 def _boolean_limit(limit_id: str, scope: str, metric: str, passed: bool, action: str, explanation: str) -> dict[str, Any]:

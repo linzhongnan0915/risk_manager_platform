@@ -23,7 +23,92 @@ function statusBadge(status) {
 function utilizationBar(utilization, status) {
   const pctVal = Math.min(100, Math.max(0, (Number(utilization) || 0) * 100));
   const tone = status === "breach" ? "breach" : status === "warning" || status === "watch" ? "warn" : "ok";
-  return `<div class="util-bar ${tone}" title="${pctVal.toFixed(0)}% utilization"><span style="width:${pctVal}%"></span></div>`;
+  return `<div class="util-bar ${tone}" title="${pctVal.toFixed(1)}% utilization"><span style="width:${pctVal}%"></span></div>`;
+}
+
+const FACTOR_PROXY_METHODOLOGY = {
+  equity_beta: "Signed weighted sum of ETF proxy betas to broad equity (e.g. SPY/QQQ). Unitless loading; limit compares |loading| to budget.",
+  credit_spread: "Signed proxy loading to credit spread risk via HY/IG ETF sleeves. Unitless loading; limit compares |loading| to budget.",
+  rates_duration: "Signed proxy loading to interest-rate duration via Treasury ETF sleeves. Unitless loading; limit compares |loading| to budget.",
+  usd_fx: "Signed proxy loading to USD macro pressure via UUP and related FX proxies. Unitless loading; limit compares |loading| to budget.",
+  commodity_beta: "Signed proxy loading to broad commodity beta via DBC/USO and related proxies. Unitless loading; limit compares |loading| to budget.",
+  volatility: "Signed proxy loading to volatility-only instruments (VIX/VXX/SVXY). Shown only when vol-proxy sleeves are present in the weighted model.",
+  short_vol: "Signed proxy loading to short-volatility sleeves (e.g. SVXY). Shown only when short-vol proxies are present in the weighted model.",
+  emerging_market: "Signed proxy loading to emerging-market equity beta via EEM and related proxies. Unitless loading; limit compares |loading| to budget.",
+};
+
+function factorLimitStatusLabel(status) {
+  const normalized = String(status || "ok").toLowerCase();
+  if (normalized === "ok") return "Normal";
+  if (normalized === "watch") return "Watch";
+  if (normalized === "warning") return "Warning";
+  if (normalized === "breach") return "Breach";
+  if (normalized === "not_modeled" || normalized === "not_evaluated") return "N/A";
+  return humanize(status, "N/A");
+}
+
+function factorLimitStatusClass(status) {
+  const normalized = String(status || "ok").toLowerCase();
+  if (normalized === "breach") return "breach";
+  if (normalized === "warning") return "warning";
+  if (normalized === "watch") return "watch";
+  if (normalized === "not_modeled" || normalized === "not_evaluated") return "neutral";
+  return "ok";
+}
+
+function factorExposureDirection(signedValue) {
+  const value = Number(signedValue);
+  if (!Number.isFinite(value) || Math.abs(value) <= 1e-9) return "Neutral";
+  return value > 0 ? "Long" : "Short";
+}
+
+function isFactorExposureNotModeled(check) {
+  if (!check) return true;
+  const status = String(check.status || "").toLowerCase();
+  if (status === "not_modeled" || status === "not_evaluated") return true;
+  return check.current_value == null;
+}
+
+function formatFixedNumber(value, digits = 2) {
+  return Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "0.00";
+}
+
+function formatFactorLimitCard(check, exposureMap = {}, artifact = activeArtifact) {
+  const metric = check?.metric;
+  const label = humanizeMetricLabel(metric, artifact);
+  const tooltip = FACTOR_PROXY_METHODOLOGY[metric] || "Signed ETF proxy factor loading from the research model. Not a position-level institutional sensitivity.";
+  if (isFactorExposureNotModeled(check)) {
+    return {
+      label,
+      tooltip,
+      exposureText: "N/A",
+      direction: "Not modeled",
+      loadingLimitText: "—",
+      utilizationText: "Not modeled",
+      utilization: null,
+      statusLabel: "N/A",
+      statusClass: "neutral",
+      rawStatus: check?.status || "not_modeled",
+    };
+  }
+  const signed = Number(check.current_value);
+  const absVal = Math.abs(signed);
+  const limit = Number(check.breach_threshold);
+  const utilization = Number.isFinite(check.utilization)
+    ? Number(check.utilization)
+    : (limit > 0 ? absVal / limit : null);
+  return {
+    label,
+    tooltip,
+    exposureText: formatFixedNumber(signed, 3),
+    direction: factorExposureDirection(signed),
+    loadingLimitText: `${formatFixedNumber(absVal, 3)} / ${formatFixedNumber(limit, 3)}`,
+    utilizationText: utilization != null ? `${(utilization * 100).toFixed(1)}% of limit` : "—",
+    utilization,
+    statusLabel: factorLimitStatusLabel(check.status),
+    statusClass: factorLimitStatusClass(check.status),
+    rawStatus: check.status,
+  };
 }
 
 function compactKpiStrip(items) {
@@ -102,12 +187,17 @@ function formatEligibilityDisplay(strategy) {
 }
 
 const METRIC_DISPLAY_LABELS = {
-  equity_beta: "Equity Beta",
-  credit_spread: "Credit Spread Exposure",
-  rates_duration: "Rates Duration",
-  factor_herfindahl: "Factor Concentration",
-  max_factor_change_per_rebalance: "Maximum Factor Change per Rebalance",
-  cash_exposure: "Treasury-Bill / Liquidity Proxy Exposure",
+  equity_beta: "Equity Beta Proxy Loading",
+  credit_spread: "Credit Spread Proxy Loading",
+  rates_duration: "Rates Duration Proxy Loading",
+  usd_fx: "USD FX Proxy Loading",
+  commodity_beta: "Commodity Beta Proxy Loading",
+  volatility: "Volatility Proxy Loading",
+  short_vol: "Short Volatility Proxy Loading",
+  emerging_market: "Emerging Market Proxy Loading",
+  factor_herfindahl: "Factor Concentration (Proxy)",
+  max_factor_change_per_rebalance: "Maximum Proxy Factor Change per Rebalance",
+  cash_exposure: "Treasury-Bill / Liquidity Proxy Loading",
   residual_cash: "Unallocated Residual Cash",
   latest_63d_rolling_sharpe: "Latest 63D Rolling Sharpe",
   annualized_volatility: "Annualized Volatility",

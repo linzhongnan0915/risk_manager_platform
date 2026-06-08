@@ -50,6 +50,20 @@ def test_limit_summary_counts():
     assert summarize_limit_status(checks) == {"ok": 2, "watch": 1, "warning": 1, "breach": 1}
 
 
+def test_factor_limits_mark_absent_proxy_loadings_not_modeled():
+    factors = {
+        "portfolio_factor_exposure_current": {"equity_beta": 0.10},
+        "portfolio_factor_change": {},
+        "portfolio_factor_concentration_current": {"herfindahl_abs_exposure": 0.20},
+    }
+    status = evaluate_factor_limits(factors)
+    by_metric = {check["metric"]: check for check in status["checks"]}
+    assert by_metric["volatility"]["status"] == "not_modeled"
+    assert by_metric["volatility"]["current_value"] is None
+    assert by_metric["volatility"]["utilization"] is None
+    assert by_metric["equity_beta"]["current_value"] == 0.10
+
+
 def test_extended_limit_categories():
     factors = {
         "portfolio_factor_exposure_current": {"equity_beta": 0.20, "cash": 0.40},

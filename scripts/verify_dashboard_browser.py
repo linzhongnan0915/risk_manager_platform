@@ -470,6 +470,7 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             }
         )
         official = artifact.get("rebalance_simulation", {}).get("official_optimizer", {})
+        official_turnover = float(official.get("turnover") or 0.0)
         report["api_checks"]["underinvestment_ok"] = (
             under.get("ok", True)
             and under.get("cash_weight", 0) > 0.9
@@ -479,8 +480,10 @@ def _run_browser_verification(sync_playwright, no_screenshots: bool = False) -> 
             check.get("metric") == "Invested weight" and check.get("status") == "breach"
             for check in over.get("checks", [])
         )
+        factor_before = official.get("factor_exposure_before", {})
+        factor_after = official.get("factor_exposure_after", {})
         report["api_checks"]["factor_before_not_equal_after"] = (
-            official.get("factor_exposure_before", {}) != official.get("factor_exposure_after", {})
+            factor_before != factor_after if official_turnover > 1e-6 else factor_before == factor_after
         )
         if official.get("metrics_before") and official.get("metrics_after"):
             report["api_checks"]["numeric_metrics_present"] = math.isfinite(

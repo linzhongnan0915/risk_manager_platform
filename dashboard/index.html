@@ -187,11 +187,12 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Risk Factors & Exposure">
-            <section class="kpi-grid factor-kpi-grid" id="factorKpiGrid"></section>
+            <p class="factor-section-note">Proxy factor loadings from the ETF research model. Signed loadings are shown for direction; limits and utilization use absolute |loading|. These are not position-level institutional factor sensitivities (e.g. Barra/Axioma).</p>
+            <section class="kpi-grid factor-kpi-grid" id="factorKpiGrid" aria-label="Proxy factor loading summary cards"></section>
             <section class="factor-grid">
-              <article class="panel v2-panel"><div class="panel-title">Portfolio Factor Exposure</div><p class="factor-note" id="riskFactorNote"></p><div id="riskFactorBars" class="factor-bars"></div></article>
-              <article class="panel v2-panel"><div class="panel-title" title="Normalized absolute proxy exposure; not covariance-based component risk contribution.">Factor Exposure Share</div><div id="riskContribution"></div><div class="compact-list" id="factorLimitAlerts"></div></article>
-              <article class="panel v2-panel full-width"><div class="panel-title">Strategy-By-Factor Matrix</div><div class="matrix-scroll"><div class="matrix" id="factorMatrix"></div></div></article>
+              <article class="panel v2-panel"><div class="panel-title" title="Signed weighted ETF proxy loadings aggregated to portfolio level.">Portfolio Proxy Factor Loadings</div><p class="factor-note" id="riskFactorNote"></p><div id="riskFactorBars" class="factor-bars"></div></article>
+              <article class="panel v2-panel"><div class="panel-title" title="Normalized absolute proxy loading share; not covariance-based component risk contribution.">Proxy Factor Exposure Share</div><div id="riskContribution"></div><div class="compact-list" id="factorLimitAlerts"></div></article>
+              <article class="panel v2-panel full-width"><div class="panel-title">Strategy-by-Proxy-Factor Matrix</div><div class="matrix-scroll"><div class="matrix" id="factorMatrix"></div></div></article>
               <article class="panel v2-panel full-width"><div class="panel-title">Scenario Shock Table</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="scenarioTable"></table></div></div></article>
             </section>
           </section>
