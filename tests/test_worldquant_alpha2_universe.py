@@ -299,6 +299,78 @@ def test_spac_shell_classification():
     assert spac_unit.exclusion_reason == "units"
     assert operating_common.classification == "common_stock"
     assert operating_common.eligible_candidate is True
+    assert operating_common.is_reit is False
+
+
+def test_reit_trust_classification():
+    def classify(name: str, *, etf_flag: str = "N") -> object:
+        return classify_security(
+            {
+                "symbol_raw": "TEST",
+                "security_name": name,
+                "etf_flag": etf_flag,
+                "test_issue_flag": "N",
+            }
+        )
+
+    good = classify("Gladstone Commercial Corporation - Real Estate Investment Trust")
+    whlr = classify("Wheeler Real Estate Investment Trust, Inc. - Common Stock")
+    svc = classify("Service Properties Trust - Shares of Beneficial Interest")
+    arr = classify("ARMOUR Residential REIT, Inc.")
+    wpc = classify("W. P. Carey Inc. REIT")
+    geo = classify("Geo Group Inc (The) REIT")
+    rhp = classify("Ryman Hospitality Properties, Inc. (REIT)")
+
+    for result in (good, whlr, svc, arr, wpc, geo, rhp):
+        assert result.classification == "reit_common_equity"
+        assert result.eligible_candidate is True
+        assert result.is_reit is True
+        assert result.needs_review is False
+
+    whlrd = classify(
+        "Wheeler Real Estate Investment Trust, Inc. Series D Cumulative Preferred Stock"
+    )
+    whlrp = classify(
+        "Wheeler Real Estate Investment Trust, Inc. 8.75% Series B Cumulative Preferred Stock"
+    )
+    whlrl = classify(
+        "Wheeler Real Estate Investment Trust, Inc. 7.00% Senior Notes due 2031"
+    )
+    assert whlrd.classification == "preferred_share"
+    assert whlrp.classification == "preferred_share"
+    assert whlrl.classification == "notes_debt"
+
+    reit_etf = classify("Real Estate ETF Trust", etf_flag="Y")
+    assert reit_etf.classification == "etf_flag"
+    assert reit_etf.eligible_candidate is False
+
+    rnp = classify("Cohen & Steers REIT and Preferred and Income Fund, Inc. Common Shares")
+    assert rnp.classification == "closed_end_fund"
+    assert rnp.eligible_candidate is False
+    assert rnp.is_reit is False
+
+    unrelated_trust = classify("Example Capital Investment Trust")
+    assert unrelated_trust.classification == "fund_trust"
+    assert unrelated_trust.eligible_candidate is False
+    assert unrelated_trust.needs_review is False
+
+    cef_beneficial = classify(
+        "BlackRock Taxable Municipal Bond Trust Common Shares of Beneficial Interest"
+    )
+    assert cef_beneficial.classification == "closed_end_fund"
+    assert cef_beneficial.eligible_candidate is False
+
+    fund_beneficial = classify(
+        "Virtus Diversified Income & Convertible Fund Common Shares of Beneficial Interest"
+    )
+    assert fund_beneficial.classification == "closed_end_fund"
+    assert fund_beneficial.eligible_candidate is False
+
+    gabelli_trust = classify(
+        "The Gabelli Healthcare & Wellness Trust Common Shares of Beneficial Interest"
+    )
+    assert gabelli_trust.classification == "closed_end_fund"
+    assert gabelli_trust.eligible_candidate is False
 
 
 def test_symbol_raw_preserved_separately_from_normalized():

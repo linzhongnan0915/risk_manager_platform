@@ -66,6 +66,7 @@ MASTER_COLUMNS = [
     "cqs_symbol",
     "nasdaq_symbol",
     "is_adr",
+    "is_reit",
     "classification",
     "eligible_candidate",
     "exclusion_reason",
@@ -81,6 +82,7 @@ class ClassificationResult:
     exclusion_reason: str
     needs_review: bool
     is_adr: bool
+    is_reit: bool = False
 
 
 def is_footer_row(line: str) -> bool:
@@ -169,15 +171,47 @@ def download_symbol_directories() -> tuple[str, str]:
     return nasdaq_text, other_text
 
 
-_NAME_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("etf_name", re.compile(r"\betf\b|exchange[- ]traded fund|\betn\b", re.I)),
-    ("fund_trust", re.compile(r"\b(closed[- ]end fund|investment trust)\b", re.I)),
-    ("preferred_share", re.compile(r"\bpreferred stock\b|\bpreferred shares?\b|\bpfd\b|\bpref\.?\b|\bpreference shares?\b", re.I)),
+_INSTRUMENT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("warrant", re.compile(r"\bwarrants?\b", re.I)),
     ("rights", re.compile(r"\brights?\b|\bacquisition right\b|\bsubscription right\b", re.I)),
     ("units", re.compile(r"\bunits?\b|\btrust units?\b", re.I)),
-    ("notes_debt", re.compile(r"\bnotes due\b|\bsenior notes?\b|\bsubordinated notes?\b|\bdebentures?\b|\bcorporate bond\b|\bloan stock\b|\bconvertible senior\b", re.I)),
 ]
+
+_PREFERRED_PATTERN = re.compile(
+    r"\bpreferred stock\b|\bpreferred shares?\b|\bpfd\b|\bpref\.?\b|\bpreference shares?\b",
+    re.I,
+)
+_NOTES_DEBT_PATTERN = re.compile(
+    r"\bnotes due\b|\bsenior notes?\b|\bsubordinated notes?\b|\bdebentures?\b|"
+    r"\bcorporate bond\b|\bloan stock\b|\bconvertible senior\b|"
+    r"\b\d+(?:\.\d+)?%\s*(?:senior\s+)?notes?\b",
+    re.I,
+)
+_POOLED_INVESTMENT_PATTERN = re.compile(
+    r"\bclosed[- ]end fund\b|\bmutual fund\b|\betf\b|\betn\b|exchange[- ]traded fund|"
+    r"\bincome fund\b|\bfund, inc\.\s*common shares?\b|\binvestment company\b|"
+    r"\bfund\b.*\bcommon shares of beneficial interest\b|"
+    r"\bcommon shares of beneficial interest\b.*\bfund\b|"
+    r"\b(income trust|bond trust|capital trust| dividend trust|municipal bond trust|gold trust)\b",
+    re.I,
+)
+_OPERATING_REIT_TRUST_PATTERN = re.compile(
+    r"\b(?:[\w.&'-]+\s+){0,4}"
+    r"(?:properties|healthcare|hospitality|hotel|storage|industrial|office|service|homes \d+\s+rent)"
+    r"(?:\s+[\w.&'-]+){0,2}\s+trust\b|\btrust\s+-\s+shares of beneficial interest\b",
+    re.I,
+)
+_NON_REIT_INVESTMENT_TRUST_PATTERN = re.compile(
+    r"(?<!real estate )\binvestment trust\b",
+    re.I,
+)
+
+_REIT_MARKER_PATTERN = re.compile(r"\breit\b|\breal estate investment trust\b", re.I)
+_BENEFICIAL_INTEREST_PATTERN = re.compile(r"\bshares of beneficial interest\b", re.I)
+_COMMON_EQUITY_PATTERN = re.compile(
+    r"\bcommon stock\b|\bcommon shares?\b|\bordinary shares?\b|\bclass [a-z]\s+(?:common|ordinary) shares?\b",
+    re.I,
+)
 
 _SPAC_SHELL_PATTERN = re.compile(
     r"\b(?:blank[- ]check\b|"
@@ -200,9 +234,76 @@ _COMMON_STOCK_PATTERN = re.compile(
     re.I,
 )
 _AMBIGUOUS_NAME_PATTERN = re.compile(
-    r"\b(class [a-z] ordinary shares?|limited partnership|lp units?|beneficial interest)\b",
+    r"\b(class [a-z] ordinary shares?|limited partnership|lp units?)\b",
     re.I,
 )
+
+
+def _matches_instrument_pattern(name: str, reason: str, pattern: re.Pattern[str]) -> bool:
+    if reason == "warrant" and "warranty" in name.lower():
+        return False
+    return bool(pattern.search(name))
+
+
+def _is_operating_reit_trust(name: str) -> bool:
+    if re.search(
+        r"\b(gabelli|guggenheim|blackrock|pimco|nuveen|virtus|abrdn|invesco|franklin|allspring|"
+        r"graniteshares|clough|robinhood|pimco|medias)\b",
+        name,
+        re.I,
+    ):
+        return False
+    return bool(_OPERATING_REIT_TRUST_PATTERN.search(name))
+
+
+def _is_pooled_trust_beneficial_interest(name: str) -> bool:
+    return bool(
+        _BENEFICIAL_INTEREST_PATTERN.search(name)
+        and re.search(r"\btrust\b", name, re.I)
+        and not _REIT_MARKER_PATTERN.search(name)
+        and not _is_operating_reit_trust(name)
+    )
+
+
+def _is_non_reit_investment_trust(name: str) -> bool:
+    if _REIT_MARKER_PATTERN.search(name):
+        return False
+    return bool(_NON_REIT_INVESTMENT_TRUST_PATTERN.search(name))
+
+
+def _is_reit_common_equity(name: str) -> bool:
+    if _PREFERRED_PATTERN.search(name) or _NOTES_DEBT_PATTERN.search(name):
+        return False
+    if _POOLED_INVESTMENT_PATTERN.search(name) or _is_non_reit_investment_trust(name):
+        return False
+
+    has_reit_marker = bool(_REIT_MARKER_PATTERN.search(name))
+    has_beneficial_interest = bool(_BENEFICIAL_INTEREST_PATTERN.search(name))
+
+    if has_beneficial_interest:
+        if re.search(r"\bfund\b", name, re.I):
+            return False
+        if has_reit_marker:
+            return True
+        if _is_operating_reit_trust(name):
+            return True
+        if re.search(r"\bhomes \d+\s+rent\b", name, re.I):
+            return True
+        return False
+
+    if not has_reit_marker:
+        return False
+
+    if _COMMON_EQUITY_PATTERN.search(name):
+        return True
+
+    if re.search(r"\(REIT\)|\breit,?\s+inc(?:\.|orporated)?\s*$|\breit\s*$", name, re.I):
+        return True
+
+    if re.search(r"\breal estate investment trust\s*$", name, re.I):
+        return True
+
+    return False
 
 
 def classify_security(row: pd.Series | dict[str, Any]) -> ClassificationResult:
@@ -215,38 +316,50 @@ def classify_security(row: pd.Series | dict[str, Any]) -> ClassificationResult:
     name = str(data.get("security_name", "")).strip()
     etf_flag = str(data.get("etf_flag", "")).strip().upper()
     test_issue_flag = str(data.get("test_issue_flag", "")).strip().upper()
-    symbol_raw = str(data.get("symbol_raw", "")).strip()
     is_adr = bool(_ADR_PATTERN.search(name))
 
     if etf_flag == "Y":
-        return ClassificationResult("etf_flag", False, "etf_flag", False, is_adr)
+        return ClassificationResult("etf_flag", False, "etf_flag", False, is_adr, False)
     if test_issue_flag == "Y":
-        return ClassificationResult("test_issue", False, "test_issue", False, is_adr)
+        return ClassificationResult("test_issue", False, "test_issue", False, is_adr, False)
 
-    for reason, pattern in _NAME_PATTERNS:
-        if reason == "warrant" and "warranty" in name.lower():
-            continue
-        if pattern.search(name):
-            return ClassificationResult(reason, False, reason, False, is_adr)
+    for reason, pattern in _INSTRUMENT_PATTERNS:
+        if _matches_instrument_pattern(name, reason, pattern):
+            return ClassificationResult(reason, False, reason, False, is_adr, False)
+
+    if _PREFERRED_PATTERN.search(name):
+        return ClassificationResult("preferred_share", False, "preferred_share", False, is_adr, False)
+
+    if _NOTES_DEBT_PATTERN.search(name):
+        return ClassificationResult("notes_debt", False, "notes_debt", False, is_adr, False)
+
+    if _POOLED_INVESTMENT_PATTERN.search(name) or _is_pooled_trust_beneficial_interest(name):
+        return ClassificationResult("closed_end_fund", False, "closed_end_fund", False, is_adr, False)
+
+    if _is_non_reit_investment_trust(name):
+        return ClassificationResult("fund_trust", False, "fund_trust", False, is_adr, False)
 
     if _SPAC_SHELL_PATTERN.search(name) and _SHARE_INSTRUMENT_PATTERN.search(name):
-        return ClassificationResult("spac_shell", False, "spac_shell", False, is_adr)
+        return ClassificationResult("spac_shell", False, "spac_shell", False, is_adr, False)
 
     if is_adr:
         if _COMMON_STOCK_PATTERN.search(name) or "representing" in name.lower():
-            return ClassificationResult("adr_depositary", True, "", False, True)
-        return ClassificationResult("adr_depositary", False, "", True, True)
+            return ClassificationResult("adr_depositary", True, "", False, True, False)
+        return ClassificationResult("adr_depositary", False, "", True, True, False)
+
+    if _is_reit_common_equity(name):
+        return ClassificationResult("reit_common_equity", True, "", False, is_adr, True)
 
     if _COMMON_STOCK_PATTERN.search(name):
-        return ClassificationResult("common_stock", True, "", False, False)
+        return ClassificationResult("common_stock", True, "", False, is_adr, False)
 
     if _AMBIGUOUS_NAME_PATTERN.search(name):
-        return ClassificationResult("needs_review_ambiguous", False, "", True, is_adr)
+        return ClassificationResult("needs_review_ambiguous", False, "", True, is_adr, False)
 
     if name.endswith(" Inc.") or name.endswith(" Corp.") or name.endswith(" Corporation"):
-        return ClassificationResult("needs_review_ambiguous", False, "", True, is_adr)
+        return ClassificationResult("needs_review_ambiguous", False, "", True, is_adr, False)
 
-    return ClassificationResult("needs_review_ambiguous", False, "", True, is_adr)
+    return ClassificationResult("needs_review_ambiguous", False, "", True, is_adr, False)
 
 
 def _apply_classification(frame: pd.DataFrame) -> pd.DataFrame:
@@ -257,6 +370,7 @@ def _apply_classification(frame: pd.DataFrame) -> pd.DataFrame:
             {
                 **row.to_dict(),
                 "is_adr": result.is_adr,
+                "is_reit": result.is_reit,
                 "classification": result.classification,
                 "eligible_candidate": result.eligible_candidate,
                 "exclusion_reason": result.exclusion_reason,
@@ -311,6 +425,10 @@ def build_audit_summary(master: pd.DataFrame) -> dict[str, int]:
         "adr_count": int(master["is_adr"].astype(bool).sum()),
         "needs_review_count": int(master["needs_review"].astype(bool).sum()),
         "eligible_candidate_count": int(master["eligible_candidate"].astype(bool).sum()),
+        "reit_common_equity_count": int((master["classification"] == "reit_common_equity").sum()),
+        "fund_closed_end_exclusion_count": int(
+            master["exclusion_reason"].isin(["closed_end_fund", "fund_trust"]).sum()
+        ),
         "duplicate_symbol_rows": duplicate_symbol_count,
     }
 
@@ -328,6 +446,8 @@ def format_audit_summary(summary: dict[str, Any]) -> str:
         f"  ADR / depositary count: {summary['adr_count']}",
         f"  Needs-review count: {summary['needs_review_count']}",
         f"  Eligible-candidate count: {summary['eligible_candidate_count']}",
+        f"  REIT common-equity count: {summary['reit_common_equity_count']}",
+        f"  Fund / closed-end exclusions: {summary['fund_closed_end_exclusion_count']}",
         f"  Duplicate-symbol rows: {summary['duplicate_symbol_rows']}",
     ]
     by_reason = summary.get("non_common_exclusions_by_reason") or {}
