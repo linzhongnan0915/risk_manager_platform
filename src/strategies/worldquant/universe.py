@@ -177,8 +177,19 @@ _NAME_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("rights", re.compile(r"\brights?\b|\bacquisition right\b|\bsubscription right\b", re.I)),
     ("units", re.compile(r"\bunits?\b|\btrust units?\b", re.I)),
     ("notes_debt", re.compile(r"\bnotes due\b|\bsenior notes?\b|\bsubordinated notes?\b|\bdebentures?\b|\bcorporate bond\b|\bloan stock\b|\bconvertible senior\b", re.I)),
-    ("spac_related", re.compile(r"\bacquisition corp\b|\bacquisition company\b|\bblank check\b", re.I)),
 ]
+
+_SPAC_SHELL_PATTERN = re.compile(
+    r"\b(?:blank[- ]check\b|"
+    r"acquisition\b(?:\s+(?:[\w.&-]+\s+)*)?"
+    r"(?:corp(?:oration)?|inc(?:\.|orporated)?|ltd|limited|group|co(?:mpany)?)"
+    r"(?:\.|\b))",
+    re.I,
+)
+_SHARE_INSTRUMENT_PATTERN = re.compile(
+    r"\bcommon stock\b|\bcommon shares?\b|\bordinary shares?\b|\bclass [a-z]\s+(?:common|ordinary) shares?\b",
+    re.I,
+)
 
 _ADR_PATTERN = re.compile(
     r"\bamerican depositary shares?\b|\badrs?\b|\bdepositary shares?\b|\bglobal depositary shares?\b",
@@ -216,10 +227,10 @@ def classify_security(row: pd.Series | dict[str, Any]) -> ClassificationResult:
         if reason == "warrant" and "warranty" in name.lower():
             continue
         if pattern.search(name):
-            needs_review = reason == "spac_related" and _COMMON_STOCK_PATTERN.search(name)
-            if reason == "spac_related" and _COMMON_STOCK_PATTERN.search(name):
-                return ClassificationResult("spac_related", False, "spac_related", True, is_adr)
-            return ClassificationResult(reason, False, reason, needs_review, is_adr)
+            return ClassificationResult(reason, False, reason, False, is_adr)
+
+    if _SPAC_SHELL_PATTERN.search(name) and _SHARE_INSTRUMENT_PATTERN.search(name):
+        return ClassificationResult("spac_shell", False, "spac_shell", False, is_adr)
 
     if is_adr:
         if _COMMON_STOCK_PATTERN.search(name) or "representing" in name.lower():

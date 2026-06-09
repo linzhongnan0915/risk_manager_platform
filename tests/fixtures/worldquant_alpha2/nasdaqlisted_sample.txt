@@ -1,5 +1,6 @@
 Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares
 AAPL|Apple Inc. - Common Stock|Q|N|N|100|N|N
+AACB|Artius II Acquisition Inc. - Class A Ordinary Shares|G|N|N|100|N|N
 AACBU|Artius II Acquisition Inc. - Units|G|N|N|100|N|N
 AACBR|Artius II Acquisition Inc. - Rights|G|N|N|100|N|N
 AACIW|Armada Acquisition Corp. III - Warrant|G|N|N|100|N|N

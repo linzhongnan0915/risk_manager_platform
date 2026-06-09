@@ -42,7 +42,7 @@ def test_is_footer_row():
 def test_parse_nasdaq_listed_removes_footer_and_preserves_fields():
     frame = parse_nasdaq_listed_text(_load_fixture("nasdaqlisted_sample.txt"))
 
-    assert len(frame) == 10
+    assert len(frame) == 11
     assert "File Creation Time" not in frame["symbol_raw"].values
     aapl = frame.loc[frame["symbol_raw"] == "AAPL"].iloc[0]
     assert aapl["security_name"] == "Apple Inc. - Common Stock"
@@ -58,7 +58,7 @@ def test_parse_nasdaq_listed_removes_footer_and_preserves_fields():
 def test_parse_other_listed_removes_footer_and_preserves_fields():
     frame = parse_other_listed_text(_load_fixture("otherlisted_sample.txt"))
 
-    assert len(frame) == 9
+    assert len(frame) == 11
     agilent = frame.loc[frame["symbol_raw"] == "A"].iloc[0]
     assert agilent["security_name"] == "Agilent Technologies, Inc. Common Stock"
     assert agilent["listing_exchange"] == "NYSE"
@@ -189,8 +189,8 @@ def test_build_universe_from_text_summary_counts():
         _load_fixture("otherlisted_sample.txt"),
     )
 
-    assert summary["nasdaq_listed_rows"] == 10
-    assert summary["other_exchange_rows"] == 9
+    assert summary["nasdaq_listed_rows"] == 11
+    assert summary["other_exchange_rows"] == 11
     assert summary["etf_exclusions"] >= 2
     assert summary["test_issue_exclusions"] >= 2
     assert summary["adr_count"] >= 2
@@ -206,6 +206,99 @@ def test_build_universe_from_text_summary_counts():
     assert "ZTOP" not in eligible_symbols
     assert "ZVZZT" not in eligible_symbols
     assert "AACBU" not in eligible_symbols
+    assert "AACB" not in eligible_symbols
+    assert "QETA" not in eligible_symbols
+    assert "BIII" not in eligible_symbols
+
+
+def test_spac_shell_classification():
+    nasdaq_spac = classify_security(
+        {
+            "symbol_raw": "AACB",
+            "security_name": "Artius II Acquisition Inc. - Class A Ordinary Shares",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    nyse_common = classify_security(
+        {
+            "symbol_raw": "QETA",
+            "security_name": "Quetta Acquisition Corporation - Common Stock",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    nyse_ordinary = classify_security(
+        {
+            "symbol_raw": "BIII",
+            "security_name": "Black Spade Acquisition III Co Class A Ordinary Shares",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    roman_numeral_corp = classify_security(
+        {
+            "symbol_raw": "APAC",
+            "security_name": "StoneBridge Acquisition II Corporation - Class A Ordinary Shares",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    acquisition_group = classify_security(
+        {
+            "symbol_raw": "SAGU",
+            "security_name": "Shreya Acquisition Group Class A Ordinary Shares",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    spac_warrant = classify_security(
+        {
+            "symbol_raw": "AACIW",
+            "security_name": "Armada Acquisition Corp. III - Warrant",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    spac_right = classify_security(
+        {
+            "symbol_raw": "AACBR",
+            "security_name": "Artius II Acquisition Inc. - Rights",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    spac_unit = classify_security(
+        {
+            "symbol_raw": "AACBU",
+            "security_name": "Artius II Acquisition Inc. - Units",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+    operating_common = classify_security(
+        {
+            "symbol_raw": "AAPL",
+            "security_name": "Apple Inc. - Common Stock",
+            "etf_flag": "N",
+            "test_issue_flag": "N",
+        }
+    )
+
+    for result in (nasdaq_spac, nyse_common, nyse_ordinary, roman_numeral_corp, acquisition_group):
+        assert result.classification == "spac_shell"
+        assert result.eligible_candidate is False
+        assert result.exclusion_reason == "spac_shell"
+        assert result.needs_review is False
+
+    assert spac_warrant.classification == "warrant"
+    assert spac_warrant.exclusion_reason == "warrant"
+    assert spac_right.classification == "rights"
+    assert spac_right.exclusion_reason == "rights"
+    assert spac_unit.classification == "units"
+    assert spac_unit.exclusion_reason == "units"
+    assert operating_common.classification == "common_stock"
+    assert operating_common.eligible_candidate is True
 
 
 def test_symbol_raw_preserved_separately_from_normalized():
