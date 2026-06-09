@@ -16,6 +16,13 @@ from src.strategies.worldquant.universe import (
     format_audit_summary,
     write_universe_outputs,
 )
+from src.strategies.worldquant.research_universe import (
+    DEFAULT_RESEARCH_UNIVERSE_V1_OUTPUT,
+    build_research_universe_v1_audit,
+    filter_research_universe_v1,
+    format_research_universe_v1_audit,
+    write_research_universe_v1,
+)
 
 
 def main() -> None:
@@ -26,9 +33,18 @@ def main() -> None:
         master_path=DEFAULT_MASTER_OUTPUT,
         candidates_path=DEFAULT_CANDIDATES_OUTPUT,
     )
+    research_universe = filter_research_universe_v1(master)
+    research_summary = build_research_universe_v1_audit(master, candidates)
+    research_path = write_research_universe_v1(
+        research_universe,
+        output_path=DEFAULT_RESEARCH_UNIVERSE_V1_OUTPUT,
+    )
     print(format_audit_summary(summary))
     print(f"Wrote security master: {master_path}")
     print(f"Wrote common-stock candidates: {candidates_path}")
+    print()
+    print(format_research_universe_v1_audit(research_summary))
+    print(f"Wrote research universe v1: {research_path}")
 
 
 if __name__ == "__main__":
