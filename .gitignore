@@ -31,3 +31,4 @@ output/.yfinance_cache/
 data/reference/worldquant_alpha2_us_security_master.csv
 data/reference/worldquant_alpha2_common_stock_candidates.csv
 data/reference/worldquant_alpha2_research_universe_v1.csv
+data/reference/worldquant_alpha2_pilot_universe_500.csv

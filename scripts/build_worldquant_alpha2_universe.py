@@ -23,6 +23,13 @@ from src.strategies.worldquant.research_universe import (
     format_research_universe_v1_audit,
     write_research_universe_v1,
 )
+from src.strategies.worldquant.pilot_universe import (
+    DEFAULT_PILOT_UNIVERSE_OUTPUT,
+    build_pilot_universe_audit,
+    format_pilot_universe_audit,
+    select_pilot_universe,
+    write_pilot_universe,
+)
 
 
 def main() -> None:
@@ -45,6 +52,13 @@ def main() -> None:
     print()
     print(format_research_universe_v1_audit(research_summary))
     print(f"Wrote research universe v1: {research_path}")
+
+    pilot_universe = select_pilot_universe(research_universe)
+    pilot_summary = build_pilot_universe_audit(research_universe, pilot_universe)
+    pilot_path = write_pilot_universe(pilot_universe, output_path=DEFAULT_PILOT_UNIVERSE_OUTPUT)
+    print()
+    print(format_pilot_universe_audit(pilot_summary))
+    print(f"Wrote pilot universe: {pilot_path}")
 
 
 if __name__ == "__main__":
