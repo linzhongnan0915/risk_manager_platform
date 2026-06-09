@@ -26,3 +26,7 @@ output/.yfinance_cache/
 .env
 .env.*
 !.env.example
+
+# Generated WorldQuant Alpha #2 universe files
+data/reference/worldquant_alpha2_us_security_master.csv
+data/reference/worldquant_alpha2_common_stock_candidates.csv
