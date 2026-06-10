@@ -46,18 +46,32 @@ FAILURE_COLUMNS = [
     "error_type",
     "error_message",
     "status",
+    "row_count",
+    "usable_observation_count",
+    "missing_value_count",
+    "missing_value_ratio",
 ]
 
+# Full normalized OHLCV schema stored by the downloader.
 REQUIRED_OHLCV_VALUE_COLUMNS = ["open", "high", "low", "close", "adj_close", "volume"]
+
+# Alpha #2 signal and default execution require these fields only.
+# High/Low remain in the normalized schema but are not used in usability checks.
+# Strict v1 policy: partial_data remains excluded from the backtest universe.
+ALPHA2_CRITICAL_VALUE_COLUMNS = ["open", "close", "adj_close", "volume"]
 
 DATA_QUALITY_COLUMNS = [
     "ticker",
+    "provider_symbol",
     "status",
     "row_count",
     "usable_observation_count",
     "missing_value_count",
     "missing_value_ratio",
     "reason",
+    "batch_id",
+    "attempts",
+    "error_type",
 ]
 
 # Matches Alpha #2 warmup: delta(2) + correlation(6) -> first finite alpha at row index 7.
@@ -268,11 +282,14 @@ class TickerDataQuality:
 def _alpha2_usable_row_mask(frame: pd.DataFrame) -> pd.Series:
     open_values = pd.to_numeric(frame["open"], errors="coerce")
     close_values = pd.to_numeric(frame["close"], errors="coerce")
+    adj_close_values = pd.to_numeric(frame["adj_close"], errors="coerce")
     volume_values = pd.to_numeric(frame["volume"], errors="coerce")
     return (
         open_values.gt(0)
         & np.isfinite(open_values)
         & np.isfinite(close_values)
+        & adj_close_values.gt(0)
+        & np.isfinite(adj_close_values)
         & volume_values.gt(0)
         & np.isfinite(volume_values)
     )
@@ -297,16 +314,16 @@ def classify_ticker_ohlcv(
             reason="no rows returned for ticker",
         )
 
-    missing_columns = set(REQUIRED_OHLCV_VALUE_COLUMNS) - set(frame.columns)
+    missing_columns = set(ALPHA2_CRITICAL_VALUE_COLUMNS) - set(frame.columns)
     if missing_columns:
         return TickerDataQuality(
             ticker=normalized_ticker,
             status=TICKER_STATUS_MISSING_COLUMNS,
             row_count=int(len(frame)),
             usable_observation_count=0,
-            missing_value_count=int(len(frame) * len(REQUIRED_OHLCV_VALUE_COLUMNS)),
+            missing_value_count=int(len(frame) * len(ALPHA2_CRITICAL_VALUE_COLUMNS)),
             missing_value_ratio=1.0,
-            reason=f"missing required columns: {sorted(missing_columns)}",
+            reason=f"missing Alpha #2 critical columns: {sorted(missing_columns)}",
         )
 
     working = frame.copy()
@@ -324,13 +341,13 @@ def classify_ticker_ohlcv(
             reason=f"duplicate dates found: {duplicate_dates}",
         )
 
-    value_frame = working[REQUIRED_OHLCV_VALUE_COLUMNS].apply(pd.to_numeric, errors="coerce")
-    value_frame = value_frame.replace([np.inf, -np.inf], np.nan)
-    total_cells = int(value_frame.size)
-    missing_value_count = int(value_frame.isna().sum().sum())
+    critical_frame = working[ALPHA2_CRITICAL_VALUE_COLUMNS].apply(pd.to_numeric, errors="coerce")
+    critical_frame = critical_frame.replace([np.inf, -np.inf], np.nan)
+    total_cells = int(critical_frame.size)
+    missing_value_count = int(critical_frame.isna().sum().sum())
     missing_value_ratio = float(missing_value_count / total_cells) if total_cells else 1.0
 
-    has_price = value_frame[["open", "high", "low", "close", "adj_close"]].notna().any(axis=1)
+    has_price = critical_frame[["open", "close", "adj_close"]].notna().any(axis=1)
     if not has_price.any():
         return TickerDataQuality(
             ticker=normalized_ticker,
@@ -339,10 +356,10 @@ def classify_ticker_ohlcv(
             usable_observation_count=0,
             missing_value_count=missing_value_count,
             missing_value_ratio=missing_value_ratio,
-            reason="all required OHLCV values are NaN",
+            reason="all Alpha #2 critical values are NaN",
         )
 
-    usable_mask = _alpha2_usable_row_mask(value_frame)
+    usable_mask = _alpha2_usable_row_mask(critical_frame)
     usable_observation_count = int(usable_mask.sum())
     if usable_observation_count == 0:
         return TickerDataQuality(
@@ -379,7 +396,7 @@ def classify_ticker_ohlcv(
             missing_value_ratio=missing_value_ratio,
             reason=(
                 f"{usable_observation_count} usable observations with "
-                f"{missing_value_ratio:.1%} missing required values"
+                f"{missing_value_ratio:.1%} missing Alpha #2 critical values"
             ),
         )
 
@@ -414,12 +431,21 @@ def assess_ticker_data_quality(
 
     for ticker in requested:
         frame = grouped.get(ticker, pd.DataFrame(columns=OHLCV_LONG_COLUMNS))
+        assessment = classify_ticker_ohlcv(
+            frame,
+            ticker=ticker,
+            min_valid_observations=min_valid_observations,
+        )
         rows.append(
-            classify_ticker_ohlcv(
-                frame,
-                ticker=ticker,
-                min_valid_observations=min_valid_observations,
-            ).to_dict()
+            {
+                **assessment.to_dict(),
+                "provider_symbol": frame["provider_symbol"].iloc[0]
+                if not frame.empty and "provider_symbol" in frame.columns
+                else "",
+                "batch_id": pd.NA,
+                "attempts": pd.NA,
+                "error_type": pd.NA,
+            }
         )
     return pd.DataFrame(rows, columns=DATA_QUALITY_COLUMNS)
 
@@ -473,18 +499,86 @@ def _record_failure(
     attempts: int,
     error: Exception,
     status: str,
+    quality: TickerDataQuality | None = None,
 ) -> None:
-    failures.append(
-        {
-            "ticker": ticker,
-            "provider_symbol": provider_symbol,
-            "batch_id": batch_id,
-            "attempts": attempts,
-            "error_type": type(error).__name__,
-            "error_message": str(error),
-            "status": status,
-        }
-    )
+    record: dict[str, Any] = {
+        "ticker": ticker,
+        "provider_symbol": provider_symbol,
+        "batch_id": batch_id,
+        "attempts": attempts,
+        "error_type": type(error).__name__,
+        "error_message": str(error),
+        "status": status,
+    }
+    if quality is not None:
+        record.update(
+            {
+                "row_count": quality.row_count,
+                "usable_observation_count": quality.usable_observation_count,
+                "missing_value_count": quality.missing_value_count,
+                "missing_value_ratio": quality.missing_value_ratio,
+            }
+        )
+    else:
+        record.update(
+            {
+                "row_count": np.nan,
+                "usable_observation_count": np.nan,
+                "missing_value_count": np.nan,
+                "missing_value_ratio": np.nan,
+            }
+        )
+    failures.append(record)
+
+
+def merge_download_failures_into_quality_report(
+    quality_report: pd.DataFrame,
+    download_failures: pd.DataFrame | None,
+) -> pd.DataFrame:
+    """Merge download-stage quality metrics into the final per-ticker report."""
+    if download_failures is None or download_failures.empty:
+        return quality_report
+
+    merged = quality_report.copy()
+    for column in DATA_QUALITY_COLUMNS:
+        if column not in merged.columns:
+            merged[column] = pd.NA
+
+    numeric_fields = [
+        "row_count",
+        "usable_observation_count",
+        "missing_value_count",
+        "missing_value_ratio",
+        "batch_id",
+        "attempts",
+    ]
+    failure_lookup = download_failures.drop_duplicates(subset=["ticker"], keep="last").set_index("ticker")
+
+    for idx, row in merged.iterrows():
+        ticker = row["ticker"]
+        if ticker not in failure_lookup.index:
+            continue
+        failure = failure_lookup.loc[ticker]
+        merged.loc[idx, "status"] = failure.get("status", row["status"])
+        merged.loc[idx, "reason"] = str(
+            failure.get("error_message", failure.get("reason", row["reason"]))
+        )
+        if pd.notna(failure.get("provider_symbol", pd.NA)):
+            merged.loc[idx, "provider_symbol"] = failure.get("provider_symbol")
+        if pd.notna(failure.get("error_type", pd.NA)):
+            merged.loc[idx, "error_type"] = failure.get("error_type")
+
+        for field in numeric_fields:
+            if field not in failure.index:
+                merged.loc[idx, field] = pd.NA
+                continue
+            value = failure.get(field)
+            if pd.notna(value):
+                merged.loc[idx, field] = value
+            else:
+                merged.loc[idx, field] = pd.NA
+
+    return merged[DATA_QUALITY_COLUMNS]
 
 
 def download_ohlcv(
@@ -568,6 +662,7 @@ def download_ohlcv(
                 source=source,
             )
             if normalized.empty:
+                empty_quality = classify_ticker_ohlcv(normalized, ticker=ticker)
                 _record_failure(
                     failures,
                     ticker=ticker,
@@ -576,6 +671,7 @@ def download_ohlcv(
                     attempts=attempts_used,
                     error=ValueError("provider returned no rows for ticker"),
                     status=TICKER_STATUS_EMPTY,
+                    quality=empty_quality,
                 )
                 continue
 
@@ -589,6 +685,7 @@ def download_ohlcv(
                     attempts=attempts_used,
                     error=ValueError(quality.reason),
                     status=quality.status,
+                    quality=quality,
                 )
                 continue
             ohlcv_parts.append(normalized)
@@ -620,6 +717,7 @@ def build_download_audit(
         requested,
         min_valid_observations=min_valid_observations,
     )
+    quality_report = merge_download_failures_into_quality_report(quality_report, failures)
     usable = sorted(
         quality_report.loc[quality_report["status"].map(is_usable_ticker_status), "ticker"].tolist()
     )

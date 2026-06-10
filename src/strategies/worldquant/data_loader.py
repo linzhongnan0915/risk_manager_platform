@@ -39,6 +39,43 @@ def ohlcv_long_to_panels(
     return panels
 
 
+def assert_cached_ohlcv_covers_requested_range(
+    ohlcv: pd.DataFrame,
+    requested_start: str,
+    requested_end: str,
+) -> tuple[str, str]:
+    """Fail fast when a cached OHLCV file does not span the requested backtest window."""
+    if ohlcv.empty:
+        raise ValueError(
+            "cached OHLCV is empty for the requested date range; rerun with --refresh-data"
+        )
+
+    actual_start = pd.to_datetime(ohlcv["date"]).min().date()
+    actual_end = pd.to_datetime(ohlcv["date"]).max().date()
+    requested_start_date = pd.to_datetime(requested_start).date()
+    requested_end_date = pd.to_datetime(requested_end).date()
+
+    if actual_end < requested_start_date or actual_start > requested_end_date:
+        raise ValueError(
+            "cached OHLCV does not overlap the requested date range: "
+            f"file spans {actual_start.isoformat()} to {actual_end.isoformat()}, "
+            f"but requested {requested_start_date.isoformat()} to {requested_end_date.isoformat()}. "
+            "Rerun with --refresh-data."
+        )
+
+    start_gap_days = (actual_start - requested_start_date).days
+    end_gap_days = (requested_end_date - actual_end).days
+    if start_gap_days > 7 or end_gap_days > 7:
+        raise ValueError(
+            "cached OHLCV does not cover the requested date range: "
+            f"file spans {actual_start.isoformat()} to {actual_end.isoformat()}, "
+            f"but requested {requested_start_date.isoformat()} to {requested_end_date.isoformat()}. "
+            "Rerun with --refresh-data."
+        )
+
+    return actual_start.isoformat(), actual_end.isoformat()
+
+
 def prepare_alpha2_market_data(
     ohlcv: pd.DataFrame,
     requested_tickers: list[str],

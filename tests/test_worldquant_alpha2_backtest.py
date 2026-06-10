@@ -74,6 +74,21 @@ def test_end_to_end_backtest_smoke_universe(tmp_path):
 
     compounded = float(np.prod(1.0 + result.daily_returns["net_return"].to_numpy()) - 1.0)
     assert result.summary.iloc[0]["cumulative_net_return"] == pytest.approx(compounded)
+    assert result.summary.iloc[0]["execution_mode"] == "next_open_to_close"
+    assert result.summary.iloc[0]["execution_lag"] == 1
+    assert result.summary.iloc[0]["return_definition"] == "open_to_close"
+
+    sample = result.signal_sample
+    assert not sample.empty
+    assert (sample["side"] == "long").any()
+    assert (sample["side"] == "short").any()
+    assert (sample["executed_position"] > 0).any()
+    assert (sample["executed_position"] < 0).any()
+    first = sample.iloc[0]
+    assert first["signal_date"] != first["execution_date"]
+    assert result.executed_weights.loc[pd.Timestamp(first["execution_date"]), first["ticker"]] == pytest.approx(
+        first["executed_position"]
+    )
 
     rejected = result.quality_report.loc[result.quality_report["status"] == TICKER_STATUS_ALL_NAN, "ticker"].tolist()
     assert rejected == []

@@ -371,3 +371,98 @@ def test_one_invalid_ticker_does_not_mark_whole_batch_success():
     assert failures.iloc[0]["status"] == TICKER_STATUS_ALL_NAN
     assert quality.loc[quality["ticker"] == "AAPL", "status"].iloc[0] == TICKER_STATUS_SUCCESS
     assert failures_lookup.loc["AHR", "status"] == TICKER_STATUS_ALL_NAN
+
+
+def test_merge_preserves_download_quality_metrics_for_rejected_partial_data():
+    failures = pd.DataFrame(
+        [
+            {
+                "ticker": "AHR",
+                "provider_symbol": "AHR",
+                "batch_id": 0,
+                "attempts": 1,
+                "error_type": "ValueError",
+                "error_message": "36 usable observations with 41.0% missing Alpha #2 critical values",
+                "status": "partial_data",
+                "row_count": 61,
+                "usable_observation_count": 36,
+                "missing_value_count": 100,
+                "missing_value_ratio": 0.41,
+            }
+        ]
+    )
+    from src.strategies.worldquant.market_data import merge_download_failures_into_quality_report
+
+    quality = assess_ticker_data_quality(pd.DataFrame(), ["AHR"])
+    merged = merge_download_failures_into_quality_report(quality, failures)
+    ahr = merged.loc[merged["ticker"] == "AHR"].iloc[0]
+
+    assert ahr["status"] == "partial_data"
+    assert ahr["row_count"] == 61
+    assert ahr["usable_observation_count"] == 36
+    assert ahr["missing_value_ratio"] == pytest.approx(0.41)
+    assert ahr["reason"] == failures.iloc[0]["error_message"]
+    assert pd.notna(ahr["batch_id"])
+    assert pd.notna(ahr["attempts"])
+
+
+def test_legacy_failure_merge_preserves_status_without_fabricating_metrics():
+    failures = pd.DataFrame(
+        [
+            {
+                "ticker": "AHR",
+                "provider_symbol": "AHR",
+                "batch_id": 0,
+                "attempts": 1,
+                "error_type": "ValueError",
+                "error_message": "legacy cached failure reason",
+                "status": "partial_data",
+            }
+        ]
+    )
+    from src.strategies.worldquant.market_data import merge_download_failures_into_quality_report
+
+    quality = assess_ticker_data_quality(pd.DataFrame(), ["AHR"])
+    merged = merge_download_failures_into_quality_report(quality, failures)
+    ahr = merged.loc[merged["ticker"] == "AHR"].iloc[0]
+
+    assert ahr["status"] == "partial_data"
+    assert ahr["reason"] == "legacy cached failure reason"
+    assert pd.isna(ahr["row_count"])
+    assert pd.isna(ahr["usable_observation_count"])
+
+
+def test_missing_high_low_only_does_not_reject_alpha2_ticker():
+    rows = []
+    for day in range(2, 12):
+        rows.append(
+            {
+                "date": f"2024-01-{day:02d}",
+                "ticker": "AAPL",
+                "provider_symbol": "AAPL",
+                "open": 10.0 + day,
+                "high": float("nan"),
+                "low": float("nan"),
+                "close": 10.5 + day,
+                "adj_close": 10.4 + day,
+                "volume": 1000.0 + day,
+                "source": "test",
+            }
+        )
+    frame = pd.DataFrame(rows)
+    result = classify_ticker_ohlcv(frame, ticker="AAPL")
+    assert result.status == TICKER_STATUS_SUCCESS
+
+
+def test_missing_critical_volume_marks_partial_data():
+    rows = []
+    for day in range(2, 12):
+        row = _sample_row("AAPL", f"2024-01-{day:02d}", close=10 + day, volume=100 + day)
+        if day in {10, 11}:
+            row["volume"] = float("nan")
+        rows.append(row)
+    frame = pd.DataFrame(rows)
+    result = classify_ticker_ohlcv(frame, ticker="AAPL")
+    assert result.status == "partial_data"
+    assert result.usable_observation_count >= 8
+    assert not is_usable_ticker_status(result.status)
