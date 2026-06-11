@@ -6,7 +6,7 @@ import pandas as pd
 
 from src.strategies.liquidity_resilience import liquidity_resilience_score
 from src.strategies.realized_skewness import realized_skewness_score
-from src.strategies.shadow_mvp import COMPOSITE_ID, platform_strategy_registry
+from src.strategies.shadow_mvp import COMPOSITE_ID, initialize_database, platform_strategy_registry
 from src.strategies.strategy_factory import StrategyContext
 
 
@@ -34,3 +34,13 @@ def test_retained_signals_use_shared_strategy_context():
     )
     assert liquidity_resilience_score(context).shape == prices.shape
     assert realized_skewness_score(context).shape == prices.shape
+
+
+def test_empty_deployment_database_seeds_retained_shadow_positions(tmp_path):
+    database = tmp_path / "shadow.db"
+    connection = initialize_database(database)
+    count = connection.execute("SELECT COUNT(*) FROM daily_strategy_positions").fetchone()[0]
+    strategies = {row[0] for row in connection.execute("SELECT DISTINCT strategy_id FROM daily_strategy_positions")}
+    connection.close()
+    assert count == 216
+    assert strategies == {"C2A2_020", "C2B2_004"}

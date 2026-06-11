@@ -1,0 +1,1518 @@
+{
+  "data_label": "SHADOW",
+  "allocation_eligible": false,
+  "positions": [
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "ACMR",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "ACVA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "ADEA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "AEE",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "AEP",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "ALHC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "AMH",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "AMPL",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "AMT",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "AOSL",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "ASM",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "ASTS",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "ATEC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "BBSI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "BE",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "BKKT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "BKU",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "BMI",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "BRK.A",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "BRK.B",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CAE",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CBIO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CBU",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CCB",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CCOI",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CCRN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CHCO",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CL",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CLYM",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CM",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CMS",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CNP",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "COST",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CRVS",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "CSWC",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "DRI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "EXR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "FABC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "FCF",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "FIG",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "FLS",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "GAB",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "GEHC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "GEO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "GFS",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "HROW",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "HTCO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "HTZ",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "HYT",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "IBCP",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "IDCC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "IMSR",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "INTC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "INVA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "IRT",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "JBIO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "JBTM",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "KALV",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "KO",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "KVYO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "LIFE",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "LTH",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "LW",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "LXP",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "MAA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "MOG.A",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "MOS",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "MSEX",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "NI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "NNN",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "NSA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "NSP",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "NVRI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "NVS",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "NWE",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "OBK",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "OMCL",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "PGR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "POR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "PRG",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "PRVA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "PTCT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "RF",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "RGEN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "RHP",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "RYN",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SATL",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SBRA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SENS",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SHO",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SITE",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SRRK",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SWKS",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "SXT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "TALK",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "TSCO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "UCTT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "USAR",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "USLM",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "UVV",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "VCYT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "VICR",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "VTS",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "WEX",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "WHR",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "WPC",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "WSR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2A2_020",
+      "date": "2026-06-09",
+      "ticker": "WTM",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ACMR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ACVA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ADEA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ADT",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "AGO",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "AI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ALHC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "AMG",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "AMPL",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ARR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ARW",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ATEC",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "AXON",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "BBSI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "BE",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "BH.A",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "BKU",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "BMI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "BRK.A",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "BRK.B",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CALX",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CASH",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CCB",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CCOI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CCRN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CLYM",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CMCSA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CRK",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CVSA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "CWK",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "DOC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ESAB",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ETON",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "FABC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "FCF",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "GCT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "GEHC",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "GEO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "GLBE",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "GPOR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "HROW",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "HTCO",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "HYT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "IDCC",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "INTC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "IRM",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "JBTM",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "JLL",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "KALV",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "KNSA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "KNTK",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "KTB",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "KVYO",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "LIFE",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "LIVN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "LMAT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "LNTH",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "LTH",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "LW",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "MAA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "MITK",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "MPT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "MSEX",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "MZTI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "NAVN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "NNN",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "NSA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "NWN",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "OMCL",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "ORLY",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "OZK",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "PCOR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "POOL",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "PRG",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "PRK",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "PRVA",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "PTCT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "RH",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "RHLD",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SATL",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SCI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SENEA",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SENS",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SGRY",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SITE",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SLM",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SRRK",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "STEP",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "STVN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "SXT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "TALK",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "TKR",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "TRVI",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "TSCO",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "TSN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "USLM",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "VAC",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "VCYT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "VTOL",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "VTS",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WAFD",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WAL",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WAT",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WCN",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WEX",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WHR",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WPC",
+      "data_label": "SHADOW",
+      "target_weight": 0.009259259259259259
+    },
+    {
+      "strategy_id": "C2B2_004",
+      "date": "2026-06-09",
+      "ticker": "WSR",
+      "data_label": "SHADOW",
+      "target_weight": -0.009259259259259259
+    }
+  ]
+}

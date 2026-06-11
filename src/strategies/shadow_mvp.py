@@ -19,6 +19,7 @@ COMPOSITE_ID = "STRATEGY_21_RESEARCH_COMPOSITE_V1"
 COMPOSITE_WEIGHTS = {"C2A2_020": 0.5, "C2B2_004": 0.5}
 ALLOWED_FILTERS = {"RESEARCH_COMPOSITE_MEMBER", "RESEARCH_COMPOSITE", "RESEARCH_CANDIDATE", "ARCHIVE", "BLOCKED", "ALL"}
 DEPLOYMENT_REGISTRY = Path("data/config/retained_strategy_registry.json")
+DEPLOYMENT_POSITION_SEED = Path("data/config/retained_shadow_positions_seed.json")
 
 
 def initialize_database(path: str | Path) -> sqlite3.Connection:
@@ -50,6 +51,18 @@ def initialize_database(path: str | Path) -> sqlite3.Connection:
     ):
         if name not in existing:
             connection.execute(f"ALTER TABLE pipeline_runs ADD COLUMN {name} {kind}")
+    position_count = connection.execute("SELECT COUNT(*) FROM daily_strategy_positions").fetchone()[0]
+    if position_count == 0 and DEPLOYMENT_POSITION_SEED.exists():
+        seed = json.loads(DEPLOYMENT_POSITION_SEED.read_text(encoding="utf-8"))
+        connection.executemany(
+            "INSERT OR IGNORE INTO daily_strategy_positions "
+            "(strategy_id,date,ticker,data_label,target_weight) VALUES (?,?,?,?,?)",
+            [
+                (row["strategy_id"], row["date"], row["ticker"], row["data_label"], row["target_weight"])
+                for row in seed["positions"]
+            ],
+        )
+        connection.commit()
     return connection
 
 
