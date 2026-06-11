@@ -14,7 +14,7 @@
           <span class="brand-mark"></span>
           <div>
             <strong>Hedge Fund Risk Workstation</strong>
-            <span class="brand-sub">Multi-Strategy Model Portfolio Risk</span>
+            <span class="brand-sub">Research &amp; Shadow MVP</span>
           </div>
         </div>
         <div class="topbar-meta" id="topbarMeta"></div>
@@ -39,86 +39,29 @@
 
         <main class="main-stage">
           <section class="tab-panel active" data-tab-panel="Portfolio Command Center">
-            <div id="commandKpiStrip"></div>
             <div id="commandDataWarning" class="command-data-warning" aria-live="polite"></div>
-            <details class="data-quality-details" id="commandDataQualityDetails">
-              <summary>Data quality details</summary>
-              <div id="commandDataQualityExpanded" class="compact-list"></div>
-            </details>
-            <section class="v2-grid command-v2-grid research-command-grid">
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Research Composite Members <span class="status-pill ok">SHADOW</span></div>
-                <div id="researchAllocationBars" class="allocation-bars compact-bars"></div>
+            <section class="v2-grid command-v2-grid research-mvp-grid">
+              <article class="panel v2-panel panel-span-12 section-block">
+                <div class="panel-title section-heading">A. Current Research Portfolio</div>
+                <div id="currentResearchPortfolioPanel" class="compact-list"></div>
               </article>
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Strategy 21 Composite Status</div>
-                <div id="strategy21StatusPanel" class="compact-list"></div>
+              <article class="panel v2-panel panel-span-12 section-block">
+                <div class="panel-title section-heading">B. Performance</div>
+                <div id="researchPerformancePanel" class="compact-list"></div>
               </article>
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Shadow Member Estimates</div>
-                <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="shadowMemberEstimatesTable"></table></div></div>
+              <article class="panel v2-panel panel-span-12 section-block">
+                <div class="panel-title section-heading">C. Risk &amp; Data Quality</div>
+                <div id="researchRiskDataPanel" class="compact-list"></div>
               </article>
-              <article class="panel v2-panel panel-span-12">
-                <div class="panel-title">Research Data &amp; Risk Alerts
-                  <span class="panel-header-controls risk-action-filters" id="riskActionFilters">
-                    <button type="button" class="ghost-button compact" data-risk-filter="current_model">Legacy Model</button>
-                    <button type="button" class="ghost-button compact" data-risk-filter="research">Research Quality</button>
-                    <button type="button" class="ghost-button compact active" data-risk-filter="data">Data Quality</button>
-                    <button type="button" class="ghost-button compact" data-risk-filter="governance">Governance</button>
-                    <button type="button" class="ghost-button compact" data-risk-filter="all">All</button>
-                  </span>
-                </div>
-                <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="riskActionTable"></table></div></div>
+              <article class="panel v2-panel panel-span-12 section-block">
+                <div class="panel-title section-heading">D. Research Pipeline</div>
+                <div id="researchPipelinePanel" class="compact-list"></div>
               </article>
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Next-Day Watchlist</div>
-                <div class="compact-list" id="commandWatchlist"></div>
-              </article>
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Market Proxy Warnings</div>
-                <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="commandMarketMini"></table></div></div>
-              </article>
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Research Data &amp; Governance</div>
-                <div class="compact-list" id="commandDataQuality"></div>
-              </article>
-            </section>
-            <section class="legacy-proxy-section" id="legacyProxySection">
-              <div class="legacy-proxy-banner">LEGACY PROXY / BENCHMARK RESEARCH</div>
-              <p class="legacy-proxy-note">Historical ETF proxy portfolio for benchmark research. Not current Strategy 21 shadow holdings, intraday PnL, or allocation-approved positions.</p>
-              <section class="v2-grid command-v2-grid">
-                <article class="panel v2-panel panel-span-4">
-                  <div class="panel-title">Legacy Proxy Allocation</div>
-                  <div id="allocationBars" class="allocation-bars compact-bars"></div>
-                </article>
-                <article class="panel v2-panel panel-span-4 contributors-panel">
-                  <div class="panel-title">Legacy Proxy Contributors</div>
-                  <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="contributorsTable"></table></div></div>
-                </article>
-                <article class="panel v2-panel panel-span-4 detractors-panel">
-                  <div class="panel-title">Legacy Proxy Detractors</div>
-                  <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="detractorsTable"></table></div></div>
-                </article>
-                <article class="panel v2-panel panel-span-6">
-                  <div class="panel-title">Legacy Proxy Operating NAV / PnL <small id="pnlChartCaption"></small></div>
-                  <div id="operatingLedgerWrap"></div>
-                  <canvas id="pnlCanvas" width="720" height="160"></canvas>
-                </article>
-                <article class="panel v2-panel panel-span-6" id="operatingDrawdownPanel">
-                  <div class="panel-title">Legacy Proxy Operating Drawdown</div>
-                  <canvas id="drawdownCanvas" width="720" height="120"></canvas>
-                </article>
-                <article class="panel v2-panel panel-span-12">
-                  <div class="panel-title">Legacy Proxy Allocation Recommendations <button type="button" class="ghost-button compact" id="openRebalanceTab">Open Allocation</button></div>
-                  <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="rebalancePreviewTable"></table></div></div>
-                </article>
-              </section>
-              <section class="historical-research-context compact-context" id="historicalResearchContext"></section>
             </section>
           </section>
 
           <section class="tab-panel" data-tab-panel="Strategy Monitor">
-            <div id="monitorKpiStrip"></div>
+            <div id="researchPipelineSummaryStrip" class="research-pipeline-strip compact-summary"></div>
             <article class="panel v2-panel strategy-monitor-panel" id="shadowStrategyPanel">
               <div class="monitor-heading">
                 <div class="panel-title">Current Research / Shadow Registry</div>
@@ -170,6 +113,8 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Allocation & Rebalance">
+            <div class="legacy-proxy-banner legacy-tab-banner">LEGACY PROXY ALLOCATION SANDBOX</div>
+            <p class="legacy-proxy-note">ETF proxy benchmark workflow only. Does not control Strategy 21 shadow holdings, weights, or authoritative research PnL.</p>
             <div id="allocationBeforeAfterStrip"></div>
             <section class="approval-status-bar v2-approval-bar" id="approvalStatusBar"></section>
             <section class="allocation-persistent-checks" id="allocationPersistentChecks"></section>
@@ -183,7 +128,7 @@
             </section>
             <section class="v2-grid allocation-v2-grid">
               <article class="panel v2-panel panel-span-12">
-                <div class="panel-title">Allocation Recommendation Matrix <span id="weightTotalState" class="weight-total-state"></span></div>
+                <div class="panel-title">Legacy Proxy Allocation Matrix <span id="weightTotalState" class="weight-total-state"></span></div>
                 <div class="table-viewport allocation-matrix-viewport">
                   <div class="table-scroll">
                     <table class="data-table dense sticky-head freeze-first-col" id="allocationEditorTable"></table>
@@ -224,10 +169,53 @@
                 <p class="decision-footnote" id="decisionAuthorityStatus">Human approval does not authorize execution.</p>
               </article>
             </section>
+            <section class="legacy-proxy-section legacy-tab-section">
+              <div class="legacy-proxy-banner">LEGACY PROXY BENCHMARK PANELS</div>
+              <section class="v2-grid command-v2-grid">
+                <article class="panel v2-panel panel-span-4">
+                  <div class="panel-title">Legacy Proxy Weights</div>
+                  <div id="allocationBars" class="allocation-bars compact-bars"></div>
+                </article>
+                <article class="panel v2-panel panel-span-4">
+                  <div class="panel-title">Legacy Proxy Contributors</div>
+                  <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="contributorsTable"></table></div></div>
+                </article>
+                <article class="panel v2-panel panel-span-4">
+                  <div class="panel-title">Legacy Proxy Detractors</div>
+                  <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="detractorsTable"></table></div></div>
+                </article>
+                <article class="panel v2-panel panel-span-6">
+                  <div class="panel-title">Legacy Proxy Operating NAV / PnL <small id="pnlChartCaption"></small></div>
+                  <div id="operatingLedgerWrap"></div>
+                  <canvas id="pnlCanvas" width="720" height="160"></canvas>
+                </article>
+                <article class="panel v2-panel panel-span-6" id="operatingDrawdownPanel">
+                  <div class="panel-title">Legacy Proxy Operating Drawdown</div>
+                  <canvas id="drawdownCanvas" width="720" height="120"></canvas>
+                </article>
+                <article class="panel v2-panel panel-span-12">
+                  <div class="panel-title">Legacy Proxy Allocation Recommendations</div>
+                  <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="rebalancePreviewTable"></table></div></div>
+                </article>
+              </section>
+              <section class="historical-research-context compact-context" id="historicalResearchContext"></section>
+            </section>
+            <div id="riskActionFilters" class="hidden-panel">
+              <button type="button" data-risk-filter="current_model"></button>
+              <button type="button" data-risk-filter="research"></button>
+              <button type="button" data-risk-filter="data"></button>
+              <button type="button" data-risk-filter="governance"></button>
+              <button type="button" data-risk-filter="all"></button>
+            </div>
+            <table id="riskActionTable" class="hidden-panel"></table>
+            <div id="commandWatchlist" class="hidden-panel"></div>
+            <table id="commandMarketMini" class="hidden-panel"></table>
+            <div id="commandDataQuality" class="hidden-panel"></div>
           </section>
 
           <section class="tab-panel" data-tab-panel="Risk Factors & Exposure">
-            <p class="factor-section-note">Proxy factor loadings from the ETF research model. Signed loadings are shown for direction; limits and utilization use absolute |loading|. These are not position-level institutional factor sensitivities (e.g. Barra/Axioma).</p>
+            <div class="legacy-proxy-banner legacy-tab-banner">LEGACY PROXY LOADINGS</div>
+            <p class="factor-section-note">Legacy ETF proxy factor loadings. Not Strategy 21 stock-level shadow exposures.</p>
             <section class="kpi-grid factor-kpi-grid" id="factorKpiGrid" aria-label="Proxy factor loading summary cards"></section>
             <section class="factor-grid">
               <article class="panel v2-panel"><div class="panel-title" title="Signed weighted ETF proxy loadings aggregated to portfolio level.">Portfolio Proxy Factor Loadings</div><p class="factor-note" id="riskFactorNote"></p><div id="riskFactorBars" class="factor-bars"></div></article>
@@ -238,6 +226,7 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Correlation & Diversification">
+            <div class="legacy-proxy-banner legacy-tab-banner">LEGACY PROXY CORRELATION</div>
             <section class="correlation-layout">
               <article class="panel v2-panel"><div class="panel-title">Diversification Summary</div><select id="correlationUniverse" aria-label="Correlation universe"><option value="allocated">Allocated only</option><option value="all">All research universe</option></select><div id="correlationSummary" class="drawer-section-grid"></div></article>
               <article class="panel v2-panel"><div class="panel-title">Highest Correlation Pairs</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="correlationPairs"></table></div></div></article>
@@ -246,6 +235,7 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Market & Macro Monitor">
+            <div class="legacy-proxy-banner legacy-tab-banner">LEGACY MARKET &amp; MACRO PROXY</div>
             <section class="market-grid">
               <article class="panel v2-panel"><div class="panel-title">Market &amp; Macro Monitor</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="marketTable"></table></div></div></article>
               <article class="panel v2-panel"><div class="panel-title">News / Event Risk</div><div id="newsRiskSummary" class="news-risk-summary"></div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="newsTable"></table></div></div></article>
@@ -273,6 +263,7 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Strategy Library & Workflow">
+            <div class="legacy-proxy-banner legacy-tab-banner">LEGACY WORKFLOW</div>
             <article class="panel v2-panel full">
               <div class="panel-title">Strategy Library &amp; Workflow</div>
               <div class="workflow-filters" id="workflowFilters"></div>

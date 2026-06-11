@@ -80,8 +80,7 @@ DISPLAY_JS = """
     researchChecklistExplicitUnavailable: /unavailable/i.test(researchText),
     researchChecklistHasSection: /summary statistics|analyst prompt/i.test(researchText),
     riskChecklistExists: Boolean(document.getElementById('riskChecklist')),
-    monitorHasRetainedResearchView: monitorKpi.includes('current research'),
-    monitorHasLegacyProxyBreaches: monitorKpi.includes('legacy proxy breaches'),
+    monitorHasRetainedResearchView: (document.getElementById('researchPipelineSummaryStrip')?.innerText || '').toLowerCase().includes('retained'),
     reportHasRawKeys: rawKeys.some((key) => memo.includes(key)),
     hasPortfolioPortfolio: issues.includes('Portfolio · Portfolio'),
   };
@@ -201,9 +200,6 @@ def main() -> int:
             display_state = page.evaluate(DISPLAY_JS)
             report["checks"]["monitor_kpi_research_view_label"] = (
                 display_state["monitorHasRetainedResearchView"]
-            )
-            report["checks"]["monitor_kpi_legacy_proxy_breaches_label"] = (
-                display_state["monitorHasLegacyProxyBreaches"]
             )
 
             page.click('button[data-tab="Daily Risk Report / Decision Log"]')

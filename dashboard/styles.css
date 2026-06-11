@@ -287,10 +287,57 @@ button {
   display: none !important;
 }
 
-.research-command-grid .panel-title .status-pill {
-  margin-left: 8px;
-  font-size: 10px;
-  vertical-align: middle;
+.research-mvp-grid .section-heading {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.research-pipeline-strip {
+  margin: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: oklch(14% 0.02 205);
+}
+
+.partial-estimate-box {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed oklch(70% 0.12 75 / 0.45);
+  border-radius: 6px;
+}
+
+.pipeline-rejection-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.legacy-nav-item {
+  opacity: 0.72;
+  font-size: 11px;
+}
+
+.legacy-nav-item span {
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.legacy-tab-banner {
+  margin: 8px 8px 0;
+}
+
+.legacy-tab-section {
+  margin-top: 12px;
+}
+
+.nav-group-label.legacy-group {
+  color: var(--subtle);
+  margin-top: 8px;
 }
 
 .historical-research-context {

@@ -26,7 +26,6 @@ def test_dashboard_logic_semantics_script_passes():
     assert payload["checks"]["reset_returns_no_active_proposal"] is True
     assert payload["checks"]["research_checklist_rendered_or_unavailable"] is True
     assert payload["checks"]["monitor_kpi_research_view_label"] is True
-    assert payload["checks"]["monitor_kpi_legacy_proxy_breaches_label"] is True
     assert payload["checks"]["report_no_raw_metric_keys"] is True
     assert payload["checks"]["no_portfolio_portfolio_subject_label"] is True
     assert payload["pass"] is True
