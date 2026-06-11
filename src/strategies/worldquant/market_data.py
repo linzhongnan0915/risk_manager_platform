@@ -591,8 +591,14 @@ def download_ohlcv(
     backoff_seconds: tuple[float, ...] | list[float] = DEFAULT_BACKOFF_SECONDS,
     download_fn: DownloadFn | None = None,
     source: str = DEFAULT_SOURCE,
+    include_rejected_history: bool = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Download daily OHLCV for tickers with batching, retries, and partial success."""
+    """Download daily OHLCV for tickers with batching, retries, and partial success.
+
+    When ``include_rejected_history`` is True, tickers classified as ``partial_data`` or
+    ``insufficient_history`` are still retained in the returned OHLCV panel for dynamic
+    multi-date validation, while failures are recorded separately.
+    """
     if max_attempts <= 0:
         raise ValueError("max_attempts must be positive")
 
@@ -676,6 +682,10 @@ def download_ohlcv(
                 continue
 
             quality = classify_ticker_ohlcv(normalized, ticker=ticker)
+            retain_for_validation = include_rejected_history and quality.status in {
+                TICKER_STATUS_PARTIAL_DATA,
+                TICKER_STATUS_INSUFFICIENT_HISTORY,
+            }
             if not is_usable_ticker_status(quality.status):
                 _record_failure(
                     failures,
@@ -687,6 +697,8 @@ def download_ohlcv(
                     status=quality.status,
                     quality=quality,
                 )
+                if retain_for_validation:
+                    ohlcv_parts.append(normalized)
                 continue
             ohlcv_parts.append(normalized)
 
@@ -710,7 +722,15 @@ def build_download_audit(
     """Summarize a download run for logging or smoke-test reporting."""
     requested = sorted({str(ticker).strip().upper() for ticker in requested_tickers if str(ticker).strip()})
     mapped = symbol_map.loc[symbol_map["mapping_status"] != "unsupported", "ticker"].tolist()
-    downloaded = sorted(ohlcv["ticker"].unique().tolist()) if not ohlcv.empty else []
+    downloaded_set = set(ohlcv["ticker"].unique().tolist()) if not ohlcv.empty else set()
+    if not failures.empty and "row_count" in failures.columns:
+        downloaded_set.update(
+            failures.loc[
+                pd.to_numeric(failures["row_count"], errors="coerce").fillna(0).gt(0),
+                "ticker",
+            ].astype(str)
+        )
+    downloaded = sorted(downloaded_set)
     failed = sorted(failures["ticker"].unique().tolist()) if not failures.empty else []
     quality_report = assess_ticker_data_quality(
         ohlcv,

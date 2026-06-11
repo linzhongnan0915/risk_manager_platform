@@ -745,26 +745,27 @@ function formatMonitoringState(artifact = activeArtifact) {
       : status.demo_hosting
         ? "Scheduler active while service is running"
         : null);
+  const schedulerInactive = status.scheduler_enabled === false;
 
   if (marketOpen) {
     return {
       headerMarket: "Open",
       headerData: proxy.label || "Current intraday proxy",
-      stripMonitoring: demoSchedulerLabel || "Scheduled monitoring active",
+      stripMonitoring: schedulerInactive ? "Automatic refresh disabled" : demoSchedulerLabel || "Scheduled monitoring active",
       stripDataState: proxy.label || "Current intraday proxy",
-      schedulerLabel: demoSchedulerLabel || "Scheduled monitoring active",
-      detail: proxy.detail,
-      tone: proxy.tone || "positive",
+      schedulerLabel: schedulerInactive ? "Automatic refresh disabled" : demoSchedulerLabel || "Scheduled monitoring active",
+      detail: schedulerInactive ? "Manual Refresh Now remains available. Render requires ENABLE_INTRADAY_SCHEDULER=1." : proxy.detail,
+      tone: schedulerInactive ? "warning-text" : proxy.tone || "positive",
     };
   }
 
   return {
     headerMarket: "Closed",
     headerData: "Latest market close",
-    stripMonitoring: demoSchedulerLabel || "Scheduler active",
+    stripMonitoring: schedulerInactive ? "Automatic refresh disabled" : demoSchedulerLabel || "Scheduler active",
     stripDataState: "Latest market close",
-    schedulerLabel: demoSchedulerLabel || "Scheduler active",
-    detail: proxy.detail,
+    schedulerLabel: schedulerInactive ? "Automatic refresh disabled" : demoSchedulerLabel || "Scheduler active",
+    detail: schedulerInactive ? "Manual Refresh Now remains available. Render requires ENABLE_INTRADAY_SCHEDULER=1." : proxy.detail,
     tone: "",
   };
 }

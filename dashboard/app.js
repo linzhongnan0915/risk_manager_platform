@@ -258,6 +258,59 @@ async function loadLiveOverlay() {
   return null;
 }
 
+async function renderShadowStrategyRegistry(status = "ALL") {
+  const table = document.getElementById("shadowStrategyTable");
+  if (!table) return;
+  if (hasFactoryResearch()) {
+    const rows = ResearchUniverse.strategyRows().filter((row) => {
+      if (status === "ALL") return true;
+      if (status === "RESEARCH_COMPOSITE" || status === "RESEARCH_COMPOSITE_MEMBER") {
+        return row.strategy_id === ResearchUniverse.COMPOSITE_ID || row.composite_eligible;
+      }
+      if (status === "RESEARCH_CANDIDATE") return row.research_group === "REFERENCE";
+      return true;
+    });
+    const renderSection = (label, subset) => {
+      if (!subset.length) return "";
+      return `<tr class="section-row"><td colspan="12"><strong>${escapeHtml(label)} (${subset.length})</strong></td></tr>` +
+        subset.map((row) => `<tr class="factory-research-row" data-factory-strategy="${escapeHtml(row.strategy_id)}">
+          <td>${escapeHtml(row.strategy_id)}</td>
+          <td>${escapeHtml(row.name)}</td>
+          <td>${statusBadge(row.membership || row.research_group)}</td>
+          <td>${row.composite_eligible ? "ACTIVE MEMBER" : row.strategy_id === ResearchUniverse.COMPOSITE_ID ? "COMPOSITE" : "NO"}</td>
+          <td>${pct(row.net_return || 0, 1)}</td>
+          <td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td>
+          <td>${pct(row.max_drawdown || 0, 1)}</td>
+          <td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td>
+          <td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td>
+          <td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td>
+          <td class="wrap-cell">${escapeHtml(row.status_reason || "")}</td>
+          <td>${escapeHtml(row.latest_data_date || "n/a")}</td>
+        </tr>`).join("");
+    };
+    const activeRows = rows.filter((row) => row.research_group === "ACTIVE");
+    const referenceRows = rows.filter((row) => row.research_group === "REFERENCE");
+    const compositeRows = rows.filter((row) => row.strategy_id === ResearchUniverse.COMPOSITE_ID);
+    table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Composite</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th></tr>` +
+      renderSection("ACTIVE US-Equity Research", activeRows) +
+      renderSection("REFERENCE ONLY", referenceRows) +
+      renderSection("Combined Portfolio", compositeRows);
+    table.querySelectorAll("[data-factory-strategy]").forEach((row) => {
+      row.addEventListener("click", () => openFactoryResearchStrategy(row.dataset.factoryStrategy));
+    });
+    return;
+  }
+  try {
+    const response = await fetch(`/api/strategy-shadow?status=${encodeURIComponent(status)}`, { cache: "no-store" });
+    const payload = await response.json();
+    const rows = payload.strategies || [];
+    table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Allocation Eligible</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th></tr>` +
+      rows.map((row) => `<tr><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.name)}</td><td>${statusBadge(row.status)}</td><td>${row.allocation_eligible ? "YES" : "NO"}</td><td>${pct(row.net_return || 0, 1)}</td><td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td><td>${pct(row.max_drawdown || 0, 1)}</td><td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td><td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td><td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td><td class="wrap-cell">${escapeHtml(row.status_reason)}</td><td>${escapeHtml(row.latest_data_date)}</td></tr>`).join("");
+  } catch (error) {
+    table.innerHTML = "<tr><td>Shadow registry unavailable.</td></tr>";
+  }
+}
+
 function mergeLiveOverlay(artifact, overlay) {
   if (!overlay) return artifact;
   artifact.live_data_mode = overlay.data_mode || artifact.live_data_mode || "artifact_static";
@@ -305,6 +358,12 @@ function mergeIntradaySnapshot(artifact, snapshot) {
     latest_observation: snapshot.latest_observation_ts_et,
     market_status: snapshot.market_session_status,
     refresh_status: snapshot.refresh_status,
+    ticker_count_requested: snapshot.ticker_count_requested,
+    ticker_count_successful: snapshot.ticker_count_successful,
+    failed_ticker_count: (snapshot.missing_tickers || []).length,
+    missing_tickers: snapshot.missing_tickers || [],
+    shadow_intraday: snapshot.shadow_intraday,
+    intraday_data_label: snapshot.intraday_data_label,
   };
   return artifact;
 }
@@ -321,13 +380,23 @@ function renderIntradayRefreshStrip(artifact) {
   const status = artifact.intraday_refresh_status || {};
   const meta = artifact.build_metadata || {};
   const marketAsOf = meta.market_as_of || artifact.as_of_date;
-  const cadence = status.selected_cadence_minutes || status.refresh_cadence_minutes || selectedIntradayCadence || 10;
+  const cadence = status.selected_cadence_minutes || status.refresh_cadence_minutes || selectedIntradayCadence || 5;
   const lastRefresh = status.last_successful_refresh_at || status.refresh_completed_at || artifact.live_refreshed_at;
   const latestBar = status.latest_completed_market_bar_at || status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
   const nextRefresh = status.next_scheduled_refresh_at;
   const schedulerState = status.scheduler_state || status.refresh_state || monitoring.schedulerLabel || "idle";
   const freshness = status.data_freshness || status.canonical_data_state || monitoring.stripDataState;
   const schedulerDisplay = status.scheduler_display || status.scheduler_label || monitoring.schedulerLabel || schedulerState;
+  const requested = status.ticker_count_requested;
+  const successful = status.ticker_count_successful;
+  const failed = status.failed_ticker_count ?? ((status.missing_tickers || []).length);
+  const shadowRows = status.shadow_intraday?.strategies || artifact.intraday_marks?.shadow_intraday?.strategies || [];
+  const compositeShadow = shadowRows.find((row) => row.strategy_id === "STRATEGY_21_RESEARCH_COMPOSITE_V1");
+  const incomplete = shadowRows.filter((row) => row.available === false);
+  const coverageWarning = incomplete.length
+    ? `<span class="negative">Incomplete <strong>${incomplete.map((row) => `${escapeHtml(row.strategy_id)}: ${(row.missing_tickers || []).join(", ") || "no valid marks"}; uncovered ${pct(row.uncovered_gross_weight || 0, 2)}`).join(" | ")}</strong></span>`
+    : "";
+  const warning = status.last_error ? `<span class="negative">Refresh warning <strong>${escapeHtml(status.last_error)}</strong></span>` : "";
   strip.innerHTML = `
     <span>Market <strong>${monitoring.headerMarket}</strong></span>
     <span>Monitoring <strong class="${monitoring.tone || ""}">${monitoring.stripMonitoring}</strong></span>
@@ -337,6 +406,12 @@ function renderIntradayRefreshStrip(artifact) {
     <span>Last refresh <strong>${formatTimestamp(lastRefresh)}</strong></span>
     <span>Latest bar <strong>${formatTimestamp(latestBar)}</strong></span>
     <span>Next refresh <strong>${formatTimestamp(nextRefresh)}</strong></span>
+    <span>Coverage <strong>${successful ?? "n/a"}/${requested ?? "n/a"}</strong></span>
+    <span>Failed <strong>${failed ?? "n/a"}</strong></span>
+    <span>Shadow PnL <strong>${compositeShadow?.estimated_pnl == null ? "n/a" : money(compositeShadow.estimated_pnl)}</strong></span>
+    <span>Label <strong>INTRADAY_SHADOW_ESTIMATE · delayed/best-effort</strong></span>
+    ${warning}
+    ${coverageWarning}
     <span class="muted-copy">${monitoring.detail} · Snapshot ${artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact"} · Proxy as-of ${marketAsOf}</span>`;
 }
 
@@ -410,10 +485,10 @@ function applyIntradayUiRefresh(artifact) {
 
 let intradayPollTimer = null;
 let lastSeenSnapshotId = null;
-let selectedIntradayCadence = 10;
+let selectedIntradayCadence = 5;
 
 function syncCadenceSelector(minutes) {
-  selectedIntradayCadence = Number(minutes) || 10;
+  selectedIntradayCadence = Number(minutes) || 5;
   const select = document.getElementById("intradayCadenceSelect");
   if (select && String(select.value) !== String(selectedIntradayCadence)) {
     select.value = String(selectedIntradayCadence);
@@ -478,7 +553,7 @@ async function pollIntradayRefreshStatus(artifact) {
 function installIntradayPolling(artifact) {
   if (intradayPollTimer) clearInterval(intradayPollTimer);
   lastSeenSnapshotId = artifact.intraday_snapshot_id || null;
-  syncCadenceSelector(artifact.intraday_refresh_status?.selected_cadence_minutes || artifact.intraday_refresh_status?.refresh_cadence_minutes || 10);
+  syncCadenceSelector(artifact.intraday_refresh_status?.selected_cadence_minutes || artifact.intraday_refresh_status?.refresh_cadence_minutes || 5);
   pollIntradayRefreshStatus(artifact);
   intradayPollTimer = setInterval(() => pollIntradayRefreshStatus(artifact), 45_000);
 }
@@ -604,6 +679,158 @@ async function loadArtifact() {
 }
 
 let researchExtensionPromise = null;
+let factoryResearchBundle = null;
+let selectedFactoryResearchId = null;
+
+async function loadUsEquityResearchBundle() {
+  const candidates = [
+    "data/us_equity_research_bundle.json",
+    "/dashboard/data/us_equity_research_bundle.json",
+    "../dashboard/data/us_equity_research_bundle.json",
+  ];
+  for (const path of candidates) {
+    try {
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      if (payload?.factory_strategy_research?.results?.length) return payload;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function hasFactoryResearch() {
+  return Boolean(factoryResearchBundle?.factory_strategy_research?.results?.length);
+}
+
+function hydrateFactoryResearch(artifact) {
+  if (!hasFactoryResearch()) return artifact;
+  ResearchUniverse.hydrate(factoryResearchBundle.factory_strategy_research, artifact);
+  artifact.factory_strategy_research = factoryResearchBundle.factory_strategy_research;
+  artifact.us_equity_research = ResearchUniverse.architecture();
+  return artifact;
+}
+
+function factoryResearchCatalogItems() {
+  return factoryResearchBundle?.factory_strategy_research?.results || [];
+}
+
+function renderFactoryResearchArchitectureBanner() {
+  if (!hasFactoryResearch()) return;
+  const arch = ResearchUniverse.architecture();
+  const counts = ResearchUniverse.counts();
+  const el = document.getElementById("historicalResearchContext");
+  if (el) {
+    el.innerHTML = `
+      <div class="research-context-banner">
+        <strong>US-Equity Research Platform (interim retained pool — not target architecture yet)</strong>
+        <span>Target architecture: <strong>${arch.target_underlying_count}</strong> underlying @ ${(arch.target_equal_weight * 100).toFixed(0)}% each + Combined Portfolio</span>
+        <span>Current tested candidates: <strong>${arch.tested_candidate_count}</strong> · ACTIVE retained: <strong>${counts.active}</strong> · REFERENCE_ONLY: <strong>${counts.reference}</strong> · Interim composite: <strong>${counts.active}</strong> @ ${(arch.interim_equal_weight * 100).toFixed(2)}%</span>
+        <span class="status-muted">${ResearchUniverse.COMPOSITE_INTERIM_LABEL}. ETF proxy strategies are not ACTIVE members.</span>
+      </div>`;
+  }
+  const summary = document.getElementById("monitorSummary");
+  if (summary) {
+    summary.innerHTML = `
+      <span><strong>${counts.active}</strong> ACTIVE</span>
+      <span><strong>${counts.reference}</strong> REFERENCE_ONLY</span>
+      <span><strong>${counts.composite}</strong> Combined Portfolio</span>
+      <span>Target ${arch.target_underlying_count}×${(arch.target_equal_weight * 100).toFixed(0)}% · Interim ${counts.active}×${(arch.interim_equal_weight * 100).toFixed(2)}%</span>`;
+  }
+}
+
+function openFactoryResearchStrategy(strategyId) {
+  if (!hasFactoryResearch()) return;
+  selectedFactoryResearchId = strategyId;
+  const item = ResearchUniverse.itemById(strategyId);
+  if (!item) return;
+  renderFactoryResearchLabPanels(item);
+  setActiveTab("Backtesting & Research Lab");
+}
+
+function renderFactoryResearchHoldings(backtest) {
+  if (backtest?.strategy_id === ResearchUniverse.COMPOSITE_ID) {
+    const meta = backtest.factory_research?.combined_portfolio || {};
+    const rows = (meta.current_constituents || meta.members || []).map((row) =>
+      `<li>${escapeHtml(row.strategy_id)} · ${(Number(row.weight || 0) * 100).toFixed(2)}% · constituent</li>`,
+    ).join("");
+    return rows
+      ? `<div class="panel-title sub">Composite Constituents (${meta.N || (meta.current_constituents || meta.members || []).length})</div><ul class="compact-list">${rows}</ul>`
+      : "";
+  }
+  const holdings = backtest?.holdings;
+  if (!holdings) return `<p class="status-muted"><strong>Holdings:</strong> unavailable in current bundle.</p>`;
+  const longRows = (holdings.current_long_holdings || []).slice(0, 8).map((row) =>
+    `<li>${escapeHtml(row.ticker)} · ${(Number(row.weight || 0) * 100).toFixed(2)}% · long</li>`,
+  ).join("");
+  const shortRows = (holdings.current_short_holdings || []).slice(0, 8).map((row) =>
+    `<li>${escapeHtml(row.ticker)} · ${(Number(row.weight || 0) * 100).toFixed(2)}% · short</li>`,
+  ).join("");
+  return `
+    <p class="status-muted">Last rebalance: ${escapeHtml(holdings.last_rebalance_date || "n/a")}</p>
+    <div class="panel-title sub">Long Holdings (top 8)</div><ul class="compact-list">${longRows || "<li>None</li>"}</ul>
+    <div class="panel-title sub">Short Holdings (top 8)</div><ul class="compact-list">${shortRows || "<li>None</li>"}</ul>`;
+}
+
+function renderFactoryResearchLabPanels(item) {
+  if (!item?.backtest) return;
+  selectedLiteratureItem = item;
+  const backtest = item.backtest;
+  const series = backtest.return_series || {};
+  const sharedDates = factoryResearchBundle?.shared_dates || series.dates || [];
+  const gross = series.gross_returns || [];
+  const net = series.net_returns || [];
+  const dates = series.dates?.length ? series.dates : sharedDates;
+  const packetSeries = backtest.risk_packet?.chart_series || {};
+  const isComposite = item.strategy_id === ResearchUniverse.COMPOSITE_ID;
+  const arch = ResearchUniverse.architecture();
+  const caption = document.getElementById("researchLabCaption");
+  if (caption) {
+    caption.textContent = isComposite
+      ? `${ResearchUniverse.COMPOSITE_INTERIM_LABEL} · N=${arch.interim_composite_count} · weight=${(arch.interim_equal_weight * 100).toFixed(2)}% · target ${arch.target_underlying_count}×${(arch.target_equal_weight * 100).toFixed(0)}%`
+      : `${backtest.name} (${item.strategy_id}) · ${backtest.factory_research?.membership || "research"} · ${dates[0] || "n/a"} to ${dates.at(-1) || "n/a"}`;
+  }
+  const summary = document.getElementById("researchLabSummaryStrip");
+  if (summary) {
+    const costDrag = backtest.turnover?.total_cost_drag;
+    summary.innerHTML = isComposite ? `
+      <span>Status <strong>${escapeHtml(backtest.lifecycle_status || "RESEARCH COMPOSITE")}</strong></span>
+      <span>Gross cum. <strong>${pct(backtest.gross_metrics?.cumulative_return || 0, 1)}</strong></span>
+      <span>Net cum. <strong>${pct(backtest.net_metrics?.cumulative_return || 0, 1)}</strong></span>
+      <span>Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong></span>
+      <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>
+      <span>Cost drag <strong>${pct(costDrag || 0, 2)}</strong></span>
+      <span>N <strong>${arch.interim_composite_count}</strong></span>
+      <span>Weight <strong>${(arch.interim_equal_weight * 100).toFixed(2)}%</strong></span>` : `
+      <span>Status <strong>${escapeHtml(backtest.lifecycle_status || item.research_group || "research")}</strong></span>
+      <span>Gross cum. <strong>${pct(backtest.gross_metrics?.cumulative_return || 0, 1)}</strong></span>
+      <span>Net cum. <strong>${pct(backtest.net_metrics?.cumulative_return || 0, 1)}</strong></span>
+      <span>Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong></span>
+      <span>Vol <strong>${pct(backtest.net_metrics?.annual_volatility || 0, 1)}</strong></span>
+      <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>
+      <span>Membership <strong>${escapeHtml(backtest.factory_research?.membership || "REFERENCE_ONLY")}</strong></span>`;
+  }
+  drawGrossNetEquityChart(document.getElementById("backtestCanvas"), dates, gross, net);
+  drawDrawdownChart(document.getElementById("researchDrawdownCanvas"), packetSeries.drawdown || []);
+  drawRollingSharpeChart(document.getElementById("researchRollingCanvas"), packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || []);
+  drawReturnDistributionChart(document.getElementById("researchDistributionCanvas"), net);
+  const decision = document.getElementById("researchLabDecision");
+  if (decision) {
+    const logic = backtest.signal_summary || backtest.hypothesis || "Strategy logic unavailable.";
+    const status = backtest.factory_research?.membership || backtest.lifecycle_status || "research";
+    decision.innerHTML = `
+      <p>${statusBadge(status)} <strong>${escapeHtml(backtest.name)}</strong></p>
+      <p class="status-muted"><strong>Logic:</strong> ${escapeHtml(logic)}</p>
+      <p class="status-muted">${escapeHtml(backtest.factory_research?.decision_reason || backtest.action?.interpretation || "")}</p>
+      ${renderFactoryResearchHoldings(backtest)}`;
+  }
+  document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr><tr><td colspan='6'>Walk-forward unavailable in current US-equity research baseline.</td></tr>";
+  renderResearchChecklistUnavailable("No-look-ahead checklist available for literature prototypes only in this panel.");
+  const selector = document.getElementById("researchLabSelector");
+  if (selector && item.strategy_id) selector.value = item.strategy_id;
+}
 
 async function fetchResearchExtension() {
   const candidates = ["/api/artifact/research", "/output/literature_strategy_backtests.json"];
@@ -667,6 +894,14 @@ async function ensureStrategyDetail(strategy, artifact = activeArtifact) {
 
 function refreshResearchLabViews(artifact = activeArtifact) {
   if (!artifact) return;
+  if (hasFactoryResearch()) {
+    populateResearchLabSelector(artifact);
+    const defaultId = selectedFactoryResearchId || ResearchUniverse.COMPOSITE_ID;
+    const item = ResearchUniverse.itemById(defaultId) || factoryResearchCatalogItems()[0];
+    if (item) renderFactoryResearchLabPanels(item);
+    renderFactoryResearchArchitectureBanner();
+    return;
+  }
   renderLiteratureStrategies(artifact.literature_strategy_backtests || {});
   populateResearchLabSelector(artifact);
   const litResults = artifact.literature_strategy_backtests?.results || [];
@@ -779,6 +1014,10 @@ function installShellControls() {
 }
 
 function renderHistoricalResearchContext(artifact = activeArtifact) {
+  if (hasFactoryResearch()) {
+    renderFactoryResearchArchitectureBanner();
+    return;
+  }
   const el = document.getElementById("historicalResearchContext");
   if (!el || !artifact) return;
   const hist = historicalResearchRiskSummary(artifact);
@@ -1472,6 +1711,22 @@ function researchDecisionLabel(backtest, walk = {}) {
 function populateResearchLabSelector(artifact) {
   const select = document.getElementById("researchLabSelector");
   if (!select) return;
+  if (hasFactoryResearch()) {
+    const items = factoryResearchCatalogItems();
+    const groups = [
+      ["ACTIVE", items.filter((row) => row.backtest?.factory_research?.membership === "ACTIVE")],
+      ["REFERENCE_ONLY", items.filter((row) => row.backtest?.factory_research?.membership === "REFERENCE_ONLY")],
+      ["COMBINED_PORTFOLIO", items.filter((row) => row.strategy_id === ResearchUniverse.COMPOSITE_ID)],
+    ];
+    select.innerHTML = groups.flatMap(([label, rows]) => {
+      if (!rows.length) return [];
+      return [`<optgroup label="${escapeHtml(label)}">`, ...rows.map((row) =>
+        `<option value="${escapeHtml(row.strategy_id)}">${escapeHtml(row.backtest?.name || row.strategy_id)} (${escapeHtml(row.strategy_id)})</option>`,
+      ), "</optgroup>"];
+    }).join("");
+    select.onchange = () => openFactoryResearchStrategy(select.value);
+    return;
+  }
   const results = artifact?.literature_strategy_backtests?.results || [];
   select.innerHTML = results.map((row, index) => `<option value="${index}">${escapeHtml(row.backtest?.name || `Strategy ${index + 1}`)}</option>`).join("");
   select.onchange = () => {
@@ -3526,12 +3781,15 @@ async function init() {
   renderTabs();
   loadLocalDecisionEvents();
   document.body.classList.add("app-loading");
-  const [, artifact, overlay] = await Promise.all([
+  const [, artifact, overlay, researchBundle] = await Promise.all([
     probeWorkstationApi(),
     loadArtifact(),
     loadLiveOverlay(),
+    loadUsEquityResearchBundle(),
   ]);
+  factoryResearchBundle = researchBundle;
   mergeLiveOverlay(artifact, overlay);
+  hydrateFactoryResearch(artifact);
   activeArtifact = artifact;
   initProposalSession(artifact);
   renderTopHeader(artifact);
@@ -3544,6 +3802,10 @@ async function init() {
   installLiveControls(artifact);
   installStrategyMonitorControls(artifact);
   installStrategyDrawerControls(artifact);
+  const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
+  if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
+  renderShadowStrategyRegistry();
+  if (hasFactoryResearch()) renderFactoryResearchArchitectureBanner();
   installChartObservers(artifact);
   refreshProposalStatusViews(artifact);
   document.body.classList.remove("app-loading");

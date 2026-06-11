@@ -17,7 +17,7 @@ from src.market.intraday_config import (
     resolve_refresh_interval_minutes,
     stale_after_minutes_for,
 )
-from src.market.intraday_provider import fetch_intraday_bars
+from src.market.intraday_provider import bar_duration_minutes, fetch_intraday_bars
 from src.market.intraday_revaluation import revalue_mark_sensitive_outputs
 from src.market.market_hours import (
     market_session_status,
@@ -33,8 +33,20 @@ from src.market.snapshot_store import (
     write_refresh_status,
 )
 from src.market.yfinance_client import load_market_universe
+from src.strategies.shadow_intraday import (
+    build_shadow_intraday_estimates,
+    collect_shadow_position_tickers,
+    daily_shadow_return_exists,
+    finalize_daily_shadow_returns,
+)
 
 DEFAULT_ARTIFACT_PATH = Path("output/dashboard_artifact.json")
+BACKGROUND_SCHEDULER_ENABLED: bool | None = None
+
+
+def set_background_scheduler_enabled(enabled: bool | None) -> None:
+    global BACKGROUND_SCHEDULER_ENABLED
+    BACKGROUND_SCHEDULER_ENABLED = enabled
 
 
 def load_dashboard_artifact(path: Path | str = DEFAULT_ARTIFACT_PATH) -> dict[str, Any]:
@@ -127,10 +139,15 @@ def build_refresh_status_payload(
     )
     demo = is_demo_hosting()
     external_scheduler = refresh_api_token_configured()
-    scheduler_enabled = intraday_scheduler_enabled(
+    configured_scheduler_enabled = intraday_scheduler_enabled(
         config_enabled=bool(cfg.get("enabled", True)),
         force_start=None,
         force_disable=False,
+    )
+    scheduler_enabled = (
+        BACKGROUND_SCHEDULER_ENABLED
+        if BACKGROUND_SCHEDULER_ENABLED is not None
+        else configured_scheduler_enabled
     )
     demo_label = demo_scheduler_label(scheduler_enabled)
     if external_scheduler:
@@ -165,6 +182,12 @@ def build_refresh_status_payload(
         "refresh_state": state,
         "in_progress": in_progress,
         "last_error": status.get("last_error"),
+        "ticker_count_requested": snapshot.get("ticker_count_requested") if snapshot else None,
+        "ticker_count_successful": snapshot.get("ticker_count_successful") if snapshot else None,
+        "failed_ticker_count": len(snapshot.get("missing_tickers") or []) if snapshot else None,
+        "missing_tickers": snapshot.get("missing_tickers") if snapshot else [],
+        "shadow_intraday": snapshot.get("shadow_intraday") if snapshot else None,
+        "intraday_data_label": snapshot.get("intraday_data_label") if snapshot else None,
         "retry_count": status.get("retry_count"),
         "provider": cfg.get("provider", "yfinance"),
         "disclosure": (
@@ -173,6 +196,7 @@ def build_refresh_status_payload(
             if demo
             else "Research market proxy refresh; not live portfolio or exchange data."
         ),
+        "scheduler_deployment_note": "Render requires ENABLE_INTRADAY_SCHEDULER=1.",
         "demo_hosting": demo,
         "scheduler_label": scheduler_label,
     }
@@ -214,12 +238,17 @@ def run_intraday_refresh(
         holidays=cfg.get("market_holidays") or [],
         interval_minutes=interval,
     )
+    shadow_database = Path(cfg.get("shadow_database_path") or "output/shadow/strategy_shadow.db")
+    needs_close_finalization = (
+        session.status == "After-hours"
+        and not daily_shadow_return_exists(shadow_database, session.session_date)
+    )
     if not force and not should_run_scheduled_refresh(
         None,
         timezone=cfg["timezone"],
         holidays=cfg.get("market_holidays") or [],
         regular_session_only=bool(cfg.get("regular_session_only", True)),
-    ):
+    ) and not needs_close_finalization:
         payload = build_refresh_status_payload(cfg, interval_minutes=interval)
         payload.update(
             {
@@ -264,7 +293,12 @@ def run_intraday_refresh(
             artifact = load_dashboard_artifact(artifact_path)
             baseline_allocation = dict(artifact.get("allocation", {}).get("current_weights") or {})
             baseline_signals_as_of = artifact.get("as_of_date")
-            tickers = collect_refresh_tickers(artifact)
+            tickers = collect_shadow_position_tickers(shadow_database)
+            if not tickers:
+                if cfg.get("allow_artifact_position_fallback", False):
+                    tickers = collect_refresh_tickers(artifact)
+                else:
+                    raise ValueError("no current SHADOW positions available; old dashboard proxy allocations are not used")
             bar_interval = bar_interval_for_refresh(cfg, interval)
             fetcher = fetch_fn or fetch_intraday_bars
             fetch_result = fetcher(
@@ -277,6 +311,25 @@ def run_intraday_refresh(
                 stale_after_minutes=stale_after_minutes_for(cfg, interval),
                 refresh_interval_minutes=interval,
             )
+            latest_retrieved = fetch_result.get("latest_completed_bar_ts_et") or fetch_result.get("latest_observation_ts_et")
+            previous_snapshot = read_latest_snapshot(cfg)
+            previous_latest = (
+                previous_snapshot.get("latest_completed_bar_ts_et") or previous_snapshot.get("latest_observation_ts_et")
+                if previous_snapshot else None
+            )
+            if latest_retrieved and previous_latest and latest_retrieved < previous_latest:
+                write_refresh_status(
+                    {
+                        "state": "idle", "in_progress": False, "last_success_at": previous_snapshot.get("refresh_completed_at"),
+                        "last_snapshot_id": previous_snapshot.get("snapshot_id"), "selected_interval_minutes": interval,
+                        "data_freshness": (previous_snapshot.get("marks") or {}).get("data_quality", {}).get("freshness"),
+                        "last_error": None,
+                    },
+                    cfg,
+                )
+                payload = build_refresh_status_payload(cfg, interval_minutes=interval)
+                payload.update({"ok": True, "skipped": True, "reason": "stale_response_preserved_newer_snapshot"})
+                return payload
 
             requested = int(fetch_result.get("ticker_count_requested") or len(tickers))
             successful = int(fetch_result.get("ticker_count_successful") or 0)
@@ -288,6 +341,27 @@ def run_intraday_refresh(
                 )
 
             marks = revalue_mark_sensitive_outputs(artifact, fetch_result, load_market_universe())
+            shadow_intraday = build_shadow_intraday_estimates(
+                shadow_database,
+                fetch_result.get("rows") or [],
+                notional=float(artifact.get("initial_capital") or 1_000_000),
+            )
+            marks["shadow_intraday"] = shadow_intraday
+            marks["estimated_intraday_return"] = shadow_intraday.get("estimated_return")
+            marks["estimated_intraday_pnl"] = shadow_intraday.get("estimated_pnl")
+            marks["estimated_model_nav"] = (
+                marks["baseline_model_nav"] * (1.0 + shadow_intraday["estimated_return"])
+                if shadow_intraday.get("available") else None
+            )
+            marks["canonical_return_definition"] = "session first usable open to latest completed 5-minute close"
+            marks["legacy_artifact_position_estimate_authoritative"] = False
+            marks["strategy_marks"] = shadow_intraday.get("strategies") or []
+            daily_finalization = finalize_daily_shadow_returns(
+                shadow_database,
+                shadow_intraday,
+                latest_completed_bar_ts=fetch_result.get("latest_completed_bar_ts_et"),
+                bar_minutes=bar_duration_minutes(bar_interval),
+            )
             completed = datetime.now(timezone.utc)
             snapshot_id = new_snapshot_id(completed)
             snapshot = {
@@ -310,6 +384,10 @@ def run_intraday_refresh(
                 "retry_count": int(fetch_result.get("retry_count") or 0),
                 "refresh_interval_minutes": interval,
                 "marks": marks,
+                "intraday_data_label": "INTRADAY_SHADOW_ESTIMATE",
+                "shadow_intraday": shadow_intraday,
+                "latest_usable_prices": shadow_intraday.get("latest_usable_prices") or {},
+                "daily_finalization": daily_finalization,
                 "governance_preserved": {
                     "allocation_weights_unchanged": baseline_allocation,
                     "signals_as_of_unchanged": baseline_signals_as_of,

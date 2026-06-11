@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import threading
 from datetime import datetime
 from pathlib import Path
@@ -24,10 +25,19 @@ from src.market.intraday_refresh_service import (
     collect_refresh_tickers,
     refresh_lock,
     run_intraday_refresh,
+    set_background_scheduler_enabled,
     set_refresh_cadence,
 )
-from src.market.market_hours import market_session_status, should_run_scheduled_refresh
+from src.market.market_hours import MarketSessionInfo, market_session_status, should_run_scheduled_refresh
 from src.market.snapshot_store import publish_snapshot, read_latest_pointer, read_latest_snapshot
+from src.strategies.shadow_intraday import (
+    COMPOSITE_ID,
+    DAILY_LABEL,
+    INTRADAY_LABEL,
+    build_shadow_intraday_estimates,
+    collect_shadow_position_tickers,
+    finalize_daily_shadow_returns,
+)
 
 
 @pytest.fixture
@@ -38,6 +48,8 @@ def intraday_cfg(tmp_path: Path) -> dict:
     cfg["latest_pointer_path"] = str(tmp_path / "latest.json")
     cfg["status_path"] = str(tmp_path / "status.json")
     cfg["lock_path"] = str(tmp_path / "refresh.lock")
+    cfg["shadow_database_path"] = str(tmp_path / "shadow.db")
+    cfg["allow_artifact_position_fallback"] = True
     return cfg
 
 
@@ -122,10 +134,10 @@ def test_bar_interval_mapping_for_five_ten_and_thirty_minutes(intraday_cfg):
     assert "10m" not in set((intraday_cfg.get("bar_interval_by_refresh") or {}).values())
 
 
-def test_default_refresh_cadence_is_ten_minutes(intraday_cfg):
-    assert intraday_cfg["default_interval_minutes"] == 10
+def test_default_refresh_cadence_is_five_minutes(intraday_cfg):
+    assert intraday_cfg["default_interval_minutes"] == 5
     assert intraday_cfg["allowed_intervals_minutes"] == [5, 10, 30]
-    assert resolve_refresh_interval_minutes(intraday_cfg) == 10
+    assert resolve_refresh_interval_minutes(intraday_cfg) == 5
     assert stale_after_minutes_for(intraday_cfg, 5) == 10
     assert stale_after_minutes_for(intraday_cfg, 10) == 20
     assert stale_after_minutes_for(intraday_cfg, 30) == 45
@@ -299,6 +311,8 @@ def test_partial_ticker_failure_above_threshold_marks_delayed(intraday_cfg, mini
     assert result["ok"] is True
     snapshot = read_latest_snapshot(intraday_cfg)
     assert snapshot["marks"]["data_quality"]["freshness"] == "Delayed"
+    status = build_refresh_status_payload(intraday_cfg)
+    assert status["failed_ticker_count"] == len(snapshot["missing_tickers"])
 
 
 def test_stale_ticker_classification():
@@ -368,8 +382,9 @@ def test_revaluation_updates_nav_not_allocation(intraday_cfg, minimal_artifact, 
     )
     snapshot = read_latest_snapshot(intraday_cfg)
     marks = snapshot["marks"]
-    assert marks["estimated_model_nav"] > minimal_artifact["initial_capital"]
-    assert marks["estimated_intraday_pnl"] is not None
+    assert marks["estimated_model_nav"] is None
+    assert marks["estimated_intraday_pnl"] is None
+    assert marks["shadow_intraday"]["available"] is False
     assert marks["evaluation_metadata"]["allocation_unchanged"] is True
     assert marks["evaluation_metadata"]["signals_unchanged"] is True
     assert snapshot["governance_preserved"]["allocation_weights_unchanged"] == minimal_artifact["allocation"]["current_weights"]
@@ -388,6 +403,21 @@ def test_scheduled_refresh_skipped_when_market_closed(intraday_cfg, minimal_arti
     assert read_latest_pointer(intraday_cfg) is None
 
 
+def test_after_hours_runs_until_daily_shadow_is_finalized(intraday_cfg, minimal_artifact, tmp_path: Path, monkeypatch):
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+    monkeypatch.setattr("src.market.intraday_refresh_service.should_run_scheduled_refresh", lambda *args, **kwargs: False)
+    monkeypatch.setattr(
+        "src.market.intraday_refresh_service.market_session_status",
+        lambda **kwargs: MarketSessionInfo("After-hours", "America/New_York", "2026-06-11", True, None),
+    )
+    result = run_intraday_refresh(
+        force=False, interval_minutes=5, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_success,
+    )
+    assert result["ok"] is True
+    assert not result.get("skipped")
+
+
 def test_manual_and_scheduled_share_pipeline(intraday_cfg, minimal_artifact, tmp_path: Path):
     artifact_path = tmp_path / "artifact.json"
     artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
@@ -400,7 +430,7 @@ def test_manual_and_scheduled_share_pipeline(intraday_cfg, minimal_artifact, tmp
 def test_build_refresh_status_payload_shape(intraday_cfg):
     payload = build_refresh_status_payload(intraday_cfg)
     assert payload["ok"] is True
-    assert payload["refresh_cadence_minutes"] == 10
+    assert payload["refresh_cadence_minutes"] == 5
     assert payload["bar_interval"] == "5m"
     assert payload["scheduler_state"]
     assert payload["latest_completed_market_bar_at"] is None or isinstance(payload["latest_completed_market_bar_at"], str)
@@ -412,6 +442,151 @@ def test_collect_refresh_tickers_includes_universe_and_positions(minimal_artifac
     assert "SPY" in tickers
     assert "TLT" in tickers
     assert len(tickers) > 2
+
+
+def test_shadow_positions_drive_tickers_and_daily_finalization_is_idempotent(tmp_path):
+    database = tmp_path / "shadow.db"
+    with sqlite3.connect(database) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE daily_strategy_positions (
+              strategy_id TEXT, date TEXT, ticker TEXT, data_label TEXT, target_weight REAL,
+              PRIMARY KEY(strategy_id,date,ticker,data_label));
+            CREATE TABLE daily_strategy_returns (
+              strategy_id TEXT, date TEXT, data_label TEXT, net_return REAL,
+              PRIMARY KEY(strategy_id,date,data_label));
+            """
+        )
+        for strategy_id in ("C2A2_020", "C2B2_004"):
+            connection.execute(
+                "INSERT INTO daily_strategy_positions VALUES (?,?,?,?,?)",
+                (strategy_id, "2026-06-11", "AAA", "SHADOW", 1.0),
+            )
+    rows = [
+        {"source_ticker": "AAA", "session_date": "2026-06-11", "observation_ts_et": "2026-06-11T09:30:00-04:00",
+         "open": 100.0, "close": 100.5, "bar_completeness": "completed"},
+        {"source_ticker": "AAA", "session_date": "2026-06-11", "observation_ts_et": "2026-06-11T15:55:00-04:00",
+         "open": 100.5, "close": 102.0, "bar_completeness": "completed"},
+    ]
+    assert collect_shadow_position_tickers(database) == ["AAA"]
+    estimates = build_shadow_intraday_estimates(database, rows)
+    assert estimates["data_label"] == INTRADAY_LABEL
+    assert {row["strategy_id"] for row in estimates["strategies"]} == {"C2A2_020", "C2B2_004", COMPOSITE_ID}
+    first = finalize_daily_shadow_returns(database, estimates, latest_completed_bar_ts=rows[-1]["observation_ts_et"], bar_minutes=5)
+    second = finalize_daily_shadow_returns(database, estimates, latest_completed_bar_ts=rows[-1]["observation_ts_et"], bar_minutes=5)
+    assert first["finalized"] and second["finalized"]
+    with sqlite3.connect(database) as connection:
+        rows_written = connection.execute("SELECT strategy_id,data_label,nav_value FROM daily_strategy_returns").fetchall()
+    assert len(rows_written) == 3
+    assert {row[1] for row in rows_written} == {DAILY_LABEL}
+
+
+def test_missing_position_mark_withholds_strategy_and_composite(tmp_path):
+    database = tmp_path / "shadow.db"
+    with sqlite3.connect(database) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE daily_strategy_positions (
+              strategy_id TEXT, date TEXT, ticker TEXT, data_label TEXT, target_weight REAL,
+              PRIMARY KEY(strategy_id,date,ticker,data_label));
+            CREATE TABLE daily_strategy_returns (
+              strategy_id TEXT, date TEXT, data_label TEXT, net_return REAL,
+              PRIMARY KEY(strategy_id,date,data_label));
+            """
+        )
+        for strategy_id in ("C2A2_020", "C2B2_004"):
+            connection.execute("INSERT INTO daily_strategy_positions VALUES (?,?,?,?,?)", (strategy_id, "2026-06-11", "AAA", "SHADOW", 0.5))
+            connection.execute("INSERT INTO daily_strategy_positions VALUES (?,?,?,?,?)", (strategy_id, "2026-06-11", "MISSING", "SHADOW", -0.5))
+    rows = [{"source_ticker": "AAA", "session_date": "2026-06-11", "observation_ts_et": "2026-06-11T10:00:00-04:00",
+             "open": 100.0, "close": 102.0, "bar_completeness": "completed"}]
+    estimates = build_shadow_intraday_estimates(database, rows)
+    lookup = {row["strategy_id"]: row for row in estimates["strategies"]}
+    assert lookup["C2A2_020"]["status"] == "INCOMPLETE"
+    assert lookup["C2A2_020"]["missing_tickers"] == ["MISSING"]
+    assert lookup["C2A2_020"]["uncovered_gross_weight"] == pytest.approx(0.5)
+    assert lookup["C2A2_020"]["estimated_pnl"] is None
+    assert lookup[COMPOSITE_ID]["available"] is False
+    assert lookup[COMPOSITE_ID]["estimated_pnl"] is None
+
+
+def test_snapshot_kpi_uses_same_withheld_canonical_shadow_estimate(intraday_cfg, minimal_artifact, tmp_path):
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+    with sqlite3.connect(intraday_cfg["shadow_database_path"]) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE daily_strategy_positions (
+              strategy_id TEXT, date TEXT, ticker TEXT, data_label TEXT, target_weight REAL,
+              PRIMARY KEY(strategy_id,date,ticker,data_label));
+            CREATE TABLE daily_strategy_returns (
+              strategy_id TEXT, date TEXT, data_label TEXT, net_return REAL,
+              PRIMARY KEY(strategy_id,date,data_label));
+            """
+        )
+        for strategy_id in ("C2A2_020", "C2B2_004"):
+            connection.execute("INSERT INTO daily_strategy_positions VALUES (?,?,?,?,?)", (strategy_id, "2026-06-11", "SPY", "SHADOW", 0.5))
+            connection.execute("INSERT INTO daily_strategy_positions VALUES (?,?,?,?,?)", (strategy_id, "2026-06-11", "TLT", "SHADOW", -0.5))
+    intraday_cfg["min_success_ticker_ratio"] = 0.3
+    result = run_intraday_refresh(
+        force=True, interval_minutes=5, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=_mock_fetch_partial,
+    )
+    assert result["ok"] is True
+    snapshot = read_latest_snapshot(intraday_cfg)
+    assert snapshot["shadow_intraday"]["available"] is False
+    assert snapshot["marks"]["estimated_intraday_pnl"] is None
+    assert snapshot["marks"]["estimated_model_nav"] is None
+    assert snapshot["marks"]["strategy_marks"] == snapshot["shadow_intraday"]["strategies"]
+
+
+def test_short_position_rising_stock_has_negative_contribution(tmp_path):
+    database = tmp_path / "shadow.db"
+    with sqlite3.connect(database) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE daily_strategy_positions (
+              strategy_id TEXT, date TEXT, ticker TEXT, data_label TEXT, target_weight REAL,
+              PRIMARY KEY(strategy_id,date,ticker,data_label));
+            CREATE TABLE daily_strategy_returns (
+              strategy_id TEXT, date TEXT, data_label TEXT, net_return REAL,
+              PRIMARY KEY(strategy_id,date,data_label));
+            """
+        )
+        for strategy_id in ("C2A2_020", "C2B2_004"):
+            connection.execute("INSERT INTO daily_strategy_positions VALUES (?,?,?,?,?)", (strategy_id, "2026-06-11", "AAA", "SHADOW", -0.5))
+    rows = [{"source_ticker": "AAA", "session_date": "2026-06-11", "observation_ts_et": "2026-06-11T10:00:00-04:00",
+             "open": 100.0, "close": 102.0, "bar_completeness": "completed"}]
+    estimates = build_shadow_intraday_estimates(database, rows)
+    lookup = {row["strategy_id"]: row for row in estimates["strategies"]}
+    assert lookup["C2A2_020"]["estimated_return"] == pytest.approx(-0.01)
+
+
+def test_no_valid_position_marks_are_unavailable(tmp_path):
+    database = tmp_path / "shadow.db"
+    with sqlite3.connect(database) as connection:
+        connection.executescript(
+            """
+            CREATE TABLE daily_strategy_positions (
+              strategy_id TEXT, date TEXT, ticker TEXT, data_label TEXT, target_weight REAL,
+              PRIMARY KEY(strategy_id,date,ticker,data_label));
+            CREATE TABLE daily_strategy_returns (
+              strategy_id TEXT, date TEXT, data_label TEXT, net_return REAL,
+              PRIMARY KEY(strategy_id,date,data_label));
+            """
+        )
+    estimates = build_shadow_intraday_estimates(database, [])
+    assert estimates["available"] is False
+    assert estimates["estimated_pnl"] is None
+
+
+def test_scheduler_disabled_is_exposed(intraday_cfg):
+    set_background_scheduler_enabled(False)
+    try:
+        status = build_refresh_status_payload(intraday_cfg)
+        assert status["scheduler_enabled"] is False
+        assert status["scheduler_display"] == "idle"
+        assert "ENABLE_INTRADAY_SCHEDULER=1" in status["scheduler_deployment_note"]
+    finally:
+        set_background_scheduler_enabled(None)
 
 
 def test_refresh_lock_context_manager(intraday_cfg):
@@ -446,6 +621,70 @@ def test_retry_behavior_on_transient_provider_errors(monkeypatch):
     )
     assert attempts["count"] == 3
     assert payload["ticker_count_successful"] == 1
+
+
+def test_yfinance_request_is_recent_five_minute_batch(monkeypatch):
+    captured = {}
+
+    def fake_download(**kwargs):
+        captured.update(kwargs)
+        idx = pd.date_range("2026-06-11 14:00", periods=2, freq="5min", tz="UTC")
+        return pd.DataFrame(
+            {"Open": [100.0, 100.5], "High": [101.0, 101.0], "Low": [99.0, 100.0],
+             "Close": [100.5, 100.8], "Volume": [1000.0, 1200.0]},
+            index=idx,
+        )
+
+    monkeypatch.setattr("src.market.intraday_provider.yf.download", fake_download)
+    from src.market.intraday_provider import fetch_intraday_bars
+
+    fetch_intraday_bars(["AAA"], bar_interval="5m", retry_attempts=1)
+    assert captured["tickers"] == ["AAA"]
+    assert captured["period"] == "1d"
+    assert captured["interval"] == "5m"
+    assert captured["auto_adjust"] is False
+
+
+def test_intraday_fetch_maps_class_share_ticker_and_restores_source(monkeypatch):
+    captured = {}
+
+    def fake_download(**kwargs):
+        captured.update(kwargs)
+        idx = pd.date_range("2026-06-11 14:00", periods=2, freq="5min", tz="UTC")
+        columns = pd.MultiIndex.from_product([["BRK-B"], ["Open", "High", "Low", "Close", "Volume"]])
+        return pd.DataFrame([[100, 101, 99, 100.5, 1000], [100.5, 101, 100, 100.8, 1200]], index=idx, columns=columns)
+
+    monkeypatch.setattr("src.market.intraday_provider.yf.download", fake_download)
+    from src.market.intraday_provider import fetch_intraday_bars
+
+    payload = fetch_intraday_bars(["BRK.B"], bar_interval="5m", retry_attempts=1)
+    assert captured["tickers"] == ["BRK-B"]
+    assert payload["requested_tickers"] == ["BRK.B"]
+    assert {row["source_ticker"] for row in payload["rows"]} == {"BRK.B"}
+
+
+def test_stale_response_does_not_overwrite_newer_snapshot(intraday_cfg, minimal_artifact, tmp_path):
+    artifact_path = tmp_path / "artifact.json"
+    artifact_path.write_text(json.dumps(minimal_artifact), encoding="utf-8")
+    publish_snapshot(
+        {
+            "snapshot_id": "newer", "refresh_status": "success",
+            "latest_completed_bar_ts_et": "2026-06-11T15:55:00-04:00",
+            "latest_observation_ts_et": "2026-06-11T15:55:00-04:00",
+            "refresh_completed_at": "2026-06-11T20:01:00+00:00", "marks": {"data_quality": {"freshness": "Current"}},
+        },
+        intraday_cfg,
+    )
+
+    def older_fetch(tickers, **kwargs):
+        payload = _mock_fetch_success(tickers, **kwargs)
+        payload["latest_completed_bar_ts_et"] = "2026-06-11T15:50:00-04:00"
+        payload["latest_observation_ts_et"] = "2026-06-11T15:50:00-04:00"
+        return payload
+
+    result = run_intraday_refresh(force=True, artifact_path=artifact_path, config=intraday_cfg, fetch_fn=older_fetch)
+    assert result["skipped"] is True
+    assert read_latest_pointer(intraday_cfg)["snapshot_id"] == "newer"
 
 
 def test_concurrent_refresh_threads_one_wins(intraday_cfg, minimal_artifact, tmp_path: Path):

@@ -13,6 +13,7 @@ import yfinance as yf
 
 from src.market.demo_hosting import is_demo_hosting
 from src.market.intraday_config import load_intraday_config, stale_after_minutes_for
+from src.strategies.worldquant.market_data import map_ticker_to_provider
 
 logger = logging.getLogger(__name__)
 
@@ -90,9 +91,15 @@ def fetch_intraday_bars(
     timeout_seconds = int(timeout_seconds or cfg.get("request_timeout_seconds") or 20)
     retry_attempts = int(retry_attempts or cfg.get("retry_attempts") or 3)
     backoff_seconds = list(backoff_seconds or cfg.get("backoff_seconds") or [5, 15, 30])
-    unique = sorted({ticker for ticker in tickers if ticker})
-    if not unique:
+    source_tickers = sorted({ticker for ticker in tickers if ticker})
+    if not source_tickers:
         raise ValueError("no tickers requested for intraday fetch")
+    source_by_provider = {
+        mapping.provider_symbol: mapping.ticker
+        for mapping in (map_ticker_to_provider(ticker) for ticker in source_tickers)
+        if mapping.provider_symbol
+    }
+    unique = sorted(source_by_provider)
 
     last_error: Exception | None = None
     raw = pd.DataFrame()
@@ -140,6 +147,10 @@ def fetch_intraday_bars(
         target_timezone=target_timezone,
         stale_after_minutes=stale_minutes,
     )
+    for row in rows:
+        row["source_ticker"] = source_by_provider.get(row["source_ticker"], row["source_ticker"])
+    missing = [source_by_provider.get(ticker, ticker) for ticker in missing]
+    stale = [source_by_provider.get(ticker, ticker) for ticker in stale]
     tz = ZoneInfo(target_timezone)
     now_et = datetime.now(tz=ZoneInfo("UTC")).astimezone(tz)
     completed_rows, incomplete_latest, latest_completed_ts = partition_completed_bars(
@@ -154,14 +165,14 @@ def fetch_intraday_bars(
     return {
         "provider": "yfinance",
         "bar_interval": bar_interval,
-        "requested_tickers": unique,
+        "requested_tickers": source_tickers,
         "rows": valuation_rows,
         "all_rows": rows,
         "completed_rows": completed_rows,
         "incomplete_current_bars": list(incomplete_latest.values()),
         "missing_tickers": missing,
         "stale_tickers": stale,
-        "ticker_count_requested": len(unique),
+        "ticker_count_requested": len(source_tickers),
         "ticker_count_successful": len({row["source_ticker"] for row in valuation_rows}),
         "latest_observation_ts_et": latest_ts,
         "latest_completed_bar_ts_et": latest_completed_ts,

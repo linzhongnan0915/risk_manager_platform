@@ -21,8 +21,8 @@
         <div class="topbar-actions">
           <label class="cadence-select-label" for="intradayCadenceSelect" title="Scheduled refresh cadence">Cadence</label>
           <select id="intradayCadenceSelect" class="cadence-select compact" title="Scheduled refresh cadence" aria-label="Refresh cadence">
-            <option value="5">5 min</option>
-            <option value="10" selected>10 min</option>
+            <option value="5" selected>5 min</option>
+            <option value="10">10 min</option>
             <option value="30">30 min</option>
           </select>
           <button type="button" class="ghost-button compact" id="toggleRiskDrawer" title="Toggle risk status drawer">Risk Status</button>
@@ -95,6 +95,22 @@
 
           <section class="tab-panel" data-tab-panel="Strategy Monitor">
             <div id="monitorKpiStrip"></div>
+            <article class="panel v2-panel strategy-monitor-panel">
+              <div class="monitor-heading">
+                <div class="panel-title">Retained Research / Shadow Registry</div>
+                <select id="shadowStrategyStatusFilter" aria-label="Shadow strategy status">
+                  <option value="ALL">ALL</option>
+                    <option value="RESEARCH_COMPOSITE_MEMBER">RESEARCH_COMPOSITE_MEMBER</option>
+                    <option value="RESEARCH_COMPOSITE">RESEARCH_COMPOSITE</option>
+                    <option value="RESEARCH_CANDIDATE">RESEARCH_CANDIDATE</option>
+                  <option value="ARCHIVE">ARCHIVE</option>
+                  <option value="BLOCKED">BLOCKED</option>
+                </select>
+              </div>
+              <div class="table-viewport"><div class="table-scroll">
+                <table class="data-table dense sticky-head" id="shadowStrategyTable"></table>
+              </div></div>
+            </article>
             <article class="panel v2-panel strategy-monitor-panel">
               <div class="monitor-heading">
                 <div class="panel-title">Strategy Monitor</div>
@@ -321,6 +337,7 @@
       </div>
     </div>
     <script src="components.js"></script>
+    <script src="research_universe.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

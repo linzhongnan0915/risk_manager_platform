@@ -29,6 +29,7 @@ from src.market.intraday_refresh_service import (
     build_refresh_status_payload,
     read_latest_snapshot_payload,
     run_intraday_refresh,
+    set_background_scheduler_enabled,
     set_refresh_cadence,
 )
 from src.market.live_refresh import write_live_overlay
@@ -36,6 +37,7 @@ from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series
 from src.risk.limits import load_risk_limits
+from src.strategies.shadow_mvp import initialize_database, platform_strategy_registry
 
 logger = logging.getLogger(__name__)
 
@@ -256,6 +258,21 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._send_safe_error(exc, context="live-summary")
             return
+        if parsed.path in {"/api/strategy-shadow", "/api/strategy-shadow/"}:
+            try:
+                query = parse_qs(parsed.query or "")
+                status_filter = (query.get("status") or ["ALL"])[0]
+                strategies = platform_strategy_registry(
+                    self.server_root / "output/research/strategy_factory_v1",
+                    self.server_root / "output/research/strategy_21_research_composite_v1",
+                    status_filter,
+                )
+                self._send_json({"ok": True, "status_filter": status_filter.upper(), "strategies": strategies})
+            except ValueError as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            except Exception as exc:
+                self._send_safe_error(exc, context="strategy-shadow")
+            return
         if parsed.path in {"/api/artifact/bootstrap", "/api/artifact/bootstrap/"}:
             body = self.bootstrap_artifact_bytes
             if body is None:
@@ -465,6 +482,7 @@ def main(
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     configure_yfinance_cache(PROJECT_ROOT)
+    initialize_database(PROJECT_ROOT / "output/shadow/strategy_shadow.db").close()
     artifact = ensure_deployment_artifact()
     WorkstationHandler.warm_artifact_caches(artifact)
 
@@ -479,6 +497,7 @@ def main(
         force_start=intraday_scheduler,
         force_disable=no_intraday_scheduler,
     )
+    set_background_scheduler_enabled(start_scheduler)
     if start_scheduler:
         scheduler_thread = threading.Thread(target=_intraday_scheduler_loop, args=(PROJECT_ROOT,), daemon=True)
         scheduler_thread.start()

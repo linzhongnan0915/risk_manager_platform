@@ -7,14 +7,23 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+EXECUTION_MODE_NEXT_OPEN_TO_OPEN = "next_open_to_open"
 EXECUTION_MODE_NEXT_OPEN_TO_CLOSE = "next_open_to_close"
 EXECUTION_MODE_CLOSE_TO_CLOSE_LAG2 = "close_to_close_lag2"
 
 SUPPORTED_EXECUTION_MODES = frozenset(
-    {EXECUTION_MODE_NEXT_OPEN_TO_CLOSE, EXECUTION_MODE_CLOSE_TO_CLOSE_LAG2}
+    {
+        EXECUTION_MODE_NEXT_OPEN_TO_OPEN,
+        EXECUTION_MODE_NEXT_OPEN_TO_CLOSE,
+        EXECUTION_MODE_CLOSE_TO_CLOSE_LAG2,
+    }
 )
 
 EXECUTION_MODE_SPECS: dict[str, dict[str, int | str]] = {
+    EXECUTION_MODE_NEXT_OPEN_TO_OPEN: {
+        "execution_lag": 0,
+        "return_definition": "open_to_open",
+    },
     EXECUTION_MODE_NEXT_OPEN_TO_CLOSE: {
         "execution_lag": 1,
         "return_definition": "open_to_close",
@@ -60,6 +69,11 @@ def build_asset_return_panel(
 ) -> pd.DataFrame:
     """Build the asset return panel aligned to the selected execution convention."""
     normalized = validate_execution_mode(execution_mode)
+    if normalized == EXECUTION_MODE_NEXT_OPEN_TO_OPEN:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            returns = open_prices.shift(-1) / open_prices - 1.0
+        returns.iloc[-1, :] = np.nan
+        return returns.replace([np.inf, -np.inf], np.nan)
     if normalized == EXECUTION_MODE_NEXT_OPEN_TO_CLOSE:
         with np.errstate(divide="ignore", invalid="ignore"):
             returns = close_prices / open_prices - 1.0
@@ -77,12 +91,13 @@ def compute_portfolio_returns_from_weights(
     return_definition: str,
 ) -> PortfolioReturnResult:
     """Apply execution lag, gross PnL, symmetric turnover costs, and net PnL."""
-    if execution_lag <= 0:
-        raise ValueError("execution_lag must be positive")
+    if execution_lag < 0:
+        raise ValueError("execution_lag must be non-negative")
 
-    executed_weights = target_weights.shift(execution_lag).fillna(0.0)
-    gross_return = (executed_weights * asset_returns).sum(axis=1, min_count=1).fillna(0.0)
-    turnover = executed_weights.diff().abs().sum(axis=1).fillna(executed_weights.abs().sum(axis=1))
+    executed_weights = target_weights.copy() if execution_lag == 0 else target_weights.shift(execution_lag).fillna(0.0)
+    gross_return = (executed_weights * asset_returns).sum(axis=1, min_count=1)
+    turnover = executed_weights.diff().abs().sum(axis=1)
+    turnover = turnover.fillna(executed_weights.abs().sum(axis=1))
     transaction_cost = turnover * (buy_bps + sell_bps) / 2.0 / 10_000.0
     net_return = gross_return - transaction_cost
 
