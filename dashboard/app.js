@@ -113,9 +113,20 @@ function scopeSummary(artifact, scopeName) {
   return artifact?.risk_status_summary?.scopes?.[scopeName]?.summary || { ok: 0, watch: 0, warning: 0, breach: 0 };
 }
 
+function researchContextMeta(artifact = activeArtifact) {
+  const usingResearch = factoryDataReady && typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode();
+  return {
+    usingResearch,
+    monitoredCount: usingResearch ? ResearchUniverse.strategyRows().length : (artifact?.strategy_count || 0),
+    modeBadge: usingResearch ? "US-Equity Research" : "Prototype Model Portfolio",
+    disclosure: usingResearch
+      ? "Strategy Factory + Strategy 21 research composite · NOT LIVE · NOT allocation approved · Pilot survivorship-biased universe"
+      : (artifact?.data_classification?.disclosure || "Prototype model portfolio · ETF proxy research data · Not live positions or fills"),
+  };
+}
+
 function renderTruthDisclosure(artifact = activeArtifact) {
-  const disclosure = artifact?.data_classification?.disclosure
-    || "Prototype model portfolio · ETF proxy research data · Not live positions or fills";
+  const { disclosure } = researchContextMeta(artifact);
   const node = document.getElementById("truthDisclosure");
   if (node) node.textContent = disclosure;
   const build = document.getElementById("buildTrace");
@@ -910,6 +921,8 @@ function scheduleResearchExtensionLoad(artifact) {
     activeArtifact = updated;
     ResearchUniverse.hydrate(factoryResearchCatalog, updated);
     renderResearchModeBanners();
+    renderTopHeader(updated);
+    renderTruthDisclosure(updated);
     refreshResearchLabViews(updated);
     renderTables(updated);
     renderWorkstationPanels(updated);
@@ -960,11 +973,12 @@ function renderTopHeader(artifact = activeArtifact) {
   const el = document.getElementById("topbarMeta");
   if (!el || !artifact) return;
   const monitoring = formatMonitoringState(artifact);
+  const context = researchContextMeta(artifact);
   el.innerHTML = `
-    <span class="mode-badge">Prototype Model Portfolio</span>
+    <span class="mode-badge">${context.modeBadge}</span>
     <span>As-of <strong>${artifact.as_of_date || "n/a"}</strong></span>
     <span>Initial Model Capital <strong>${money(artifact.initial_capital || 0)}</strong></span>
-    <span>Monitored <strong>${artifact.strategy_count || 0}</strong></span>
+    <span>Monitored <strong>${context.monitoredCount}</strong></span>
     <span>Market <strong>${monitoring.headerMarket}</strong></span>
     <span>Data <strong class="${monitoring.tone || ""}">${monitoring.headerData}</strong></span>`;
   renderSecondaryStatusStrip(artifact);
@@ -974,7 +988,7 @@ function renderSecondaryStatusStrip(artifact, meta = artifact?.build_metadata ||
   const el = document.getElementById("secondaryStatusStrip");
   if (!el) return;
   const monitoring = formatMonitoringState(artifact);
-  const disclosure = artifact?.data_classification?.disclosure || "Prototype · ETF proxy · Not live fills";
+  const disclosure = researchContextMeta(artifact).disclosure;
   el.innerHTML = `
     <span title="${escapeHtml(disclosure)}">Build ${meta.build_id || "n/a"}</span>
     <span>Retrieved ${meta.data_retrieved_at || meta.artifact_generated_at || "n/a"}</span>
