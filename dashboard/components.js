@@ -792,8 +792,9 @@ function humanizeResearchRegistryStatus(status) {
     RESEARCH_COMPOSITE_MEMBER: "RESEARCH COMPOSITE MEMBER",
     RESEARCH_COMPOSITE: "RESEARCH COMPOSITE",
     RESEARCH_CANDIDATE: "RESEARCH CANDIDATE",
-    ARCHIVE: "ARCHIVED",
-    BLOCKED: "ARCHIVED",
+    LEGACY_PROXY: "LEGACY PROXY",
+    ARCHIVE: "ARCHIVED/REJECTED",
+    BLOCKED: "ARCHIVED/REJECTED",
   };
   return labels[status] || String(status || "").replaceAll("_", " ");
 }
@@ -830,56 +831,6 @@ function countShadowDataAlerts(shadowState) {
   return incomplete + (missingTickers ? 1 : 0);
 }
 
-const RESEARCH_PIPELINE_SUMMARY = {
-  tested: 12,
-  retained: 2,
-  removedDuplicate: 1,
-  rejected: 9,
-  duplicateNote: "C2B2_001 removed as economic duplicate of C2B2_004 (realized-skewness family).",
-  rejections: [
-    { id: "C2A2_001", reason: "Failed retained-member quality gate vs liquidity-resilience baseline." },
-    { id: "C2B2_001", reason: "Economic duplicate; superseded by C2B2_004." },
-    { id: "C2B2_002", reason: "Insufficient out-of-sample Sharpe after transaction-cost stress." },
-    { id: "C2A2_003", reason: "Drawdown breach in pilot window; correlation overlap with retained member." },
-    { id: "C2B2_003", reason: "Weak decile spread stability across walk-forward splits." },
-    { id: "C2A2_005", reason: "Coverage too sparse for Pilot 500 shadow monitoring." },
-    { id: "C2B2_005", reason: "Turnover above research budget under realistic ADV caps." },
-    { id: "C2A2_006", reason: "Signal decay after 2024 regime; archived for re-test." },
-    { id: "C2B2_006", reason: "Rejected after duplicate-factor screen vs C2A2_020." },
-  ],
-};
-
-function computePartialShadowEstimate(shadowState, notional = 1_000_000) {
-  const composite = shadowState.composite;
-  const members = shadowState.members || [];
-  const status = shadowState.status || {};
-  const tickerCoveragePct = status.ticker_count_requested
-    ? (Number(status.ticker_count_successful || 0) / Number(status.ticker_count_requested)) * 100
-    : null;
-  const uncoveredGross = composite?.uncovered_gross_weight ?? members.reduce((sum, row) => sum + Number(row.uncovered_gross_weight || 0), 0);
-  const positionCoveragePct = uncoveredGross != null ? Math.max(0, (1 - uncoveredGross) * 100) : null;
-
-  if (composite?.available && composite.estimated_return != null) {
-    return {
-      kind: "authoritative",
-      return: composite.estimated_return,
-      pnl: composite.estimated_pnl,
-      tickerCoveragePct,
-      positionCoveragePct,
-      uncoveredGross,
-    };
-  }
-
-  const completeMembers = members.filter((row) => row.available && row.estimated_return != null);
-  const partialReturn = completeMembers.reduce((sum, row) => sum + 0.5 * Number(row.estimated_return), 0);
-  return {
-    kind: "partial",
-    return: completeMembers.length ? partialReturn : null,
-    pnl: completeMembers.length ? partialReturn * notional : null,
-    tickerCoveragePct,
-    positionCoveragePct,
-    uncoveredGross,
-    completeMembers: completeMembers.length,
-    totalMembers: members.length,
-  };
+function formatUnavailableLabel(detail = "DATA INCOMPLETE") {
+  return { text: "Unavailable", detail, tone: "warning-text" };
 }
