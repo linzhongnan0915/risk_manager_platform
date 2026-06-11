@@ -23,28 +23,6 @@ def _strategy_proxy_tickers(strategy: dict[str, Any]) -> list[str]:
     return tickers
 
 
-def _strategy_intraday_return(strategy: dict[str, Any], latest_bars: dict[str, dict[str, Any]]) -> float | None:
-    positions = strategy.get("position_packet", {}).get("latest_positions") or []
-    if not positions:
-        return None
-    weighted = 0.0
-    weight_sum = 0.0
-    for position in positions:
-        ticker = str(position.get("source_ticker") or position.get("ticker") or "").replace("^", "")
-        weight = float(position.get("weight") or 0.0)
-        bar = latest_bars.get(ticker) or latest_bars.get(f"^{ticker}")
-        if not bar:
-            continue
-        move = bar.get("intraday_return_from_open")
-        if move is None:
-            continue
-        weighted += weight * float(move)
-        weight_sum += weight
-    if weight_sum <= 0:
-        return None
-    return weighted / weight_sum
-
-
 def build_market_monitor_from_intraday(
     universe: list[dict[str, Any]],
     latest_bars: dict[str, dict[str, Any]],
@@ -88,34 +66,6 @@ def revalue_mark_sensitive_outputs(
     operating_cum = _operating_cumulative_return(artifact)
     baseline_nav = capital * (1.0 + operating_cum)
 
-    strategy_rows = []
-    weighted_return = 0.0
-    invested_weight = 0.0
-    for strategy in artifact.get("strategies") or []:
-        current_weight = float(strategy.get("current_weight") or 0.0)
-        move = _strategy_intraday_return(strategy, latest_bars)
-        prior_daily_pnl = float(strategy.get("daily_pnl") or 0.0)
-        estimated_pnl = prior_daily_pnl
-        if move is not None and current_weight > 0:
-            estimated_pnl = current_weight * capital * move
-            weighted_return += current_weight * move
-            invested_weight += current_weight
-        strategy_rows.append(
-            {
-                "strategy_id": strategy.get("strategy_id"),
-                "name": strategy.get("name"),
-                "current_weight": current_weight,
-                "estimated_intraday_return": move,
-                "estimated_intraday_pnl": estimated_pnl,
-                "artifact_daily_pnl_unchanged": prior_daily_pnl,
-                "allocation_market_value": current_weight * capital,
-            }
-        )
-
-    portfolio_intraday_return = weighted_return if invested_weight > 0 else 0.0
-    estimated_nav = baseline_nav * (1.0 + portfolio_intraday_return)
-    estimated_intraday_pnl = estimated_nav - baseline_nav
-
     market_monitor = build_market_monitor_from_intraday(
         universe,
         latest_bars,
@@ -148,14 +98,14 @@ def revalue_mark_sensitive_outputs(
 
     freshness = _freshness_label(fetch_result)
     return {
-        "estimated_model_nav": estimated_nav,
-        "estimated_intraday_pnl": estimated_intraday_pnl,
-        "estimated_intraday_return": portfolio_intraday_return,
+        "estimated_model_nav": None,
+        "estimated_intraday_pnl": None,
+        "estimated_intraday_return": None,
         "baseline_model_nav": baseline_nav,
         "market_monitor": market_monitor,
         "news_risk": news_risk,
         "recommendations": recommendations,
-        "strategy_marks": strategy_rows,
+        "strategy_marks": [],
         "factor_exposure_current": artifact.get("factors", {}).get("portfolio_factor_exposure_current", {}),
         "data_quality": {
             "freshness": freshness,

@@ -22,7 +22,19 @@ output/intraday_refresh_status.json
 output/intraday_refresh.lock
 output/intraday_snapshots/
 output/.yfinance_cache/
+output/shadow/
+output/research/worldquant_alpha2/
 
 .env
 .env.*
 !.env.example
+
+# Generated WorldQuant Alpha #2 universe files
+data/reference/worldquant_alpha2_us_security_master.csv
+data/reference/worldquant_alpha2_common_stock_candidates.csv
+data/reference/worldquant_alpha2_research_universe_v1.csv
+data/reference/worldquant_alpha2_pilot_universe_500.csv
+
+# Generated WorldQuant Alpha #2 market-data files
+data/raw/worldquant_alpha2/*
+!data/raw/worldquant_alpha2/.gitkeep

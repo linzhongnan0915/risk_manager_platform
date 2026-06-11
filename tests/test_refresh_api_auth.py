@@ -164,7 +164,7 @@ def test_external_scheduler_status_payload(monkeypatch):
     payload = build_refresh_status_payload()
     assert payload["external_scheduler_active"] is True
     assert payload["scheduler_display"] == "External active"
-    assert payload["refresh_cadence_minutes"] == 10
+    assert payload["refresh_cadence_minutes"] == 5
 
 
 def test_external_refresh_market_closed_returns_skipped(monkeypatch, intraday_cfg, minimal_artifact, tmp_path: Path):
@@ -237,6 +237,7 @@ def intraday_cfg(tmp_path: Path) -> dict:
     cfg["latest_pointer_path"] = str(tmp_path / "latest.json")
     cfg["status_path"] = str(tmp_path / "status.json")
     cfg["lock_path"] = str(tmp_path / "refresh.lock")
+    cfg["allow_artifact_position_fallback"] = True
     return cfg
 
 

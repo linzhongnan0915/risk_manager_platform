@@ -258,6 +258,20 @@ async function loadLiveOverlay() {
   return null;
 }
 
+async function renderShadowStrategyRegistry(status = "ALL") {
+  const table = document.getElementById("shadowStrategyTable");
+  if (!table) return;
+  try {
+    const response = await fetch(`/api/strategy-shadow?status=${encodeURIComponent(status)}`, { cache: "no-store" });
+    const payload = await response.json();
+    const rows = payload.strategies || [];
+    table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Allocation Eligible</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th></tr>` +
+      rows.map((row) => `<tr><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.name)}</td><td>${statusBadge(row.status)}</td><td>${row.allocation_eligible ? "YES" : "NO"}</td><td>${pct(row.net_return || 0, 1)}</td><td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td><td>${pct(row.max_drawdown || 0, 1)}</td><td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td><td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td><td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td><td class="wrap-cell">${escapeHtml(row.status_reason)}</td><td>${escapeHtml(row.latest_data_date)}</td></tr>`).join("");
+  } catch (error) {
+    table.innerHTML = "<tr><td>Shadow registry unavailable.</td></tr>";
+  }
+}
+
 function mergeLiveOverlay(artifact, overlay) {
   if (!overlay) return artifact;
   artifact.live_data_mode = overlay.data_mode || artifact.live_data_mode || "artifact_static";
@@ -305,6 +319,12 @@ function mergeIntradaySnapshot(artifact, snapshot) {
     latest_observation: snapshot.latest_observation_ts_et,
     market_status: snapshot.market_session_status,
     refresh_status: snapshot.refresh_status,
+    ticker_count_requested: snapshot.ticker_count_requested,
+    ticker_count_successful: snapshot.ticker_count_successful,
+    failed_ticker_count: (snapshot.missing_tickers || []).length,
+    missing_tickers: snapshot.missing_tickers || [],
+    shadow_intraday: snapshot.shadow_intraday,
+    intraday_data_label: snapshot.intraday_data_label,
   };
   return artifact;
 }
@@ -321,13 +341,23 @@ function renderIntradayRefreshStrip(artifact) {
   const status = artifact.intraday_refresh_status || {};
   const meta = artifact.build_metadata || {};
   const marketAsOf = meta.market_as_of || artifact.as_of_date;
-  const cadence = status.selected_cadence_minutes || status.refresh_cadence_minutes || selectedIntradayCadence || 10;
+  const cadence = status.selected_cadence_minutes || status.refresh_cadence_minutes || selectedIntradayCadence || 5;
   const lastRefresh = status.last_successful_refresh_at || status.refresh_completed_at || artifact.live_refreshed_at;
   const latestBar = status.latest_completed_market_bar_at || status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
   const nextRefresh = status.next_scheduled_refresh_at;
   const schedulerState = status.scheduler_state || status.refresh_state || monitoring.schedulerLabel || "idle";
   const freshness = status.data_freshness || status.canonical_data_state || monitoring.stripDataState;
   const schedulerDisplay = status.scheduler_display || status.scheduler_label || monitoring.schedulerLabel || schedulerState;
+  const requested = status.ticker_count_requested;
+  const successful = status.ticker_count_successful;
+  const failed = status.failed_ticker_count ?? ((status.missing_tickers || []).length);
+  const shadowRows = status.shadow_intraday?.strategies || artifact.intraday_marks?.shadow_intraday?.strategies || [];
+  const compositeShadow = shadowRows.find((row) => row.strategy_id === "STRATEGY_21_RESEARCH_COMPOSITE_V1");
+  const incomplete = shadowRows.filter((row) => row.available === false);
+  const coverageWarning = incomplete.length
+    ? `<span class="negative">Incomplete <strong>${incomplete.map((row) => `${escapeHtml(row.strategy_id)}: ${(row.missing_tickers || []).join(", ") || "no valid marks"}; uncovered ${pct(row.uncovered_gross_weight || 0, 2)}`).join(" | ")}</strong></span>`
+    : "";
+  const warning = status.last_error ? `<span class="negative">Refresh warning <strong>${escapeHtml(status.last_error)}</strong></span>` : "";
   strip.innerHTML = `
     <span>Market <strong>${monitoring.headerMarket}</strong></span>
     <span>Monitoring <strong class="${monitoring.tone || ""}">${monitoring.stripMonitoring}</strong></span>
@@ -337,6 +367,12 @@ function renderIntradayRefreshStrip(artifact) {
     <span>Last refresh <strong>${formatTimestamp(lastRefresh)}</strong></span>
     <span>Latest bar <strong>${formatTimestamp(latestBar)}</strong></span>
     <span>Next refresh <strong>${formatTimestamp(nextRefresh)}</strong></span>
+    <span>Coverage <strong>${successful ?? "n/a"}/${requested ?? "n/a"}</strong></span>
+    <span>Failed <strong>${failed ?? "n/a"}</strong></span>
+    <span>Shadow PnL <strong>${compositeShadow?.estimated_pnl == null ? "n/a" : money(compositeShadow.estimated_pnl)}</strong></span>
+    <span>Label <strong>INTRADAY_SHADOW_ESTIMATE · delayed/best-effort</strong></span>
+    ${warning}
+    ${coverageWarning}
     <span class="muted-copy">${monitoring.detail} · Snapshot ${artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact"} · Proxy as-of ${marketAsOf}</span>`;
 }
 
@@ -410,10 +446,10 @@ function applyIntradayUiRefresh(artifact) {
 
 let intradayPollTimer = null;
 let lastSeenSnapshotId = null;
-let selectedIntradayCadence = 10;
+let selectedIntradayCadence = 5;
 
 function syncCadenceSelector(minutes) {
-  selectedIntradayCadence = Number(minutes) || 10;
+  selectedIntradayCadence = Number(minutes) || 5;
   const select = document.getElementById("intradayCadenceSelect");
   if (select && String(select.value) !== String(selectedIntradayCadence)) {
     select.value = String(selectedIntradayCadence);
@@ -478,7 +514,7 @@ async function pollIntradayRefreshStatus(artifact) {
 function installIntradayPolling(artifact) {
   if (intradayPollTimer) clearInterval(intradayPollTimer);
   lastSeenSnapshotId = artifact.intraday_snapshot_id || null;
-  syncCadenceSelector(artifact.intraday_refresh_status?.selected_cadence_minutes || artifact.intraday_refresh_status?.refresh_cadence_minutes || 10);
+  syncCadenceSelector(artifact.intraday_refresh_status?.selected_cadence_minutes || artifact.intraday_refresh_status?.refresh_cadence_minutes || 5);
   pollIntradayRefreshStatus(artifact);
   intradayPollTimer = setInterval(() => pollIntradayRefreshStatus(artifact), 45_000);
 }
@@ -3544,6 +3580,9 @@ async function init() {
   installLiveControls(artifact);
   installStrategyMonitorControls(artifact);
   installStrategyDrawerControls(artifact);
+  const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
+  if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
+  renderShadowStrategyRegistry();
   installChartObservers(artifact);
   refreshProposalStatusViews(artifact);
   document.body.classList.remove("app-loading");

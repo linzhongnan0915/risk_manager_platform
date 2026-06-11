@@ -3,7 +3,8 @@
 
 intraday_refresh:
   enabled: true
-  default_interval_minutes: 10
+  # Render deployments require ENABLE_INTRADAY_SCHEDULER=1 to run the background loop.
+  default_interval_minutes: 5
   allowed_intervals_minutes:
     - 5
     - 10
@@ -31,6 +32,7 @@ intraday_refresh:
   latest_pointer_path: output/intraday_latest.json
   status_path: output/intraday_refresh_status.json
   lock_path: output/intraday_refresh.lock
+  shadow_database_path: output/shadow/strategy_shadow.db
 
   # NYSE full-day closures (extend annually for prototype).
   market_holidays:
