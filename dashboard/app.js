@@ -134,11 +134,39 @@ function portfolioSeriesForDisplay(artifact = activeArtifact) {
   return artifact?.portfolio_series || {};
 }
 
-function uiStrategies(artifact = activeArtifact) {
-  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
-    return ResearchUniverse.strategyRows();
+let factoryDataReady = false;
+
+function normalizeFactoryCatalog(payload) {
+  if (!payload) return null;
+  const dates = payload.shared_dates;
+  const catalog = payload.factory_strategy_research || payload;
+  if (dates && catalog?.results) {
+    catalog.results.forEach((item) => {
+      const series = item.backtest?.return_series;
+      if (series && !series.dates?.length) series.dates = dates;
+    });
   }
-  return artifact?.strategies || [];
+  return catalog?.results ? catalog : null;
+}
+
+function activateFactoryCatalog(catalog, artifact = activeArtifact) {
+  if (!catalog?.results?.length) {
+    factoryDataReady = false;
+    return false;
+  }
+  factoryResearchCatalog = catalog;
+  ResearchUniverse.hydrate(factoryResearchCatalog, artifact);
+  mergedResearchResults = buildMergedResearchResults(artifact);
+  factoryDataReady = true;
+  return true;
+}
+
+function uiStrategies(artifact = activeArtifact) {
+  if (typeof ResearchUniverse !== "undefined" && ResearchUniverse.isLegacyProxyMode()) {
+    return artifact?.strategies || [];
+  }
+  if (factoryDataReady) return ResearchUniverse.strategyRows();
+  return [];
 }
 
 function uiPortfolioSeries(artifact = activeArtifact) {
@@ -312,29 +340,27 @@ async function renderShadowStrategyRegistry(status = "ALL_US_EQUITY") {
   ResearchUniverse.setPortfolioViewMode("current");
   ResearchUniverse.setStrategyTableFilter(status);
   renderResearchModeBanners();
+  if (!factoryDataReady) {
+    table.innerHTML = "<tr><td colspan='12'>DATA UNAVAILABLE — US-equity research bundle not loaded.</td></tr>";
+    return;
+  }
   const rows = ResearchUniverse.filterStrategyRows(status);
-  table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Family</th><th>Status</th><th>Alloc. Eligible</th><th>Gross</th><th>Net</th><th>Sharpe</th><th>Vol</th><th>Max DD</th><th>Turnover</th><th>Cost Drag</th><th>IC</th><th>Decile</th><th>Return Driver</th><th>Limitation</th><th>Action</th><th>Latest Data</th></tr>` +
+  table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Gross</th><th>Net</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>Cost Drag</th><th>IC</th><th>Decile</th><th>Decision</th></tr>` +
     rows.map((row) => `<tr class="table-link-row" data-open-research-lab="${escapeHtml(row.strategy_id)}">
       <td>${escapeHtml(row.strategy_id)}</td>
       <td>${escapeHtml(row.name)}</td>
-      <td>${escapeHtml(row.strategy_type || "us_equity_research")}</td>
       <td>${statusBadge(row.lifecycle_status || row.research_group)}</td>
-      <td>${row.allocation_eligibility?.eligible ? "YES" : "NO"}</td>
       <td>${row.gross_return == null ? "N/A" : pct(row.gross_return, 1)}</td>
       <td>${row.net_return == null ? "N/A" : pct(row.net_return, 1)}</td>
       <td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td>
-      <td>${row.volatility == null ? "N/A" : pct(row.volatility, 1)}</td>
       <td>${row.max_drawdown == null ? "N/A" : pct(row.max_drawdown, 1)}</td>
       <td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td>
       <td>${row.transaction_cost_drag == null ? "N/A" : pct(row.transaction_cost_drag, 2)}</td>
       <td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td>
       <td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td>
-      <td class="wrap-cell">${escapeHtml(row.primary_return_driver || "—")}</td>
-      <td class="wrap-cell">${escapeHtml(row.main_limitation || "—")}</td>
-      <td class="wrap-cell">${escapeHtml(row.recommended_action || "Review")}</td>
-      <td>${escapeHtml(row.latest_data_date || "n/a")}</td>
+      <td class="wrap-cell">${escapeHtml(row.status_reason || row.recommended_action || "Review")}</td>
     </tr>`).join("") ||
-    "<tr><td colspan='18'>No strategies match this filter.</td></tr>";
+    "<tr><td colspan='12'>No strategies match this filter.</td></tr>";
   table.querySelectorAll("[data-open-research-lab]").forEach((row) => {
     row.addEventListener("click", () => openResearchLabForStrategy(row.dataset.openResearchLab));
   });
@@ -609,8 +635,10 @@ const proposalSession = {
 };
 
 function initProposalSession(artifact) {
-  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+  if (factoryDataReady) {
     proposalSession.weights = ResearchUniverse.defaultResearchWeights();
+  } else if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode()) {
+    proposalSession.weights = {};
   } else {
     proposalSession.weights = Object.fromEntries(
       (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.current_weight || 0]),
@@ -621,8 +649,10 @@ function initProposalSession(artifact) {
 }
 
 function loadSystemProposalSession(artifact) {
-  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+  if (factoryDataReady) {
     proposalSession.weights = ResearchUniverse.defaultResearchWeights();
+  } else if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode()) {
+    proposalSession.weights = {};
   } else {
     proposalSession.weights = Object.fromEntries(
       (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.proposed_weight || 0]),
@@ -630,6 +660,15 @@ function loadSystemProposalSession(artifact) {
   }
   proposalSession.simulation = null;
   proposalSession.source = "system";
+}
+
+function renderLegacyAllocationReference(artifact) {
+  const table = document.getElementById("legacyAllocationReferenceTable");
+  if (!table) return;
+  table.innerHTML = "<tr><th>Legacy ETF Proxy</th><th>Current Weight</th></tr>" +
+    (artifact.strategies || []).filter((row) => (row.current_weight || 0) > 0).map((row) =>
+      `<tr><td>${escapeHtml(row.name)}</td><td>${pct(row.current_weight || 0, 1)}</td></tr>`).join("") ||
+    "<tr><td colspan='2'>No legacy proxy allocation loaded.</td></tr>";
 }
 
 function invalidateProposalSimulation() {
@@ -728,7 +767,7 @@ async function loadArtifact() {
 let researchExtensionPromise = null;
 
 async function fetchFactoryResearchExtension() {
-  const candidates = ["/api/artifact/factory-research"];
+  const candidates = ["/dashboard/data/us_equity_research_bundle.json", "/api/artifact/factory-research"];
   for (const path of candidates) {
     try {
       const response = await fetch(path, { cache: "no-store" });
@@ -745,9 +784,7 @@ async function ensureFactoryResearchExtension() {
   if (factoryResearchCatalog?.results?.length) return factoryResearchCatalog;
   if (!factoryResearchPromise) factoryResearchPromise = fetchFactoryResearchExtension();
   const extension = await factoryResearchPromise;
-  if (extension?.factory_strategy_research) {
-    factoryResearchCatalog = extension.factory_strategy_research;
-  }
+  activateFactoryCatalog(normalizeFactoryCatalog(extension), activeArtifact);
   return factoryResearchCatalog;
 }
 
@@ -2987,8 +3024,14 @@ function renderAllocationEditor(artifact) {
   }
   const table = document.getElementById("allocationEditorTable");
   if (!table) return;
+  const strategies = uiStrategies(artifact);
+  if (!factoryDataReady || !strategies.length) {
+    table.innerHTML = "<tr><td colspan='12'>DATA UNAVAILABLE — STRATEGY 21 RESEARCH ALLOCATION requires the US-equity bundle.</td></tr>";
+    renderLegacyAllocationReference(artifact);
+    return;
+  }
   table.innerHTML = "<tr><th>Strategy</th><th>Lifecycle</th><th>Eligibility</th><th>Current</th><th>Proposed</th><th>Change</th><th>Direction</th><th>Trade $</th><th>Est. Cost</th><th>Risk Contrib.</th><th>Action</th><th>Rationale</th></tr>" +
-    uiStrategies(artifact).map((strategy) => {
+    strategies.map((strategy) => {
       const current = strategy.current_weight || 0;
       const target = proposalSession.weights[strategy.strategy_id] || 0;
       const change = target - current;
@@ -3011,8 +3054,9 @@ function renderAllocationEditor(artifact) {
         <td class="wrap-cell">${strategyRationale(strategy)}</td>
       </tr>`;
     }).join("");
+  renderLegacyAllocationReference(artifact);
   table.querySelectorAll("[data-weight-id]").forEach((input) => input.addEventListener("input", () => {
-    const strategy = uiStrategies(artifact).find((s) => s.strategy_id === input.dataset.weightId);
+    const strategy = strategies.find((s) => s.strategy_id === input.dataset.weightId);
     let val = Math.max(0, Number(input.value || 0) / 100);
     if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) val = Math.min(val, strategy.current_weight);
     proposalSession.weights[input.dataset.weightId] = val;
@@ -3024,7 +3068,7 @@ function renderAllocationEditor(artifact) {
   table.querySelectorAll("[data-weight-delta]").forEach((button) => button.addEventListener("click", () => {
     const id = button.dataset.weightDelta;
     const delta = Number(button.dataset.delta || 0);
-    const strategy = uiStrategies(artifact).find((s) => s.strategy_id === id);
+    const strategy = strategies.find((s) => s.strategy_id === id);
     let next = Math.max(0, (proposalSession.weights[id] || 0) + delta);
     if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) next = Math.min(next, strategy.current_weight);
     proposalSession.weights[id] = Math.min(next, 0.25);
@@ -3034,8 +3078,8 @@ function renderAllocationEditor(artifact) {
     refreshProposalStatusViews(artifact);
   }));
   table.querySelectorAll("[data-open-strategy]").forEach((button) => button.addEventListener("click", () => {
-    openStrategyReview(artifact.strategies.find((strategy) => strategy.strategy_id === button.dataset.openStrategy), artifact);
-    setActiveTab("Strategy Monitor");
+    if (factoryDataReady) openResearchLabForStrategy(button.dataset.openStrategy);
+    else openStrategyReview(artifact.strategies.find((strategy) => strategy.strategy_id === button.dataset.openStrategy), artifact);
   }));
 }
 
@@ -4087,9 +4131,8 @@ async function init() {
     loadLiveOverlay(),
   ]);
   mergeLiveOverlay(artifact, overlay);
-  await ensureFactoryResearchExtension();
-  ResearchUniverse.hydrate(factoryResearchCatalog, artifact);
   activeArtifact = artifact;
+  await ensureFactoryResearchExtension();
   initProposalSession(artifact);
   renderResearchModeBanners();
   renderTopHeader(artifact);
@@ -4104,7 +4147,8 @@ async function init() {
   installStrategyDrawerControls(artifact);
   const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
   if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
-  renderShadowStrategyRegistry();
+  await renderShadowStrategyRegistry();
+  refreshResearchLabViews(artifact);
   installChartObservers(artifact);
   refreshProposalStatusViews(artifact);
   document.body.classList.remove("app-loading");
