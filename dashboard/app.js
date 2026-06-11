@@ -258,59 +258,44 @@ async function loadLiveOverlay() {
   return null;
 }
 
-function renderShadowRegistryTableRows(rows) {
+async function renderShadowStrategyRegistry(status = "ALL") {
   const table = document.getElementById("shadowStrategyTable");
   if (!table) return;
-  shadowRegistryCache = rows;
+  await ensureFactoryResearchExtension();
+  let rows = (factoryResearchCatalog?.results || []).map((item) => {
+    const backtest = item.backtest || {};
+    const factory = backtest.factory_research || {};
+    return {
+      strategy_id: item.strategy_id || backtest.strategy_id,
+      name: backtest.name,
+      status: backtest.lifecycle_status || item.research_group,
+      allocation_eligible: backtest.allocation_eligible,
+      net_return: backtest.net_metrics?.cumulative_return,
+      sharpe: backtest.net_metrics?.sharpe,
+      max_drawdown: backtest.net_metrics?.max_drawdown,
+      turnover: backtest.turnover?.average_daily_turnover,
+      ic: factory.mean_ic,
+      decile_spread: factory.decile_spread,
+      status_reason: factory.decision_reason || backtest.action?.interpretation,
+      latest_data_date: backtest.latest_data_date,
+      research_group: item.research_group,
+    };
+  });
+  if (status === "RESEARCH_COMPOSITE_MEMBER") {
+    rows = rows.filter((row) => row.research_group === "CURRENT_US_EQUITY_RESEARCH");
+  } else if (status === "RESEARCH_COMPOSITE") {
+    rows = rows.filter((row) => row.research_group === "STRATEGY_21");
+  } else if (status === "ARCHIVE" || status === "BLOCKED") {
+    rows = rows.filter((row) => row.research_group === "ARCHIVED_US_EQUITY_RESEARCH");
+  } else if (status === "RESEARCH_CANDIDATE") {
+    rows = rows.filter((row) => row.research_group === "CURRENT_US_EQUITY_RESEARCH" || row.research_group === "ARCHIVED_US_EQUITY_RESEARCH");
+  }
   table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Allocation Eligible</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th></tr>` +
-    rows.map((row) => `<tr><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.name)}</td><td>${statusBadge(humanizeResearchRegistryStatus(row.status))}</td><td>${row.allocation_eligible ? "YES" : "NO"}</td><td>${pct(row.net_return || 0, 1)}</td><td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td><td>${pct(row.max_drawdown || 0, 1)}</td><td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td><td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td><td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td><td class="wrap-cell">${escapeHtml(row.status_reason)}</td><td>${escapeHtml(row.latest_data_date)}</td></tr>`).join("");
-}
-
-async function renderShadowStrategyRegistry(status = "CURRENT_RESEARCH") {
-  const table = document.getElementById("shadowStrategyTable");
-  if (!table) return;
-  document.getElementById("legacyStrategyMonitorPanel")?.classList.add("hidden-panel");
-  document.getElementById("shadowStrategyPanel")?.classList.remove("hidden-panel");
-  if (status === "LEGACY_PROXY") {
-    const rows = (activeArtifact?.strategies || []).map((strategy) => ({
-      strategy_id: strategy.strategy_id,
-      name: strategy.name,
-      status: (strategy.current_weight || 0) > 0 ? "LEGACY_PROXY" : "RESEARCH_CANDIDATE",
-      allocation_eligible: (strategy.current_weight || 0) > 0,
-      net_return: strategy.mtd_return ?? strategy.daily_return ?? 0,
-      sharpe: strategy.sharpe,
-      max_drawdown: strategy.current_drawdown ?? strategy.max_drawdown ?? 0,
-      turnover: strategy.turnover?.annualized_turnover ?? null,
-      ic: null,
-      decile_spread: null,
-      status_reason: strategy.final_action_after_double_check || strategy.recommended_action || "Legacy ETF proxy benchmark",
-      latest_data_date: activeArtifact?.as_of_date || "—",
-    }));
-    renderShadowRegistryTableRows(rows);
-    return;
-  }
-  try {
-    const apiStatus = status === "CURRENT_RESEARCH" ? "ALL" : status;
-    const response = await fetch(`/api/strategy-shadow?status=${encodeURIComponent(apiStatus)}`, { cache: "no-store" });
-    const payload = await response.json();
-    let rows = payload.strategies || [];
-    if (status === "CURRENT_RESEARCH") {
-      rows = rows.filter((row) => RESEARCH_STRATEGY_IDS.has(row.strategy_id));
-    } else if (status === "RESEARCH_COMPOSITE") {
-      rows = rows.filter((row) => row.status === "RESEARCH_COMPOSITE" || row.status === "RESEARCH_COMPOSITE_MEMBER");
-    }
-    renderShadowRegistryTableRows(rows);
-    if (activeArtifact) {
-      renderResearchCommandPanels(activeArtifact);
-      renderCommandKpiStrip(activeArtifact);
-    }
-  } catch (error) {
-    table.innerHTML = "<tr><td>Shadow registry unavailable.</td></tr>";
-  }
-}
-
-function registryRow(strategyId) {
-  return shadowRegistryCache.find((row) => row.strategy_id === strategyId) || null;
+    rows.map((row) => `<tr class="table-link-row" data-open-research-lab="${escapeHtml(row.strategy_id)}"><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.name)}</td><td>${statusBadge(row.status)}</td><td>${row.allocation_eligible ? "YES" : "NO"}</td><td>${pct(row.net_return || 0, 1)}</td><td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td><td>${pct(row.max_drawdown || 0, 1)}</td><td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td><td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td><td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td><td class="wrap-cell">${escapeHtml(row.status_reason || "")}</td><td>${escapeHtml(row.latest_data_date || "n/a")}</td></tr>`).join("") ||
+    "<tr><td colspan='12'>No strategies match this filter.</td></tr>";
+  table.querySelectorAll("[data-open-research-lab]").forEach((row) => {
+    row.addEventListener("click", () => openResearchLabForStrategy(row.dataset.openResearchLab));
+  });
 }
 
 function mergeLiveOverlay(artifact, overlay) {
@@ -371,34 +356,8 @@ function mergeIntradaySnapshot(artifact, snapshot) {
 }
 
 function renderLiveDataState(artifact) {
-  renderHeaderDataWarning(artifact);
-  renderCommandDataQualityExpanded(artifact);
   renderIntradayRefreshStrip(artifact);
   renderTruthDisclosure(artifact);
-}
-
-function renderHeaderDataWarning(artifact) {
-  const warningEl = document.getElementById("headerDataWarning");
-  const commandWarningEl = document.getElementById("commandDataWarning");
-  const shadowState = extractShadowPortfolioState(artifact);
-  const warning = formatShadowCoverageWarning(shadowState);
-  const html = warning ? escapeHtml(warning) : "";
-  if (warningEl) warningEl.textContent = warning || "";
-  if (commandWarningEl) commandWarningEl.textContent = warning || "";
-}
-
-function renderCommandDataQualityExpanded(artifact) {
-  const el = document.getElementById("commandDataQualityExpanded");
-  if (!el) return;
-  const shadowState = extractShadowPortfolioState(artifact);
-  const status = shadowState.status || {};
-  const rows = shadowState.rows || [];
-  el.innerHTML = rows.map((row) => `
-    <p><strong>${escapeHtml(row.strategy_id)}</strong> · ${escapeHtml(row.status || "UNKNOWN")} · available=${row.available ? "yes" : "no"} · uncovered gross ${pct(row.uncovered_gross_weight || 0, 2)} · missing ${escapeHtml((row.missing_tickers || []).join(", ") || "none")}</p>
-  `).join("") || "<p>No shadow estimate rows loaded.</p>";
-  el.innerHTML += `<p><strong>Requested tickers:</strong> ${status.ticker_count_requested ?? "n/a"} · <strong>Successful:</strong> ${status.ticker_count_successful ?? "n/a"} · <strong>Failed:</strong> ${status.failed_ticker_count ?? (status.missing_tickers || []).length ?? "n/a"}</p>`;
-  el.innerHTML += `<p><strong>Missing tickers:</strong> ${escapeHtml((status.missing_tickers || []).join(", ") || "none")}</p>`;
-  el.innerHTML += `<p><strong>Scheduler:</strong> ${escapeHtml(status.scheduler_display || status.scheduler_label || "n/a")} · <strong>Snapshot:</strong> ${escapeHtml(artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact")}</p>`;
 }
 
 function renderIntradayRefreshStrip(artifact) {
@@ -504,12 +463,10 @@ async function refreshLiveDataFromServer(artifact) {
 function applyIntradayUiRefresh(artifact) {
   renderTopHeader(artifact);
   renderLiveDataState(artifact);
-  renderResearchCommandPanels(artifact);
   renderNewsRiskSummary(artifact.news_risk);
   renderRecommendationPanels(artifact.recommendations);
   renderKpis(artifact);
   renderStaticTables(artifact);
-  renderWorkstationPanels(artifact);
   redrawAllCharts(artifact);
 }
 
@@ -598,8 +555,7 @@ function installLiveControls(artifact) {
   button.addEventListener("click", () => refreshLiveDataFromServer(artifact));
 }
 
-let riskActionFilter = "data";
-let shadowRegistryCache = [];
+let riskActionFilter = "current_model";
 let reportFrozenAt = null;
 let intradayMonitoringOffline = false;
 let activeArtifact = null;
@@ -672,6 +628,16 @@ let localDecisionEvents = [];
 let monitorSort = { key: "daily_pnl", direction: "desc" };
 let simulationApiAvailable = null;
 let selectedLiteratureItem = null;
+let factoryResearchCatalog = null;
+let mergedResearchResults = [];
+let factoryResearchPromise = null;
+const DEFAULT_RESEARCH_STRATEGY_ID = "C2A2_020";
+const RESEARCH_GROUP_LABELS = {
+  CURRENT_US_EQUITY_RESEARCH: "Current US-Equity Research",
+  ARCHIVED_US_EQUITY_RESEARCH: "Archived / Rejected US-Equity Research",
+  STRATEGY_21: "Strategy 21",
+  LEGACY_PROXY: "Research Reference / Legacy Proxy",
+};
 let correlationUniverse = "allocated";
 
 const strategyCandidateShelf = [
@@ -710,6 +676,60 @@ async function loadArtifact() {
 }
 
 let researchExtensionPromise = null;
+
+async function fetchFactoryResearchExtension() {
+  const candidates = ["/api/artifact/factory-research"];
+  for (const path of candidates) {
+    try {
+      const response = await fetch(path, { cache: "no-store" });
+      if (!response.ok) continue;
+      return await response.json();
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+async function ensureFactoryResearchExtension() {
+  if (factoryResearchCatalog?.results?.length) return factoryResearchCatalog;
+  if (!factoryResearchPromise) factoryResearchPromise = fetchFactoryResearchExtension();
+  const extension = await factoryResearchPromise;
+  if (extension?.factory_strategy_research) {
+    factoryResearchCatalog = extension.factory_strategy_research;
+  }
+  return factoryResearchCatalog;
+}
+
+function buildMergedResearchResults(artifact = activeArtifact) {
+  const factoryResults = (factoryResearchCatalog?.results || []).map((item, index) => ({
+    ...item,
+    _index: index,
+    research_group: item.research_group || item.backtest?.research_group,
+    strategy_id: item.strategy_id || item.backtest?.strategy_id,
+  }));
+  const literature = artifact?.literature_strategy_backtests?.results || [];
+  const literatureStart = factoryResults.length;
+  const legacyResults = literature.map((item, offset) => ({
+    ...item,
+    _index: literatureStart + offset,
+    research_group: "LEGACY_PROXY",
+    strategy_id: item.backtest?.strategy_id || item.backtest?.name,
+  }));
+  return [...factoryResults, ...legacyResults];
+}
+
+function findResearchLabItem(strategyId) {
+  return mergedResearchResults.find((item) => item.strategy_id === strategyId || item.backtest?.strategy_id === strategyId) || null;
+}
+
+function openResearchLabForStrategy(strategyId) {
+  const item = findResearchLabItem(strategyId);
+  if (!item) return false;
+  renderResearchLabPanels(item);
+  setActiveTab("Backtesting & Research Lab");
+  return true;
+}
 
 async function fetchResearchExtension() {
   const candidates = ["/api/artifact/research", "/output/literature_strategy_backtests.json"];
@@ -773,10 +793,11 @@ async function ensureStrategyDetail(strategy, artifact = activeArtifact) {
 
 function refreshResearchLabViews(artifact = activeArtifact) {
   if (!artifact) return;
-  renderLiteratureStrategies(artifact.literature_strategy_backtests || {});
+  mergedResearchResults = buildMergedResearchResults(artifact);
+  renderLiteratureStrategies(artifact.literature_strategy_backtests || {}, mergedResearchResults);
   populateResearchLabSelector(artifact);
-  const litResults = artifact.literature_strategy_backtests?.results || [];
-  if (litResults.length) renderResearchLabPanels({ ...litResults[0], _index: 0 });
+  const defaultItem = findResearchLabItem(DEFAULT_RESEARCH_STRATEGY_ID) || mergedResearchResults[0];
+  if (defaultItem) renderResearchLabPanels(defaultItem);
 }
 
 function scheduleSecondaryRender(artifact) {
@@ -797,15 +818,10 @@ function scheduleSecondaryRender(artifact) {
 }
 
 function scheduleResearchExtensionLoad(artifact) {
-  void ensureResearchExtension(artifact).then((updated) => {
+  void Promise.all([ensureResearchExtension(artifact), ensureFactoryResearchExtension()]).then(([updated]) => {
     if (!updated) return;
     activeArtifact = updated;
     refreshResearchLabViews(updated);
-    const selected = updated.strategies?.[0];
-    if (selected?.walk_forward?.windows?.length) {
-      document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
-        selected.walk_forward.windows.slice(-12).map((window) => `<tr><td>${window.train_start} → ${window.train_end}</td><td>${window.test_start} → ${window.test_end}</td><td>${num(window.train_sharpe)}</td><td>${num(window.test_sharpe)}</td><td class="${cls(window.test_return || 0)}">${pct(window.test_return || 0, 2)}</td><td class="negative">${pct(window.test_max_drawdown || 0, 2)}</td></tr>`).join("");
-    }
   });
 }
 
@@ -820,7 +836,7 @@ function setActiveTab(tab) {
     renderDailyReport(activeArtifact);
   }
   if (tab === "Backtesting & Research Lab" && activeArtifact) {
-    void ensureResearchExtension(activeArtifact).then((updated) => {
+    void Promise.all([ensureResearchExtension(activeArtifact), ensureFactoryResearchExtension()]).then(([updated]) => {
       activeArtifact = updated;
       refreshResearchLabViews(updated);
     });
@@ -849,28 +865,28 @@ function renderTopHeader(artifact = activeArtifact) {
   const el = document.getElementById("topbarMeta");
   if (!el || !artifact) return;
   const monitoring = formatMonitoringState(artifact);
-  const status = artifact.intraday_refresh_status || {};
-  const latestBar = status.latest_completed_market_bar_at || status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
-  const nextRefresh = status.next_scheduled_refresh_at;
-  const freshness = status.data_freshness || status.canonical_data_state || monitoring.stripDataState;
-  const schedulerDisplay = status.scheduler_display || status.scheduler_label || monitoring.schedulerLabel || "idle";
-  const requested = status.ticker_count_requested;
-  const successful = status.ticker_count_successful;
   el.innerHTML = `
+    <span class="mode-badge">Prototype Model Portfolio</span>
+    <span>As-of <strong>${artifact.as_of_date || "n/a"}</strong></span>
+    <span>Initial Model Capital <strong>${money(artifact.initial_capital || 0)}</strong></span>
+    <span>Monitored <strong>${artifact.strategy_count || 0}</strong></span>
     <span>Market <strong>${monitoring.headerMarket}</strong></span>
-    <span>Freshness <strong class="${monitoring.tone || ""}">${escapeHtml(String(freshness))}</strong></span>
-    <span>Latest bar <strong>${formatTimestamp(latestBar)}</strong></span>
-    <span>Next refresh <strong>${formatTimestamp(nextRefresh)}</strong></span>
-    <span>Coverage <strong>${successful ?? "n/a"}/${requested ?? "n/a"}</strong></span>
-    <span>Scheduler <strong>${escapeHtml(String(schedulerDisplay))}</strong></span>`;
-  renderHeaderDataWarning(artifact);
+    <span>Data <strong class="${monitoring.tone || ""}">${monitoring.headerData}</strong></span>`;
   renderSecondaryStatusStrip(artifact);
 }
 
 function renderSecondaryStatusStrip(artifact, meta = artifact?.build_metadata || {}, marketAsOf = meta.market_as_of || artifact?.as_of_date) {
   const el = document.getElementById("secondaryStatusStrip");
   if (!el) return;
-  el.innerHTML = "";
+  const monitoring = formatMonitoringState(artifact);
+  const disclosure = artifact?.data_classification?.disclosure || "Prototype · ETF proxy · Not live fills";
+  el.innerHTML = `
+    <span title="${escapeHtml(disclosure)}">Build ${meta.build_id || "n/a"}</span>
+    <span>Retrieved ${meta.data_retrieved_at || meta.artifact_generated_at || "n/a"}</span>
+    <span>Operating since ${investmentStart(artifact)}</span>
+    <span>${monitoring.stripMonitoring} · ${monitoring.stripDataState}</span>
+    <span>Proxy as-of ${marketAsOf}</span>
+    <span>${disclosure.length > 90 ? `${disclosure.slice(0, 87)}…` : disclosure}</span>`;
 }
 
 function renderGlobalStatusBar() {
@@ -1073,16 +1089,17 @@ function renderCommandMarketMini(artifact) {
 function renderMonitorKpiStrip(artifact) {
   const el = document.getElementById("monitorKpiStrip");
   if (!el) return;
-  const shadowState = extractShadowPortfolioState(artifact);
-  const incomplete = shadowState.rows.filter((row) => row.available === false).length;
-  const legacyStrategies = (artifact.strategies || []).filter((strategy) => strategy.current_weight > 0);
-  const legacyBreaches = legacyStrategies.filter((strategy) => (strategy.live_risk_status || strategy.risk_status) === "breach").length;
+  const strategies = artifact.strategies || [];
+  const allocated = strategies.filter((strategy) => strategy.current_weight > 0);
+  const warnings = allocated.filter((strategy) => ["watch", "warning"].includes(strategy.live_risk_status || strategy.risk_status)).length;
+  const breaches = allocated.filter((strategy) => (strategy.live_risk_status || strategy.risk_status) === "breach").length;
+  const openReviews = countOpenDecisionReviews(artifact, localDecisionEvents);
   el.innerHTML = compactKpiStrip([
-    ["Current Research", String(RESEARCH_STRATEGY_IDS.size), "SHADOW registry", ""],
-    ["Shadow Incomplete", String(incomplete), incomplete ? "DATA INCOMPLETE" : "All members complete", incomplete ? "warning-text" : "positive"],
-    ["Legacy Proxy Strategies", String(legacyStrategies.length), "ETF benchmark model", ""],
-    ["Legacy Proxy Breaches", String(legacyBreaches), "Legacy model only", legacyBreaches ? "negative" : ""],
-    ["Open Decision Reviews", String(countOpenDecisionReviews(artifact, localDecisionEvents)), "Local review queue", ""],
+    ["Monitored", strategies.length, "", ""],
+    ["Allocated", allocated.length, "", ""],
+    ["Warnings", warnings, "", warnings ? "warning-text" : ""],
+    ["Allocated Strategy Breaches", breaches, "", breaches ? "negative" : ""],
+    ["Open Decision Reviews", String(openReviews), `Policy: ${strategies.length} strategies`, openReviews ? "warning-text" : ""],
   ]);
 }
 
@@ -1307,7 +1324,6 @@ function renderRebalanceTradeList(artifact) {
 }
 
 function renderWorkstationPanels(artifact) {
-  renderResearchCommandPanels(artifact);
   renderAllocationBars(artifact.strategies || []);
   renderContributorsDetractorsTables(artifact);
   renderOperatingLedgerOrCharts(artifact);
@@ -1315,7 +1331,6 @@ function renderWorkstationPanels(artifact) {
   renderRebalancePreview(artifact);
   renderCommandMarketMini(artifact);
   renderCommandWatchlistPanels(artifact);
-  renderHistoricalResearchContext(artifact);
   renderMonitorKpiStrip(artifact);
   renderFactorKpiGrid(artifact);
   renderAllocationBeforeAfterStrip(artifact);
@@ -1579,12 +1594,125 @@ function researchDecisionLabel(backtest, walk = {}) {
 function populateResearchLabSelector(artifact) {
   const select = document.getElementById("researchLabSelector");
   if (!select) return;
-  const results = artifact?.literature_strategy_backtests?.results || [];
-  select.innerHTML = results.map((row, index) => `<option value="${index}">${escapeHtml(row.backtest?.name || `Strategy ${index + 1}`)}</option>`).join("");
+  const results = mergedResearchResults.length ? mergedResearchResults : buildMergedResearchResults(artifact);
+  const groupOrder = ["CURRENT_US_EQUITY_RESEARCH", "ARCHIVED_US_EQUITY_RESEARCH", "STRATEGY_21", "LEGACY_PROXY"];
+  const presentGroups = groupOrder.filter((group) => results.some((row) => (row.research_group || "LEGACY_PROXY") === group));
+  select.innerHTML = presentGroups.map((group) => {
+    const options = results
+      .filter((row) => (row.research_group || "LEGACY_PROXY") === group)
+      .map((row) => `<option value="${row._index}">${escapeHtml(row.backtest?.name || row.strategy_id)}</option>`)
+      .join("");
+    return `<optgroup label="${escapeHtml(RESEARCH_GROUP_LABELS[group] || group)}">${options}</optgroup>`;
+  }).join("");
   select.onchange = () => {
     const item = results[Number(select.value)];
-    if (item) renderResearchLabPanels({ ...item, _index: Number(select.value) });
+    if (item) renderResearchLabPanels(item);
   };
+}
+
+function renderUnavailablePanel(elementId, message = "NOT AVAILABLE IN CURRENT BASELINE") {
+  const el = document.getElementById(elementId);
+  if (el) el.innerHTML = `<p class="status-muted">${escapeHtml(message)}</p>`;
+}
+
+function renderFactoryResearchPanels(backtest, walk, item) {
+  const factory = backtest.factory_research || {};
+  const header = document.getElementById("researchStrategyHeader");
+  if (header) {
+    header.innerHTML = `
+      <p><strong>${escapeHtml(backtest.strategy_id)}</strong> · ${escapeHtml(backtest.name)}</p>
+      <p>Family <strong>${escapeHtml(backtest.strategy_family || "n/a")}</strong> · Asset class <strong>${escapeHtml(backtest.asset_class || "US individual equities")}</strong></p>
+      <p>Lifecycle <strong>${escapeHtml(backtest.lifecycle_status || "n/a")}</strong> · Allocation eligible <strong>${backtest.allocation_eligible ? "YES" : "NO"}</strong></p>
+      <p>Test period <strong>${escapeHtml(backtest.test_period_start || "n/a")} → ${escapeHtml(backtest.test_period_end || "n/a")}</strong> · Latest data <strong>${escapeHtml(backtest.latest_data_date || "n/a")}</strong></p>
+      <p>Gross cumulative <strong>${pct(backtest.gross_metrics?.cumulative_return || 0, 1)}</strong> · Net cumulative <strong>${pct(backtest.net_metrics?.cumulative_return || 0, 1)}</strong></p>
+      <p>Mean IC <strong>${factory.mean_ic == null ? "N/A" : num(factory.mean_ic, 4)}</strong> · D1 / D10 spread proxy <strong>${factory.decile_spread == null ? "N/A" : num(factory.decile_spread, 5)}</strong></p>`;
+  }
+  const icPanel = document.getElementById("researchIcPanel");
+  const ic = factory.ic_packet || {};
+  if (icPanel) {
+    if (!ic.available) {
+      icPanel.innerHTML = `<p class="status-muted">NOT AVAILABLE IN CURRENT BASELINE</p>`;
+    } else {
+      const decileRows = Object.entries(ic.deciles || {})
+        .map(([key, value]) => `<tr><td>${escapeHtml(key.replace("decile_", "D"))}</td><td>${pct(value || 0, 3)}</td></tr>`)
+        .join("");
+      icPanel.innerHTML = `
+        <p>Mean IC <strong>${num(ic.mean_ic, 4)}</strong> · D1 <strong>${pct(ic.d1 || 0, 3)}</strong> · D10 <strong>${pct(ic.d10 || 0, 3)}</strong> · Spread <strong>${num(ic.decile_spread, 5)}</strong></p>
+        <p>IC time series: <strong>${ic.ic_time_series_available ? "available" : "NOT AVAILABLE IN CURRENT BASELINE"}</strong></p>
+        <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense"><tr><th>Decile</th><th>Mean Forward Return</th></tr>${decileRows || "<tr><td colspan='2'>NOT AVAILABLE IN CURRENT BASELINE</td></tr>"}</table></div></div>`;
+    }
+  }
+  const turnoverPanel = document.getElementById("researchTurnoverPanel");
+  if (turnoverPanel) {
+    turnoverPanel.innerHTML = `
+      <p>Average daily turnover <strong>${backtest.turnover?.average_daily_turnover == null ? "N/A" : num(backtest.turnover.average_daily_turnover, 3)}</strong></p>
+      <p>Annualized turnover <strong>${backtest.turnover?.annualized_turnover == null ? "N/A" : `${num(backtest.turnover.annualized_turnover, 1)}x`}</strong></p>
+      <p>Total transaction-cost drag <strong>${backtest.turnover?.total_cost_drag == null ? "N/A" : pct(backtest.turnover.total_cost_drag, 2)}</strong></p>
+      <p>Gross vs net cumulative gap <strong>${pct((backtest.gross_metrics?.cumulative_return || 0) - (backtest.net_metrics?.cumulative_return || 0), 2)}</strong></p>`;
+  }
+  const attributionPanel = document.getElementById("researchAttributionPanel");
+  const attribution = factory.attribution || {};
+  if (attributionPanel) {
+    if (!attribution.available) {
+      attributionPanel.innerHTML = `<p class="status-muted">${escapeHtml(attribution.message || "NOT AVAILABLE IN CURRENT BASELINE")}</p>`;
+    } else {
+      attributionPanel.innerHTML = `
+        <p>Long contribution <strong>${pct(attribution.long_contribution_total || 0, 2)}</strong> · Short contribution <strong>${pct(attribution.short_contribution_total || 0, 2)}</strong></p>
+        <p>Long share of gross <strong>${attribution.long_share == null ? "N/A" : pct(attribution.long_share, 1)}</strong> · Short share <strong>${attribution.short_share == null ? "N/A" : pct(attribution.short_share, 1)}</strong></p>`;
+    }
+  }
+  const logicPanel = document.getElementById("researchLogicPanel");
+  const logic = factory.logic || {};
+  if (logicPanel) {
+    logicPanel.innerHTML = Object.entries({
+      "Economic hypothesis": logic.economic_hypothesis,
+      "Expected return driver": logic.expected_return_driver,
+      "Signal inputs": logic.signal_inputs,
+      "Score direction": logic.score_direction,
+      "Long leg": logic.long_leg,
+      "Short leg": logic.short_leg,
+      "Rebalance frequency": logic.rebalance_frequency,
+      "Execution timing": logic.execution_timing,
+      "Transaction-cost assumption": logic.transaction_cost_assumption,
+      "Likely failure regime": logic.likely_failure_regime,
+    }).map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value || "NOT AVAILABLE IN CURRENT BASELINE")}</p>`).join("");
+  }
+  const factorPanel = document.getElementById("researchFactorPanel");
+  const factors = factory.factor_interpretation || [];
+  if (factorPanel) {
+    factorPanel.innerHTML = factors.length
+      ? factors.map((row) => `<p><span class="badge warning">${escapeHtml(row.kind)}</span> <strong>${escapeHtml(row.label)}:</strong> ${escapeHtml(row.detail)}</p>`).join("")
+      : `<p class="status-muted">NOT YET MEASURED in current baseline artifacts; see candidate-pool economic interpretation only.</p>`;
+  }
+  const limitationsPanel = document.getElementById("researchLimitationsPanel");
+  if (limitationsPanel) {
+    const limitations = factory.limitations || [];
+    limitationsPanel.innerHTML = `<ul>${limitations.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`;
+  }
+  if (backtest.strategy_id === "STRATEGY_21_RESEARCH_COMPOSITE_V1" && factory.strategy_21) {
+    const s21 = factory.strategy_21;
+    if (header) {
+      header.innerHTML += `
+        <p>Members <strong>${s21.members.map((member) => `${member.strategy_id} (${pct(member.weight || 0, 0)})`).join(" · ")}</strong></p>
+        <p>Composite cumulative <strong>${pct(backtest.net_metrics?.cumulative_return || 0, 2)}</strong> · Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong> · Vol <strong>${pct(backtest.net_metrics?.annual_volatility || 0, 2)}</strong> · Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 2)}</strong></p>`;
+    }
+    if (factorPanel) {
+      const pairwise = (s21.pairwise_analysis || []).map((row) =>
+        `<tr><td>${escapeHtml(row.strategy_left)} / ${escapeHtml(row.strategy_right)}</td><td>${num(row.daily_net_return_correlation, 3)}</td><td>${num(row.rolling_60d_correlation_latest, 3)}</td><td>${num(row.drawdown_overlap, 3)}</td><td>${escapeHtml(row.distinctness_decision || "")}</td></tr>`,
+      ).join("");
+      factorPanel.innerHTML += `
+        <div class="panel-title sub">Strategy 21 Pairwise Correlation</div>
+        <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense">
+          <tr><th>Pair</th><th>Daily Corr</th><th>Latest 60D Corr</th><th>DD Overlap</th><th>Decision</th></tr>
+          ${pairwise || "<tr><td colspan='5'>NOT AVAILABLE IN CURRENT BASELINE</td></tr>"}
+        </table></div></div>
+        <p>Excluded member: <strong>C2A2_002</strong> — ${escapeHtml((s21.excluded_members || [])[0]?.reason || "economic duplicate")}</p>
+        <p>Concentration alert: <strong>${(s21.alerts?.component_over_50pct_total_pnl || []).join(", ") || "none"}</strong></p>`;
+    }
+  }
+  if (walk?.status && String(walk.status).includes("NOT AVAILABLE")) {
+    document.getElementById("walkForwardTable").innerHTML = `<tr><td colspan="6">${escapeHtml(walk.status)}</td></tr>`;
+  }
 }
 
 function renderResearchLabPanels(item) {
@@ -1599,19 +1727,24 @@ function renderResearchLabPanels(item) {
   const packetSeries = backtest.risk_packet?.chart_series || {};
   const caption = document.getElementById("researchLabCaption");
   if (caption) {
-    caption.textContent = `${backtest.name} | ${backtest.literature_source || "literature prototype"} | ${dates[0] || "n/a"} to ${dates.at(-1) || "n/a"}`;
+    const sourceLabel = backtest.research_source === "strategy_factory_v1"
+      ? "US equity Strategy Factory baseline"
+      : (backtest.literature_source || "literature prototype");
+    caption.textContent = `${backtest.name} | ${sourceLabel} | ${dates[0] || "n/a"} to ${dates.at(-1) || "n/a"}`;
   }
   const summary = document.getElementById("researchLabSummaryStrip");
   if (summary) {
     summary.innerHTML = `
+      <span>Gross cum. <strong>${pct(backtest.gross_metrics?.cumulative_return || 0, 1)}</strong></span>
+      <span>Net cum. <strong>${pct(backtest.net_metrics?.cumulative_return || 0, 1)}</strong></span>
       <span>Net ann. return <strong>${pct(backtest.net_metrics?.annual_return || 0, 1)}</strong></span>
       <span>Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong></span>
       <span>Vol <strong>${pct(backtest.net_metrics?.annual_volatility || 0, 1)}</strong></span>
       <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>
-      <span>Turnover <strong>${num(backtest.turnover?.annualized_turnover, 1)}x</strong></span>
+      <span>Turnover <strong>${backtest.turnover?.annualized_turnover == null ? "N/A" : `${num(backtest.turnover.annualized_turnover, 1)}x`}</strong></span>
       <span>Cost drag <strong>${pct(backtest.turnover?.annualized_cost_drag || 0, 2)}</strong></span>
-      <span>OOS avg Sharpe <strong>${num(walk.average_test_sharpe)}</strong></span>
-      <span>Positive OOS windows <strong>${formatOosWindows(walk)}</strong></span>`;
+      <span>OOS avg Sharpe <strong>${walk.average_test_sharpe == null ? "N/A" : num(walk.average_test_sharpe)}</strong></span>
+      <span>Positive OOS windows <strong>${(walk.windows || []).length ? formatOosWindows(walk) : "N/A"}</strong></span>`;
   }
   drawGrossNetEquityChart(document.getElementById("backtestCanvas"), dates, gross, net);
   drawDrawdownChart(document.getElementById("researchDrawdownCanvas"), packetSeries.drawdown || []);
@@ -1624,18 +1757,49 @@ function renderResearchLabPanels(item) {
   }
   document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
     (walk.windows || []).slice(-12).map((window) => `<tr><td>${window.train_start} → ${window.train_end}</td><td>${window.test_start} → ${window.test_end}</td><td>${num(window.train_sharpe)}</td><td>${num(window.test_sharpe)}</td><td class="${cls(window.test_return || 0)}">${pct(window.test_return || 0, 2)}</td><td class="negative">${pct(window.test_max_drawdown || 0, 2)}</td></tr>`).join("") ||
-    "<tr><td colspan='6'>Walk-forward windows unavailable.</td></tr>";
+    `<tr><td colspan='6'>${escapeHtml(walk.status || "Walk-forward windows unavailable.")}</td></tr>`;
   document.querySelectorAll("[data-literature-strategy]").forEach((row) => {
     row.classList.toggle("selected", Number(row.dataset.literatureStrategy) === (item._index ?? -1));
+  });
+  document.querySelectorAll("[data-open-research-lab]").forEach((row) => {
+    row.classList.toggle("selected", row.dataset.openResearchLab === (item.strategy_id || item.backtest?.strategy_id));
   });
   const selector = document.getElementById("researchLabSelector");
   if (selector && item._index != null) selector.value = String(item._index);
   const packet = backtest.risk_packet || {};
+  if (backtest.research_source === "strategy_factory_v1") {
+    renderFactoryResearchPanels(backtest, walk, item);
+  } else {
+    renderUnavailablePanel("researchStrategyHeader");
+    renderUnavailablePanel("researchIcPanel");
+    renderUnavailablePanel("researchTurnoverPanel");
+    renderUnavailablePanel("researchAttributionPanel");
+    renderUnavailablePanel("researchLogicPanel");
+    renderUnavailablePanel("researchFactorPanel");
+    renderUnavailablePanel("researchLimitationsPanel");
+  }
   if (packet.summary_statistics || (walk.windows || []).length) {
     renderLiteratureChecklist(backtest, packet, walk);
+  } else if (backtest.research_source === "strategy_factory_v1") {
+    renderResearchChecklistHtml([
+      {
+        title: "Research Quality Checks",
+        status: "Partial",
+        items: [
+          `Lifecycle status: ${backtest.lifecycle_status || "n/a"}.`,
+          `Decision: ${backtest.action?.interpretation || factoryDecisionText(backtest)}.`,
+          "Walk-forward validation is not included in the current Strategy Factory baseline artifacts.",
+        ],
+        prompt: "Treat this as screening evidence only until walk-forward and live shadow coverage are complete.",
+      },
+    ]);
   } else {
     renderResearchChecklistUnavailable("No-look-ahead checklist unavailable for this literature prototype. Risk packet or walk-forward evidence is missing.");
   }
+}
+
+function factoryDecisionText(backtest) {
+  return backtest.factory_research?.decision_reason || backtest.action?.interpretation || "See research decision panel.";
 }
 
 function renderResearchChecklistUnavailable(message) {
@@ -2243,50 +2407,46 @@ function renderCandidateStrategies() {
     }).join("");
 }
 
-function renderLiteratureStrategies(snapshot) {
-  const results = snapshot.results || [];
-  if (!results.length) {
-    document.getElementById("literatureStrategyTable").innerHTML = "<tr><td>No literature strategy backtest yet. Run refresh_platform.py.</td></tr>";
-    renderResearchChecklistUnavailable("No literature strategy backtests loaded. No-look-ahead checklist unavailable until refresh_platform.py generates research evidence.");
+function renderLiteratureStrategies(snapshot, results = mergedResearchResults) {
+  const rows = results.length ? results : (snapshot.results || []);
+  if (!rows.length) {
+    document.getElementById("literatureStrategyTable").innerHTML = "<tr><td>No research strategies loaded yet.</td></tr>";
+    renderResearchChecklistUnavailable("No research strategies loaded. Select a strategy after factory research artifacts are available.");
     return;
   }
-  document.getElementById("literatureStrategyTable").innerHTML = "<tr><th>Prototype</th><th>Source</th><th>Net Sharpe</th><th>Ann. Return</th><th>Max DD</th><th>Cost Drag</th><th>WFO</th><th>Avg Test Sharpe</th><th>Positive Windows</th><th>Action</th><th>Reason</th></tr>" +
-    results.map((item, idx) => {
+  document.getElementById("literatureStrategyTable").innerHTML = "<tr><th>Strategy</th><th>Group</th><th>Source</th><th>Net Sharpe</th><th>Ann. Return</th><th>Max DD</th><th>Cost Drag</th><th>WFO</th><th>Action</th><th>Reason</th></tr>" +
+    rows.map((item, idx) => {
       const backtest = item.backtest;
       const walk = item.walk_forward || {};
       const net = backtest.net_metrics || {};
       const turnover = backtest.turnover || {};
       const action = backtest.action || {};
-      const isPause = action.action === "Pause" || action.action === "Reduce";
-      const isReview = action.action === "Increase Review";
-      const badge = isPause ? "breach" : isReview ? "ok" : "warning";
-      return `<tr data-literature-strategy="${idx}">
-        <td>${backtest.name}</td>
-        <td>${backtest.literature_source}</td>
+      const badge = action.action === "Reject" || action.action === "Pause" ? "breach" : action.action === "Keep Researching" ? "ok" : "warning";
+      const groupLabel = RESEARCH_GROUP_LABELS[item.research_group] || item.research_group || "Research";
+      return `<tr class="table-link-row" data-literature-strategy="${item._index ?? idx}" data-open-research-lab="${escapeHtml(item.strategy_id || backtest.strategy_id)}">
+        <td>${escapeHtml(backtest.name)}</td>
+        <td>${escapeHtml(groupLabel)}</td>
+        <td>${escapeHtml(backtest.literature_source || backtest.research_source || "research")}</td>
         <td>${(net.sharpe || 0).toFixed(2)}</td>
         <td class="${cls(net.annual_return || 0)}">${pct(net.annual_return || 0, 2)}</td>
         <td class="negative">${pct(net.max_drawdown || 0, 2)}</td>
         <td>${pct(turnover.annualized_cost_drag || 0, 2)}</td>
         <td>${walk.status || "pending"}</td>
-        <td>${(walk.average_test_sharpe || 0).toFixed(2)}</td>
-        <td>${pct(walk.positive_window_rate || 0, 0)}</td>
         <td><span class="badge ${badge}">${action.action || "Review"}</span></td>
-        <td>${action.reason_code || "pending"}</td>
+        <td>${escapeHtml(backtest.factory_research?.decision_reason || action.reason_code || "pending")}</td>
       </tr>`;
     }).join("");
+  const activateRow = (item) => {
+    if (!item) return;
+    renderResearchLabPanels(item);
+    setActiveTab("Backtesting & Research Lab");
+  };
   document.querySelectorAll("[data-literature-strategy]").forEach((row) => {
-    row.addEventListener("click", () => {
-      const item = results[Number(row.dataset.literatureStrategy)];
-      item._index = Number(row.dataset.literatureStrategy);
-      renderResearchLabPanels(item);
-      setActiveTab("Backtesting & Research Lab");
-      openLiteratureStrategyReview(item, activeArtifact || fallbackArtifact);
-    });
+    row.addEventListener("click", () => activateRow(rows[Number(row.dataset.literatureStrategy)]));
   });
-  if (results.length) {
-    const first = { ...results[0], _index: 0 };
-    renderResearchLabPanels(first);
-  }
+  document.querySelectorAll("[data-open-research-lab]").forEach((row) => {
+    row.addEventListener("click", () => activateRow(findResearchLabItem(row.dataset.openResearchLab)));
+  });
 }
 
 function renderReplicationClone(snapshot) {
@@ -2356,97 +2516,32 @@ function renderKpis(artifact) {
 function renderCommandKpiStrip(artifact) {
   const el = document.getElementById("commandKpiStrip");
   if (!el) return;
-  const shadowState = extractShadowPortfolioState(artifact);
-  const composite = shadowState.composite;
-  const status = shadowState.status || {};
+  const series = portfolioSeriesForDisplay(artifact);
+  const cumulative = series.cumulative_return || [];
+  const dailyPnlMetric = operatingPnlMetric(artifact, "daily_return");
+  const cumPnlMetric = operatingPnlMetric(artifact, "cumulative_return");
+  const latestCum = metricNumeric(cumPnlMetric) ?? cumulative.at(-1) ?? 0;
+  const latestReturn = metricNumeric(dailyPnlMetric) ?? series.returns?.at(-1) ?? 0;
   const marks = artifact.intraday_marks || {};
-  const compositeRegistry = registryRow(RESEARCH_COMPOSITE_ID);
-  const memberRegistry = shadowState.members.map((row) => registryRow(row.strategy_id)).filter(Boolean);
-  const avgVol = memberRegistry.length
-    ? memberRegistry.reduce((sum, row) => sum + Math.abs(row.max_drawdown || 0), 0) / memberRegistry.length
-    : null;
+  const estimatedNav = marks.estimated_model_nav;
+  const estimatedIntradayPnl = marks.estimated_intraday_pnl;
+  const aumNow = estimatedNav ?? artifact.initial_capital * (1 + latestCum);
+  const headline = canonicalRiskHeadline(artifact);
   const issueCounts = countIssueCategories(artifact);
-  const alertCount = countShadowDataAlerts(shadowState) + (issueCounts.data_quality || 0);
-  const latestBar = status.latest_completed_market_bar_at || status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
-  const intradayPnl = composite?.estimated_pnl;
-  const researchNav = marks.estimated_model_nav;
-  const s21Status = composite?.available ? "RESEARCH COMPOSITE" : "DATA INCOMPLETE";
-  const pnlUnavailable = formatUnavailableLabel(composite?.missing_tickers?.length ? `Missing: ${composite.missing_tickers.join(", ")}` : "Strategy 21 withheld until both members complete");
-  const navUnavailable = formatUnavailableLabel("Intraday NAV withheld when composite incomplete");
+  const breached = issueCounts.breached_controls;
+  const dq = artifact.data_quality || {};
+  const intradayDq = dq.intraday || marks.data_quality || {};
   el.innerHTML = compactKpiStrip([
-    ["Strategy 21 Status", s21Status, composite?.available ? "Both members complete" : "SHADOW estimate withheld", composite?.available ? "positive" : "warning-text"],
-    ["Intraday Shadow PnL", intradayPnl == null ? pnlUnavailable.text : money(intradayPnl), intradayPnl == null ? pnlUnavailable.detail : "SHADOW · session open to latest 5m close", intradayPnl == null ? pnlUnavailable.tone : cls(intradayPnl)],
-    ["Data Coverage", `${status.ticker_count_successful ?? "n/a"}/${status.ticker_count_requested ?? "n/a"}`, `${status.failed_ticker_count ?? (status.missing_tickers || []).length ?? 0} failed`, (status.ticker_count_successful || 0) < (status.ticker_count_requested || 0) ? "warning-text" : ""],
-    ["Latest Completed Bar", formatTimestamp(latestBar), "5m yfinance proxy", ""],
-    ["Research-Composite NAV", researchNav == null ? navUnavailable.text : money(researchNav), researchNav == null ? navUnavailable.detail : "Intraday shadow mark", researchNav == null ? navUnavailable.tone : ""],
-    ["Drawdown", compositeRegistry ? pct(compositeRegistry.max_drawdown || 0, 1) : "N/A", "Research backtest max", "negative"],
-    ["Volatility", avgVol == null ? "N/A" : pct(avgVol, 1), "Member research context", ""],
-    ["Active Data/Risk Alerts", String(alertCount), "Shadow + data quality scope", alertCount ? "warning-text" : ""],
+    [estimatedNav ? "Est. Model NAV (proxy)" : "Current Model NAV", money(aumNow), estimatedNav ? "Intraday proxy mark · not realized" : `Operating since ${investmentStart(artifact)}`, cls(latestCum)],
+    [estimatedIntradayPnl != null ? "Est. Intraday PnL" : "Daily PnL", money(estimatedIntradayPnl ?? latestReturn * artifact.initial_capital), estimatedIntradayPnl != null ? "Estimated from proxy bars" : formatOperatingMetric(dailyPnlMetric), cls(estimatedIntradayPnl ?? latestReturn)],
+    ["Operating Cum. PnL", money(latestCum * artifact.initial_capital), formatOperatingMetric(cumPnlMetric), cls(latestCum)],
+    ["Current Drawdown", formatOperatingMetric(operatingMetric(artifact, "portfolio_max_drawdown"), { asPct: true }), "", "negative"],
+    ["Volatility", formatOperatingMetric(operatingMetric(artifact, "portfolio_volatility"), { asPct: true }), "Operating period", ""],
+    ["VaR 99%", formatOperatingMetric(operatingMetric(artifact, "portfolio_var_99"), { asPct: true }), "", "warning-text"],
+    ["Exp. Shortfall", formatOperatingMetric(operatingMetric(artifact, "portfolio_expected_shortfall_95"), { asPct: true }), "", "warning-text"],
+    ["Breached Controls", String(breached), `${issueCounts.current_model_issues} current-model issues`, breached ? "negative" : ""],
+    ["Data Quality", humanize(intradayDq.freshness || dq.overall_status || "monitor"), intradayDq.freshness ? "Intraday proxy" : dq.stale ? "Stale proxy" : "Proxy OK", intradayDq.freshness === "Stale" || intradayDq.freshness === "Failed" ? "warning-text" : ""],
   ]);
-}
-
-function renderResearchAllocationBars(artifact) {
-  const el = document.getElementById("researchAllocationBars");
-  if (!el) return;
-  const members = [
-    registryRow("C2A2_020"),
-    registryRow("C2B2_004"),
-  ].filter(Boolean);
-  el.innerHTML = members.map((row) => `
-    <div class="allocation-bar-row">
-      <span>${escapeHtml(row.name)} <small class="status-muted">SHADOW · 50% of Strategy 21</small></span>
-      <div class="allocation-bar-track"><span class="allocation-bar-fill" style="width:50%"></span></div>
-      <strong class="col-pct">50.0%</strong>
-    </div>`).join("") || "<p class='empty-state'>Current research members unavailable.</p>";
-  if (registryRow(RESEARCH_COMPOSITE_ID)) {
-    el.innerHTML += `<p class="status-muted">Strategy 21 composite shown only when both member marks are complete.</p>`;
-  }
-}
-
-function renderStrategy21StatusPanel(artifact) {
-  const el = document.getElementById("strategy21StatusPanel");
-  if (!el) return;
-  const shadowState = extractShadowPortfolioState(artifact);
-  const composite = shadowState.composite;
-  const registry = registryRow(RESEARCH_COMPOSITE_ID);
-  if (!composite && !registry) {
-    el.innerHTML = emptyState("Strategy 21 composite unavailable.");
-    return;
-  }
-  const withheld = composite?.available === false;
-  el.innerHTML = `
-    <p><strong>Status:</strong> ${statusBadge(withheld ? "DATA INCOMPLETE" : "RESEARCH COMPOSITE")}</p>
-    <p><strong>Intraday return:</strong> ${composite?.estimated_return == null ? "Unavailable" : pct(composite.estimated_return, 3)}</p>
-    <p><strong>Intraday PnL:</strong> ${composite?.estimated_pnl == null ? "Unavailable" : money(composite.estimated_pnl)}</p>
-    <p><strong>Research cumulative return:</strong> ${registry ? pct(registry.net_return || 0, 1) : "N/A"}</p>
-    <p><strong>Latest research data:</strong> ${escapeHtml(registry?.latest_data_date || "n/a")}</p>
-    ${withheld ? `<p class="warning-text">Composite withheld. Missing: ${escapeHtml((composite?.missing_tickers || []).join(", ") || "member marks incomplete")}</p>` : ""}`;
-}
-
-function renderShadowMemberEstimatesTable(artifact) {
-  const el = document.getElementById("shadowMemberEstimatesTable");
-  if (!el) return;
-  const shadowState = extractShadowPortfolioState(artifact);
-  const rows = shadowState.members.map((row) => {
-    const registry = registryRow(row.strategy_id);
-    return `<tr>
-      <td>${escapeHtml(row.strategy_id)}</td>
-      <td>${escapeHtml(registry?.name || row.strategy_id)}</td>
-      <td>${statusBadge(row.available ? "COMPLETE" : "DATA INCOMPLETE")}</td>
-      <td class="col-num">${row.estimated_return == null ? "Unavailable" : pct(row.estimated_return, 3)}</td>
-      <td class="col-num">${row.estimated_pnl == null ? "Unavailable" : money(row.estimated_pnl)}</td>
-      <td class="wrap-cell">${escapeHtml((row.missing_tickers || []).join(", ") || "none")}</td>
-    </tr>`;
-  }).join("");
-  el.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Return</th><th>PnL</th><th>Missing</th></tr>${rows || "<tr><td colspan='6'>No member estimates loaded.</td></tr>"}`;
-}
-
-function renderResearchCommandPanels(artifact) {
-  renderResearchAllocationBars(artifact);
-  renderStrategy21StatusPanel(artifact);
-  renderShadowMemberEstimatesTable(artifact);
-  renderHeaderDataWarning(artifact);
-  renderCommandDataQualityExpanded(artifact);
 }
 
 function renderOperatingLedgerOrCharts(artifact) {
@@ -2515,18 +2610,16 @@ function renderRiskActionCenter(artifact) {
 
 function renderCommandWatchlistPanels(artifact) {
   const recs = artifact.recommendations || [];
-  const shadowState = extractShadowPortfolioState(artifact);
   const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
+  const workflowView = deriveWorkflowPresentation(artifact, proposal);
   document.getElementById("commandWatchlist").innerHTML = recs.slice(0, 5).map((rec) => `<p>${statusBadge(rec.priority || "watch")} <strong>${escapeHtml(humanizeUserFacingText(rec.action, artifact))}</strong> — ${escapeHtml(humanizeUserFacingText(rec.rationale, artifact))}</p>`).join("") || emptyState("No watchlist items.");
   const dq = artifact.data_quality || {};
-  const intradayDq = dq.intraday || artifact.intraday_marks?.data_quality || {};
   document.getElementById("commandDataQuality").innerHTML = `
-    <p><strong>Shadow label:</strong> INTRADAY_SHADOW_ESTIMATE</p>
-    <p><strong>Composite status:</strong> ${statusBadge(shadowState.composite?.available ? "RESEARCH COMPOSITE" : "DATA INCOMPLETE")}</p>
-    <p><strong>Coverage:</strong> ${shadowState.status.ticker_count_successful ?? "n/a"}/${shadowState.status.ticker_count_requested ?? "n/a"} tickers</p>
-    <p><strong>Data freshness:</strong> ${escapeHtml(intradayDq.freshness || shadowState.status.data_freshness || dq.overall_status || "monitor")}</p>
-    <p><strong>Legacy proxy rebalance:</strong> ${statusBadge(proposal.status)} ${proposal.detail}</p>
-    <p><strong>Execution:</strong> Not authorized · SHADOW research only</p>`;
+    <p><strong>Active proposal:</strong> ${statusBadge(proposal.status)} ${proposal.detail}</p>
+    <p><strong>Missing series:</strong> ${(dq.missing_return_series || []).length || 0}</p>
+    <p><strong>Common window:</strong> ${dq.common_portfolio_risk_window_observations || 0} obs</p>
+    <p><strong>Governance:</strong> ${humanize(workflowView.workflowStatus, "monitoring")}</p>
+    <p><strong>Open decision reviews:</strong> ${countOpenDecisionReviews(artifact, localDecisionEvents)} · Approval policy applies to ${artifact.strategy_count || 0} strategies</p>`;
 }
 
 function renderTables(artifact) {
@@ -2547,7 +2640,7 @@ function renderTables(artifact) {
         : num(typeof opSharpe === "object" ? opSharpe.value : opSharpe);
       return `<tr class="${live ? "" : "research-only-row"}" data-strategy="${s.strategy_id}">
       <td>${idx + 1}</td><td><button class="table-link" data-open-strategy="${s.strategy_id}"><strong>${s.name}</strong></button></td><td>${s.strategy_type}</td>
-      <td>${live ? statusBadge("LEGACY PROXY") : statusBadge("research only")}</td>
+      <td>${live ? statusBadge("model allocated") : statusBadge("research only")}</td>
       <td>${pct(s.current_weight || 0)}</td><td>${pct(sessionProposedWeight(s.strategy_id, s.proposed_weight || 0))}</td>
       <td class="${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td>
       <td class="${cls(s.daily_return || 0)}">${pct(s.daily_return || 0, 2)}</td>
@@ -2593,7 +2686,7 @@ function renderTables(artifact) {
     return `<tr data-strategy="${s.strategy_id}" data-risk="${live ? (s.live_risk_status || s.risk_status) : "not-applicable"}" data-allocated="${live ? "active" : "research"}" data-family="${(s.strategy_type || "").toLowerCase()}" data-action="${(s.final_action_after_double_check || s.recommended_action || "").toLowerCase()}" data-search="${`${s.name} ${s.strategy_type} ${positionSummary(s)}`.toLowerCase()}">
     <td><strong>${s.name}</strong></td>
     <td>${s.strategy_type || "—"}</td>
-    <td class="col-status">${statusBadge(live ? "LEGACY PROXY" : "research")}</td>
+    <td class="col-status">${statusBadge(live ? "allocated" : "research")}</td>
     <td class="col-pct">${pct(s.current_weight || 0)}</td>
     <td class="col-pct">${pct(sessionProposedWeight(s.strategy_id, s.proposed_weight || 0))}</td>
     <td class="col-status" title="${escapeHtml(elig.detail)}">${statusBadge(elig.label)}</td>
@@ -3708,7 +3801,6 @@ async function init() {
   mergeLiveOverlay(artifact, overlay);
   activeArtifact = artifact;
   initProposalSession(artifact);
-  await renderShadowStrategyRegistry();
   renderTopHeader(artifact);
   renderKpis(artifact);
   renderTables(artifact);
@@ -3721,6 +3813,7 @@ async function init() {
   installStrategyDrawerControls(artifact);
   const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
   if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
+  renderShadowStrategyRegistry();
   installChartObservers(artifact);
   refreshProposalStatusViews(artifact);
   document.body.classList.remove("app-loading");

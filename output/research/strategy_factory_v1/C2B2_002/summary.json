@@ -1,0 +1,40 @@
+{
+  "strategy_id": "C2B2_002",
+  "version": "c2b2_002_market_residual_momentum_v1",
+  "decision": "ARCHIVE",
+  "run_valid": true,
+  "hypothetical_backfill": true,
+  "survivorship_biased_current_listed_universe": true,
+  "observations": 2120,
+  "cumulative_gross_return": -0.3337185696248688,
+  "cumulative_net_return": -0.36442387629755146,
+  "gross_return_sum": -0.3706766141831116,
+  "transaction_cost_sum": 0.047158430566661205,
+  "cost_drag_ratio": null,
+  "annualized_net_volatility": 0.09159350012381369,
+  "net_sharpe": -0.5422566502803895,
+  "max_drawdown": -0.3928028633914932,
+  "average_daily_turnover": 0.04448908544024642,
+  "mean_ic": 0.01013544239984737,
+  "d10_minus_d1": 0.00032772807997297107,
+  "decision_gates": {
+    "positive_mean_ic": true,
+    "positive_d10_minus_d1": true,
+    "positive_gross_edge": false,
+    "gross_edge_exceeds_cost": false
+  },
+  "missing_execution_returns": {
+    "missing_execution_return_count": 0,
+    "total_affected_absolute_exposure": 0.0,
+    "total_executed_absolute_exposure": 1998.9999999999943,
+    "affected_exposure_ratio": 0.0,
+    "invalidation_threshold": 0.001,
+    "run_valid": true
+  },
+  "reconciliation": {
+    "max_abs_gross_minus_long_short": 1.3877787807814457e-17,
+    "max_abs_gross_minus_cost_minus_net": 0.0,
+    "max_abs_long_plus_short_gross_exposure": 2.220446049250313e-16
+  },
+  "accounting_rule": "Missing execution returns remain zero placeholders in PnL accounting but are separately exported and invalidate the run when affected exposure exceeds the configured threshold."
+}

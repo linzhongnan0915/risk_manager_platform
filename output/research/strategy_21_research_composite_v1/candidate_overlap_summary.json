@@ -1,0 +1,37 @@
+{
+  "candidate_decisions": {
+    "C2A2_002": "REMOVE_FROM_COMPOSITE",
+    "C2A2_020": "RETAIN_BUT_OVERLAPPING",
+    "C2B2_004": "RETAIN_BUT_OVERLAPPING"
+  },
+  "exposure_diagnostics": {
+    "C2A2_002": {
+      "average_beta": 1.0175540802896417,
+      "average_lagged_adv": 147008765.12940797,
+      "average_long_concentration": 0.012471073960860444,
+      "average_short_concentration": 0.012471073960860444,
+      "average_max_position_concentration": 0.012471073960860444,
+      "residual_volatility": 0.03821506696003264
+    },
+    "C2A2_020": {
+      "average_beta": 0.9919690772721691,
+      "average_lagged_adv": 146113867.0678429,
+      "average_long_concentration": 0.012435374045552616,
+      "average_short_concentration": 0.012435374045552616,
+      "average_max_position_concentration": 0.012435374045552616,
+      "residual_volatility": "NOT_AVAILABLE_FROM_EXISTING_ARTIFACTS"
+    },
+    "C2B2_004": {
+      "average_beta": 1.0216556278262363,
+      "average_lagged_adv": 119471998.84014201,
+      "average_long_concentration": 0.012443437083783537,
+      "average_short_concentration": 0.012443437083783537,
+      "average_max_position_concentration": 0.012443437083783537,
+      "residual_volatility": "NOT_AVAILABLE_FROM_EXISTING_ARTIFACTS"
+    }
+  },
+  "retained_strategies": [
+    "C2A2_020",
+    "C2B2_004"
+  ]
+}

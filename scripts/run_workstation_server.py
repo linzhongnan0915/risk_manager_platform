@@ -22,7 +22,12 @@ import pandas as pd
 
 from scripts.validate_deployment_artifact import DeploymentArtifactError, validate_deployment_artifact
 from src.allocation.rebalance_simulation import simulate_rebalance
-from src.market.artifact_bootstrap import build_bootstrap_artifact, build_research_extension, build_strategy_detail
+from src.market.artifact_bootstrap import (
+    build_bootstrap_artifact,
+    build_factory_research_extension,
+    build_research_extension,
+    build_strategy_detail,
+)
 from src.market.demo_hosting import configure_yfinance_cache, demo_scheduler_label, intraday_scheduler_enabled, is_demo_hosting
 from src.market.intraday_config import load_intraday_config, resolve_refresh_interval_minutes
 from src.market.intraday_refresh_service import (
@@ -77,6 +82,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
     deployment_artifact: dict | None = None
     bootstrap_artifact_bytes: bytes | None = None
     research_extension_bytes: bytes | None = None
+    factory_research_extension_bytes: bytes | None = None
     last_manual_refresh_at = 0.0
     refresh_cooldown_lock = threading.Lock()
 
@@ -85,6 +91,7 @@ class WorkstationHandler(BaseHTTPRequestHandler):
         cls.deployment_artifact = artifact
         cls.bootstrap_artifact_bytes = _json_bytes(build_bootstrap_artifact(artifact))
         cls.research_extension_bytes = _json_bytes(build_research_extension(artifact))
+        cls.factory_research_extension_bytes = _json_bytes(build_factory_research_extension(cls.server_root))
 
     def log_message(self, format: str, *args) -> None:
         return
@@ -283,6 +290,12 @@ class WorkstationHandler(BaseHTTPRequestHandler):
             body = self.research_extension_bytes
             if body is None:
                 body = _json_bytes(build_research_extension(self._load_artifact()))
+            self._send_precomputed_json(body)
+            return
+        if parsed.path in {"/api/artifact/factory-research", "/api/artifact/factory-research/"}:
+            body = self.factory_research_extension_bytes
+            if body is None:
+                body = _json_bytes(build_factory_research_extension(self.server_root))
             self._send_precomputed_json(body)
             return
         if parsed.path in {"/api/artifact/strategy-detail", "/api/artifact/strategy-detail/"}:

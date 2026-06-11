@@ -43,6 +43,18 @@ def build_research_extension(artifact: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def build_factory_research_extension(project_root: str | Path) -> dict[str, Any]:
+    """US-equity Strategy Factory research payloads for the Research Lab."""
+    from pathlib import Path
+
+    from src.reporting.strategy_factory_research_adapter import build_factory_research_catalog
+
+    return {
+        "factory_strategy_research": build_factory_research_catalog(Path(project_root)),
+        "artifact_load_profile": {"mode": "factory_research_extension"},
+    }
+
+
 def build_strategy_detail(artifact: dict[str, Any], strategy_id: str) -> dict[str, Any] | None:
     """Drawer-only strategy payloads fetched on demand."""
     for strategy in artifact.get("strategies") or []:

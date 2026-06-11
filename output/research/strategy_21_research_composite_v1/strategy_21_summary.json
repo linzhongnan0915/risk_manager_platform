@@ -1,0 +1,31 @@
+{
+  "strategy_id": "STRATEGY_21_RESEARCH_COMPOSITE_V1",
+  "research_only": true,
+  "weights": {
+    "C2A2_002": 0.0,
+    "C2A2_020": 0.5,
+    "C2B2_004": 0.5
+  },
+  "cumulative_return": 0.6464245625456484,
+  "sharpe": 0.7978310167188681,
+  "annualized_volatility": 0.07811986303983127,
+  "max_drawdown": -0.10533888341846775,
+  "component_contribution": {
+    "C2A2_002": 0.0,
+    "C2A2_020": 0.3300582448194893,
+    "C2B2_004": 0.19427538010358805
+  },
+  "component_contribution_share": {
+    "C2A2_002": 0.0,
+    "C2A2_020": 0.6294813628782833,
+    "C2B2_004": 0.3705186371217168
+  },
+  "alerts": {
+    "correlation_above_0_70": [],
+    "composite_drawdown_above_10pct": true,
+    "component_over_50pct_total_pnl": [
+      "C2A2_020"
+    ]
+  },
+  "contribution_reconciliation_error": 0.0
+}

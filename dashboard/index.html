@@ -30,9 +30,8 @@
         </div>
       </header>
 
-      <div class="secondary-status-strip hidden-panel" id="secondaryStatusStrip"></div>
-      <div class="header-warning-strip" id="headerDataWarning" aria-live="polite"></div>
-      <div class="secondary-status-strip intraday-strip hidden-panel" id="intradayRefreshStrip" aria-live="polite"></div>
+      <div class="secondary-status-strip" id="secondaryStatusStrip"></div>
+      <div class="secondary-status-strip intraday-strip" id="intradayRefreshStrip" aria-live="polite"></div>
 
       <div class="workspace v2-workspace">
         <nav class="nav-rail" id="navRail" aria-label="Workstation navigation"></nav>
@@ -40,35 +39,43 @@
         <main class="main-stage">
           <section class="tab-panel active" data-tab-panel="Portfolio Command Center">
             <div id="commandKpiStrip"></div>
-            <div id="commandDataWarning" class="command-data-warning" aria-live="polite"></div>
-            <details class="data-quality-details" id="commandDataQualityDetails">
-              <summary>Data quality details</summary>
-              <div id="commandDataQualityExpanded" class="compact-list"></div>
-            </details>
-            <section class="v2-grid command-v2-grid research-command-grid">
+            <section class="v2-grid command-v2-grid">
               <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Research Composite Members <span class="status-pill ok">SHADOW</span></div>
-                <div id="researchAllocationBars" class="allocation-bars compact-bars"></div>
+                <div class="panel-title">Current Allocation</div>
+                <div id="allocationBars" class="allocation-bars compact-bars"></div>
               </article>
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Strategy 21 Composite Status</div>
-                <div id="strategy21StatusPanel" class="compact-list"></div>
+              <article class="panel v2-panel panel-span-4 contributors-panel">
+                <div class="panel-title">Top Contributors</div>
+                <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="contributorsTable"></table></div></div>
               </article>
-              <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Shadow Member Estimates</div>
-                <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="shadowMemberEstimatesTable"></table></div></div>
+              <article class="panel v2-panel panel-span-4 detractors-panel">
+                <div class="panel-title">Top Detractors</div>
+                <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="detractorsTable"></table></div></div>
+              </article>
+              <article class="panel v2-panel panel-span-6">
+                <div class="panel-title">Operating-Period NAV / PnL <small id="pnlChartCaption"></small></div>
+                <div id="operatingLedgerWrap"></div>
+                <canvas id="pnlCanvas" width="720" height="160"></canvas>
+              </article>
+              <article class="panel v2-panel panel-span-6" id="operatingDrawdownPanel">
+                <div class="panel-title">Operating-Period Drawdown</div>
+                <canvas id="drawdownCanvas" width="720" height="120"></canvas>
               </article>
               <article class="panel v2-panel panel-span-12">
-                <div class="panel-title">Research Data &amp; Risk Alerts
+                <div class="panel-title">Risk Action Center
                   <span class="panel-header-controls risk-action-filters" id="riskActionFilters">
-                    <button type="button" class="ghost-button compact" data-risk-filter="current_model">Legacy Model</button>
+                    <button type="button" class="ghost-button compact active" data-risk-filter="current_model">Current Model</button>
                     <button type="button" class="ghost-button compact" data-risk-filter="research">Research Quality</button>
-                    <button type="button" class="ghost-button compact active" data-risk-filter="data">Data Quality</button>
+                    <button type="button" class="ghost-button compact" data-risk-filter="data">Data Quality</button>
                     <button type="button" class="ghost-button compact" data-risk-filter="governance">Governance</button>
                     <button type="button" class="ghost-button compact" data-risk-filter="all">All</button>
                   </span>
                 </div>
                 <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="riskActionTable"></table></div></div>
+              </article>
+              <article class="panel v2-panel panel-span-12">
+                <div class="panel-title">Model Allocation Recommendations <button type="button" class="ghost-button compact" id="openRebalanceTab">Open Allocation</button></div>
+                <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="rebalancePreviewTable"></table></div></div>
               </article>
               <article class="panel v2-panel panel-span-4">
                 <div class="panel-title">Next-Day Watchlist</div>
@@ -79,65 +86,34 @@
                 <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="commandMarketMini"></table></div></div>
               </article>
               <article class="panel v2-panel panel-span-4">
-                <div class="panel-title">Research Data &amp; Governance</div>
+                <div class="panel-title">Data Quality &amp; Governance</div>
                 <div class="compact-list" id="commandDataQuality"></div>
               </article>
             </section>
-            <section class="legacy-proxy-section" id="legacyProxySection">
-              <div class="legacy-proxy-banner">LEGACY PROXY / BENCHMARK RESEARCH</div>
-              <p class="legacy-proxy-note">Historical ETF proxy portfolio for benchmark research. Not current Strategy 21 shadow holdings, intraday PnL, or allocation-approved positions.</p>
-              <section class="v2-grid command-v2-grid">
-                <article class="panel v2-panel panel-span-4">
-                  <div class="panel-title">Legacy Proxy Allocation</div>
-                  <div id="allocationBars" class="allocation-bars compact-bars"></div>
-                </article>
-                <article class="panel v2-panel panel-span-4 contributors-panel">
-                  <div class="panel-title">Legacy Proxy Contributors</div>
-                  <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="contributorsTable"></table></div></div>
-                </article>
-                <article class="panel v2-panel panel-span-4 detractors-panel">
-                  <div class="panel-title">Legacy Proxy Detractors</div>
-                  <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="detractorsTable"></table></div></div>
-                </article>
-                <article class="panel v2-panel panel-span-6">
-                  <div class="panel-title">Legacy Proxy Operating NAV / PnL <small id="pnlChartCaption"></small></div>
-                  <div id="operatingLedgerWrap"></div>
-                  <canvas id="pnlCanvas" width="720" height="160"></canvas>
-                </article>
-                <article class="panel v2-panel panel-span-6" id="operatingDrawdownPanel">
-                  <div class="panel-title">Legacy Proxy Operating Drawdown</div>
-                  <canvas id="drawdownCanvas" width="720" height="120"></canvas>
-                </article>
-                <article class="panel v2-panel panel-span-12">
-                  <div class="panel-title">Legacy Proxy Allocation Recommendations <button type="button" class="ghost-button compact" id="openRebalanceTab">Open Allocation</button></div>
-                  <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="rebalancePreviewTable"></table></div></div>
-                </article>
-              </section>
-              <section class="historical-research-context compact-context" id="historicalResearchContext"></section>
-            </section>
+            <section class="historical-research-context compact-context" id="historicalResearchContext"></section>
           </section>
 
           <section class="tab-panel" data-tab-panel="Strategy Monitor">
             <div id="monitorKpiStrip"></div>
-            <article class="panel v2-panel strategy-monitor-panel" id="shadowStrategyPanel">
+            <article class="panel v2-panel strategy-monitor-panel">
               <div class="monitor-heading">
-                <div class="panel-title">Current Research / Shadow Registry</div>
-                <select id="shadowStrategyStatusFilter" aria-label="Research strategy view">
-                  <option value="CURRENT_RESEARCH" selected>Current Research</option>
-                  <option value="RESEARCH_COMPOSITE">Research Composite</option>
-                  <option value="ARCHIVE">Archived/Rejected</option>
-                  <option value="LEGACY_PROXY">Legacy Proxy</option>
+                <div class="panel-title">Retained Research / Shadow Registry</div>
+                <select id="shadowStrategyStatusFilter" aria-label="Shadow strategy status">
                   <option value="ALL">ALL</option>
+                    <option value="RESEARCH_COMPOSITE_MEMBER">RESEARCH_COMPOSITE_MEMBER</option>
+                    <option value="RESEARCH_COMPOSITE">RESEARCH_COMPOSITE</option>
+                    <option value="RESEARCH_CANDIDATE">RESEARCH_CANDIDATE</option>
+                  <option value="ARCHIVE">ARCHIVE</option>
+                  <option value="BLOCKED">BLOCKED</option>
                 </select>
               </div>
               <div class="table-viewport"><div class="table-scroll">
                 <table class="data-table dense sticky-head" id="shadowStrategyTable"></table>
               </div></div>
             </article>
-            <article class="panel v2-panel strategy-monitor-panel hidden-panel" id="legacyStrategyMonitorPanel">
+            <article class="panel v2-panel strategy-monitor-panel">
               <div class="monitor-heading">
-                <div class="panel-title">Legacy Proxy Strategy Monitor</div>
-                <div class="legacy-proxy-banner">LEGACY PROXY</div>
+                <div class="panel-title">Strategy Monitor</div>
                 <div class="monitor-controls">
                   <input id="strategySearch" type="search" placeholder="Search strategy, family, position" />
                   <select id="strategyAllocationFilter" aria-label="Allocation status">
@@ -262,7 +238,7 @@
             </section>
             <section class="research-lab-grid">
               <article class="panel v2-panel research-lab-main"><div class="panel-title">Gross vs Net Cumulative Return</div><p id="researchLabCaption" class="research-caption"></p><canvas id="backtestCanvas" width="800" height="220"></canvas></article>
-              <article class="panel v2-panel research-lab-side"><div class="panel-title">Research Decision</div><div id="researchLabDecision" class="compact-list"></div><div class="panel-title sub">Drawdown</div><canvas id="researchDrawdownCanvas" class="drawer-canvas" width="380" height="120"></canvas><div class="panel-title sub">Rolling Sharpe (63D)</div><canvas id="researchRollingCanvas" class="drawer-canvas" width="380" height="120"></canvas><div class="panel-title sub">Return Distribution</div><canvas id="researchDistributionCanvas" class="drawer-canvas" width="380" height="120"></canvas></article>
+              <article class="panel v2-panel research-lab-side"><div class="panel-title">Research Decision</div><div id="researchLabDecision" class="compact-list"></div><div class="panel-title sub">Strategy Summary</div><div id="researchStrategyHeader" class="compact-list"></div><div class="panel-title sub">Drawdown</div><canvas id="researchDrawdownCanvas" class="drawer-canvas" width="380" height="120"></canvas><div class="panel-title sub">Rolling Sharpe (63D)</div><canvas id="researchRollingCanvas" class="drawer-canvas" width="380" height="120"></canvas><div class="panel-title sub">Return Distribution</div><canvas id="researchDistributionCanvas" class="drawer-canvas" width="380" height="120"></canvas><div class="panel-title sub">IC & Signal Quality</div><div id="researchIcPanel" class="compact-list"></div><div class="panel-title sub">Turnover & Cost Drag</div><div id="researchTurnoverPanel" class="compact-list"></div><div class="panel-title sub">Long vs Short Contribution</div><div id="researchAttributionPanel" class="compact-list"></div><div class="panel-title sub">Strategy Logic</div><div id="researchLogicPanel" class="compact-list"></div><div class="panel-title sub">Factor & Exposure Interpretation</div><div id="researchFactorPanel" class="compact-list"></div><div class="panel-title sub">Assumptions & Limitations</div><div id="researchLimitationsPanel" class="compact-list"></div></article>
               <article class="panel v2-panel research-lab-span-6"><div class="panel-title">No-Look-Ahead Checklist</div><div class="checklist compact-checklist" id="researchChecklist"></div></article>
               <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Walk-Forward Results</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="walkForwardTable"></table></div></div></article>
               <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Literature Strategy Prototypes</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="literatureStrategyTable"></table></div></div></article>
