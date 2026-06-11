@@ -373,7 +373,7 @@ button {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -2471,7 +2471,7 @@ li {
 }
 
 .tab-panel {
-  min-height: 680px;
+  min-height: 0;
 }
 
 .workspace,
@@ -2531,7 +2531,9 @@ body { font-size: 12px; }
 .util-bar.breach span { background: var(--danger); }
 .table-viewport { max-height: min(320px, 42vh); overflow: hidden; border: 1px solid var(--line-soft); border-radius: 3px; }
 .table-viewport.short { max-height: 180px; }
-.table-viewport .table-scroll { max-height: inherit; overflow: auto; border: 0; }
+.table-viewport .table-scroll { max-height: 100%; overflow: auto; border: 0; overscroll-behavior: contain; }
+.strategy-registry-viewport { max-height: min(520px, 62vh); }
+.strategy-registry-scroll { min-height: 0; }
 .monitor-table-viewport { max-height: min(520px, 58vh); }
 .allocation-matrix-viewport { max-height: min(400px, 48vh); }
 .data-table.dense th, .data-table.dense td { padding: 4px 6px; font-size: 11px; line-height: 1.35; height: auto; min-height: 28px; vertical-align: top; }
@@ -2618,6 +2620,5 @@ body { font-size: 12px; }
 }
 
 body.app-loading .main-stage {
-  opacity: 0.72;
-  pointer-events: none;
+  opacity: 0.88;
 }

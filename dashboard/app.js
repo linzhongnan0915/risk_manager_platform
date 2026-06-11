@@ -256,7 +256,7 @@ function renderFactorNotes(artifact = activeArtifact) {
 
 function redrawAllCharts(artifact = activeArtifact) {
   if (!artifact) return;
-  const series = portfolioSeriesForDisplay(artifact);
+  const series = uiPortfolioSeries(artifact);
   const start = investmentStart(artifact);
   const caption = document.getElementById("pnlChartCaption");
   if (caption) caption.textContent = `Operating period since ${start} · Historical research context in Research Lab`;
@@ -4125,35 +4125,49 @@ async function init() {
   renderTabs();
   loadLocalDecisionEvents();
   document.body.classList.add("app-loading");
-  const [, artifact, overlay] = await Promise.all([
-    probeWorkstationApi(),
-    loadArtifact(),
-    loadLiveOverlay(),
-  ]);
-  mergeLiveOverlay(artifact, overlay);
-  activeArtifact = artifact;
-  await ensureFactoryResearchExtension();
-  initProposalSession(artifact);
-  renderResearchModeBanners();
-  renderTopHeader(artifact);
-  renderKpis(artifact);
-  renderTables(artifact);
-  renderWorkstationPanels(artifact);
-  redrawAllCharts(artifact);
-  renderTruthDisclosure(artifact);
-  installOperationalControls(artifact);
-  installLiveControls(artifact);
-  installStrategyMonitorControls(artifact);
-  installStrategyDrawerControls(artifact);
-  const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
-  if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
-  await renderShadowStrategyRegistry();
-  refreshResearchLabViews(artifact);
-  installChartObservers(artifact);
-  refreshProposalStatusViews(artifact);
-  document.body.classList.remove("app-loading");
-  scheduleSecondaryRender(artifact);
-  scheduleResearchExtensionLoad(artifact);
+  let artifact = null;
+  try {
+    const [, loadedArtifact, overlay] = await Promise.all([
+      probeWorkstationApi(),
+      loadArtifact(),
+      loadLiveOverlay(),
+    ]);
+    artifact = loadedArtifact;
+    mergeLiveOverlay(artifact, overlay);
+    activeArtifact = artifact;
+    await ensureFactoryResearchExtension();
+    initProposalSession(artifact);
+    renderResearchModeBanners();
+    renderTopHeader(artifact);
+    renderKpis(artifact);
+    renderTables(artifact);
+    renderWorkstationPanels(artifact);
+    redrawAllCharts(artifact);
+    renderTruthDisclosure(artifact);
+    installOperationalControls(artifact);
+    installLiveControls(artifact);
+    installStrategyMonitorControls(artifact);
+    installStrategyDrawerControls(artifact);
+    const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
+    if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
+    await renderShadowStrategyRegistry();
+    refreshResearchLabViews(artifact);
+    installChartObservers(artifact);
+    refreshProposalStatusViews(artifact);
+    scheduleSecondaryRender(artifact);
+    scheduleResearchExtensionLoad(artifact);
+  } catch (error) {
+    console.error("Dashboard init failed", error);
+    const stage = document.querySelector(".main-stage");
+    if (stage && !stage.querySelector(".init-error-banner")) {
+      stage.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="init-error-banner research-context-banner warning"><strong>Dashboard load incomplete</strong> · ${escapeHtml(String(error?.message || error))} · Refresh the page or check the research bundle.</div>`,
+      );
+    }
+  } finally {
+    document.body.classList.remove("app-loading");
+  }
 }
 
 init();
