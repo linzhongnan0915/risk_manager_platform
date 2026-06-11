@@ -38,6 +38,7 @@
 
         <main class="main-stage">
           <section class="tab-panel active" data-tab-panel="Portfolio Command Center">
+            <div id="commandResearchBanner"></div>
             <div id="commandKpiStrip"></div>
             <section class="v2-grid command-v2-grid">
               <article class="panel v2-panel panel-span-4">
@@ -97,23 +98,24 @@
             <div id="monitorKpiStrip"></div>
             <article class="panel v2-panel strategy-monitor-panel">
               <div class="monitor-heading">
-                <div class="panel-title">Retained Research / Shadow Registry</div>
-                <select id="shadowStrategyStatusFilter" aria-label="Shadow strategy status">
-                  <option value="ALL">ALL</option>
-                    <option value="RESEARCH_COMPOSITE_MEMBER">RESEARCH_COMPOSITE_MEMBER</option>
-                    <option value="RESEARCH_COMPOSITE">RESEARCH_COMPOSITE</option>
-                    <option value="RESEARCH_CANDIDATE">RESEARCH_CANDIDATE</option>
-                  <option value="ARCHIVE">ARCHIVE</option>
-                  <option value="BLOCKED">BLOCKED</option>
+                <div class="panel-title">US-Equity Strategy Registry</div>
+                <select id="shadowStrategyStatusFilter" aria-label="US-equity strategy filter">
+                  <option value="ALL_US_EQUITY">ALL US-EQUITY</option>
+                  <option value="RETAINED">RETAINED</option>
+                  <option value="STRATEGY_21">STRATEGY 21</option>
+                  <option value="WATCHLIST">WATCHLIST</option>
+                  <option value="DUPLICATE">DUPLICATE</option>
+                  <option value="ARCHIVED">ARCHIVED / REJECTED</option>
+                  <option value="LEGACY_REFERENCE">LEGACY RESEARCH REFERENCE</option>
                 </select>
               </div>
               <div class="table-viewport"><div class="table-scroll">
                 <table class="data-table dense sticky-head" id="shadowStrategyTable"></table>
               </div></div>
             </article>
-            <article class="panel v2-panel strategy-monitor-panel">
+            <article class="panel v2-panel strategy-monitor-panel hidden-panel" id="legacyStrategyMonitorPanel">
               <div class="monitor-heading">
-                <div class="panel-title">Strategy Monitor</div>
+                <div class="panel-title">Legacy Proxy Strategy Monitor</div>
                 <div class="monitor-controls">
                   <input id="strategySearch" type="search" placeholder="Search strategy, family, position" />
                   <select id="strategyAllocationFilter" aria-label="Allocation status">
@@ -146,6 +148,7 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Allocation & Rebalance">
+            <div id="allocationResearchBanner"></div>
             <div id="allocationBeforeAfterStrip"></div>
             <section class="approval-status-bar v2-approval-bar" id="approvalStatusBar"></section>
             <section class="allocation-persistent-checks" id="allocationPersistentChecks"></section>
@@ -203,7 +206,9 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Risk Factors & Exposure">
-            <p class="factor-section-note">Proxy factor loadings from the ETF research model. Signed loadings are shown for direction; limits and utilization use absolute |loading|. These are not position-level institutional factor sensitivities (e.g. Barra/Axioma).</p>
+            <div id="factorResearchBanner"></div>
+            <p class="factor-section-note" id="factorSectionNote">US-equity strategy risk factors from Strategy Factory baselines and Strategy 21 overlap diagnostics. Values are labeled MEASURED, PROXY, ECONOMIC INTERPRETATION, or NOT YET MEASURED.</p>
+            <div id="usEquityFactorCards" class="compact-list"></div>
             <section class="kpi-grid factor-kpi-grid" id="factorKpiGrid" aria-label="Proxy factor loading summary cards"></section>
             <section class="factor-grid">
               <article class="panel v2-panel"><div class="panel-title" title="Signed weighted ETF proxy loadings aggregated to portfolio level.">Portfolio Proxy Factor Loadings</div><p class="factor-note" id="riskFactorNote"></p><div id="riskFactorBars" class="factor-bars"></div></article>
@@ -214,8 +219,9 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Correlation & Diversification">
+            <div id="correlationResearchBanner"></div>
             <section class="correlation-layout">
-              <article class="panel v2-panel"><div class="panel-title">Diversification Summary</div><select id="correlationUniverse" aria-label="Correlation universe"><option value="allocated">Allocated only</option><option value="all">All research universe</option></select><div id="correlationSummary" class="drawer-section-grid"></div></article>
+              <article class="panel v2-panel"><div class="panel-title">Diversification Summary</div><select id="correlationUniverse" aria-label="Correlation universe"><option value="CURRENT_COMPOSITE">Current Composite</option><option value="RETAINED">Retained</option><option value="ALL_US_EQUITY">All US-Equity Research</option><option value="EXCLUDED_DUPLICATES">Excluded Duplicates</option><option value="LEGACY_PROXY">Legacy Proxy Reference</option></select><div id="correlationSummary" class="drawer-section-grid"></div></article>
               <article class="panel v2-panel"><div class="panel-title">Highest Correlation Pairs</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="correlationPairs"></table></div></div></article>
               <article class="panel v2-panel full-width matrix-row"><div class="panel-title" id="correlationMatrixTitle">Correlation Matrix</div><div class="matrix-scroll"><div class="matrix large" id="correlationMatrix"></div></div></article>
             </section>
@@ -249,14 +255,16 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Strategy Library & Workflow">
+            <div id="workflowResearchBanner"></div>
             <article class="panel v2-panel full">
-              <div class="panel-title">Strategy Library &amp; Workflow</div>
+              <div class="panel-title">US-Equity Research Pipeline</div>
               <div class="workflow-filters" id="workflowFilters"></div>
               <div class="table-viewport workflow-table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head freeze-first-col" id="workflowTable"></table></div></div>
             </article>
           </section>
 
           <section class="tab-panel" data-tab-panel="Daily Risk Report / Decision Log">
+            <div id="dailyReportResearchBanner"></div>
             <section class="report-workspace" id="reportWorkspace">
               <div class="report-status-strip report-span-12" id="reportStatusStrip"></div>
 
@@ -336,6 +344,7 @@
         </aside>
       </div>
     </div>
+    <script src="research_universe.js"></script>
     <script src="components.js"></script>
     <script src="app.js"></script>
   </body>

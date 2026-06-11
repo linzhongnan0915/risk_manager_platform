@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
   { group: "Portfolio", tab: "Portfolio Command Center", label: "Command Center", icon: "portfolio" },
   { group: "Strategies", tab: "Strategy Monitor", label: "Strategies", icon: "line" },
   { group: "Allocation", tab: "Allocation & Rebalance", label: "Allocation", icon: "target" },
-  { group: "Risk", tab: "Risk Factors & Exposure", label: "Proxy Loadings", icon: "risk" },
+  { group: "Risk", tab: "Risk Factors & Exposure", label: "Strategy Risk", icon: "risk" },
   { group: "Risk", tab: "Correlation & Diversification", label: "Correlation", icon: "layers" },
   { group: "Research", tab: "Backtesting & Research Lab", label: "Research Lab", icon: "shield" },
   { group: "Workflow", tab: "Strategy Library & Workflow", label: "Workflow", icon: "layers" },
@@ -132,6 +132,46 @@ function portfolioSeriesForDisplay(artifact = activeArtifact) {
   const live = artifact?.portfolio_series_live;
   if (live?.dates?.length) return live;
   return artifact?.portfolio_series || {};
+}
+
+function uiStrategies(artifact = activeArtifact) {
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    return ResearchUniverse.strategyRows();
+  }
+  return artifact?.strategies || [];
+}
+
+function uiPortfolioSeries(artifact = activeArtifact) {
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode()) {
+    const series = ResearchUniverse.portfolioSeries();
+    if (series?.dates?.length) return series;
+  }
+  return portfolioSeriesForDisplay(artifact);
+}
+
+function renderResearchModeBanners() {
+  const currentBanner = `<div class="research-context-banner"><strong>STRATEGY 21 RESEARCH ALLOCATION</strong> · NOT LIVE · NOT ALLOCATION APPROVED · Default C2A2_020 50% / C2B2_004 50%</div>`;
+  const legacyBanner = `<div class="research-context-banner warning"><strong>LEGACY PROXY REFERENCE MODE</strong> · ETF proxy sandbox · Not current US-equity research portfolio</div>`;
+  const isLegacy = typeof ResearchUniverse !== "undefined" && ResearchUniverse.isLegacyProxyMode();
+  [
+    "commandResearchBanner",
+    "allocationResearchBanner",
+    "factorResearchBanner",
+    "correlationResearchBanner",
+    "workflowResearchBanner",
+    "dailyReportResearchBanner",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = isLegacy ? legacyBanner : currentBanner;
+  });
+  const legacyPanel = document.getElementById("legacyStrategyMonitorPanel");
+  if (legacyPanel) legacyPanel.classList.toggle("hidden-panel", !isLegacy);
+  const factorNote = document.getElementById("factorSectionNote");
+  if (factorNote) {
+    factorNote.textContent = isLegacy
+      ? "Legacy ETF proxy factor loadings (research reference only). Not current US-equity strategy exposure."
+      : "US-equity strategy risk factors from Strategy Factory baselines and Strategy 21 overlap diagnostics. Values are labeled MEASURED, PROXY, ECONOMIC INTERPRETATION, or NOT YET MEASURED.";
+  }
 }
 
 function riskSummaryForDisplay(artifact = activeArtifact) {
@@ -258,41 +298,43 @@ async function loadLiveOverlay() {
   return null;
 }
 
-async function renderShadowStrategyRegistry(status = "ALL") {
+async function renderShadowStrategyRegistry(status = "ALL_US_EQUITY") {
   const table = document.getElementById("shadowStrategyTable");
   if (!table) return;
   await ensureFactoryResearchExtension();
-  let rows = (factoryResearchCatalog?.results || []).map((item) => {
-    const backtest = item.backtest || {};
-    const factory = backtest.factory_research || {};
-    return {
-      strategy_id: item.strategy_id || backtest.strategy_id,
-      name: backtest.name,
-      status: backtest.lifecycle_status || item.research_group,
-      allocation_eligible: backtest.allocation_eligible,
-      net_return: backtest.net_metrics?.cumulative_return,
-      sharpe: backtest.net_metrics?.sharpe,
-      max_drawdown: backtest.net_metrics?.max_drawdown,
-      turnover: backtest.turnover?.average_daily_turnover,
-      ic: factory.mean_ic,
-      decile_spread: factory.decile_spread,
-      status_reason: factory.decision_reason || backtest.action?.interpretation,
-      latest_data_date: backtest.latest_data_date,
-      research_group: item.research_group,
-    };
-  });
-  if (status === "RESEARCH_COMPOSITE_MEMBER") {
-    rows = rows.filter((row) => row.research_group === "CURRENT_US_EQUITY_RESEARCH");
-  } else if (status === "RESEARCH_COMPOSITE") {
-    rows = rows.filter((row) => row.research_group === "STRATEGY_21");
-  } else if (status === "ARCHIVE" || status === "BLOCKED") {
-    rows = rows.filter((row) => row.research_group === "ARCHIVED_US_EQUITY_RESEARCH");
-  } else if (status === "RESEARCH_CANDIDATE") {
-    rows = rows.filter((row) => row.research_group === "CURRENT_US_EQUITY_RESEARCH" || row.research_group === "ARCHIVED_US_EQUITY_RESEARCH");
+  ResearchUniverse.hydrate(factoryResearchCatalog, activeArtifact);
+  if (status === "LEGACY_REFERENCE") {
+    ResearchUniverse.setPortfolioViewMode("legacy");
+    renderResearchModeBanners();
+    renderTables(activeArtifact);
+    return;
   }
-  table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Allocation Eligible</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th></tr>` +
-    rows.map((row) => `<tr class="table-link-row" data-open-research-lab="${escapeHtml(row.strategy_id)}"><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.name)}</td><td>${statusBadge(row.status)}</td><td>${row.allocation_eligible ? "YES" : "NO"}</td><td>${pct(row.net_return || 0, 1)}</td><td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td><td>${pct(row.max_drawdown || 0, 1)}</td><td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td><td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td><td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td><td class="wrap-cell">${escapeHtml(row.status_reason || "")}</td><td>${escapeHtml(row.latest_data_date || "n/a")}</td></tr>`).join("") ||
-    "<tr><td colspan='12'>No strategies match this filter.</td></tr>";
+  ResearchUniverse.setPortfolioViewMode("current");
+  ResearchUniverse.setStrategyTableFilter(status);
+  renderResearchModeBanners();
+  const rows = ResearchUniverse.filterStrategyRows(status);
+  table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Family</th><th>Status</th><th>Alloc. Eligible</th><th>Gross</th><th>Net</th><th>Sharpe</th><th>Vol</th><th>Max DD</th><th>Turnover</th><th>Cost Drag</th><th>IC</th><th>Decile</th><th>Return Driver</th><th>Limitation</th><th>Action</th><th>Latest Data</th></tr>` +
+    rows.map((row) => `<tr class="table-link-row" data-open-research-lab="${escapeHtml(row.strategy_id)}">
+      <td>${escapeHtml(row.strategy_id)}</td>
+      <td>${escapeHtml(row.name)}</td>
+      <td>${escapeHtml(row.strategy_type || "us_equity_research")}</td>
+      <td>${statusBadge(row.lifecycle_status || row.research_group)}</td>
+      <td>${row.allocation_eligibility?.eligible ? "YES" : "NO"}</td>
+      <td>${row.gross_return == null ? "N/A" : pct(row.gross_return, 1)}</td>
+      <td>${row.net_return == null ? "N/A" : pct(row.net_return, 1)}</td>
+      <td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td>
+      <td>${row.volatility == null ? "N/A" : pct(row.volatility, 1)}</td>
+      <td>${row.max_drawdown == null ? "N/A" : pct(row.max_drawdown, 1)}</td>
+      <td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td>
+      <td>${row.transaction_cost_drag == null ? "N/A" : pct(row.transaction_cost_drag, 2)}</td>
+      <td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td>
+      <td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td>
+      <td class="wrap-cell">${escapeHtml(row.primary_return_driver || "—")}</td>
+      <td class="wrap-cell">${escapeHtml(row.main_limitation || "—")}</td>
+      <td class="wrap-cell">${escapeHtml(row.recommended_action || "Review")}</td>
+      <td>${escapeHtml(row.latest_data_date || "n/a")}</td>
+    </tr>`).join("") ||
+    "<tr><td colspan='18'>No strategies match this filter.</td></tr>";
   table.querySelectorAll("[data-open-research-lab]").forEach((row) => {
     row.addEventListener("click", () => openResearchLabForStrategy(row.dataset.openResearchLab));
   });
@@ -567,17 +609,25 @@ const proposalSession = {
 };
 
 function initProposalSession(artifact) {
-  proposalSession.weights = Object.fromEntries(
-    (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.current_weight || 0]),
-  );
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    proposalSession.weights = ResearchUniverse.defaultResearchWeights();
+  } else {
+    proposalSession.weights = Object.fromEntries(
+      (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.current_weight || 0]),
+    );
+  }
   proposalSession.simulation = null;
   proposalSession.source = "current";
 }
 
 function loadSystemProposalSession(artifact) {
-  proposalSession.weights = Object.fromEntries(
-    (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.proposed_weight || 0]),
-  );
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    proposalSession.weights = ResearchUniverse.defaultResearchWeights();
+  } else {
+    proposalSession.weights = Object.fromEntries(
+      (artifact.strategies || []).map((strategy) => [strategy.strategy_id, strategy.proposed_weight || 0]),
+    );
+  }
   proposalSession.simulation = null;
   proposalSession.source = "system";
 }
@@ -638,7 +688,7 @@ const RESEARCH_GROUP_LABELS = {
   STRATEGY_21: "Strategy 21",
   LEGACY_PROXY: "Research Reference / Legacy Proxy",
 };
-let correlationUniverse = "allocated";
+let correlationUniverse = "CURRENT_COMPOSITE";
 
 const strategyCandidateShelf = [
   ["WQ Multi-Alpha ETF Basket", "101 Alphas", "SPY/QQQ/IWM/QUAL/VLUE/MTUM/USMV", "Ranked price-volume alpha blend", "Crowding, turnover, style reversal", "Prototype running"],
@@ -821,7 +871,15 @@ function scheduleResearchExtensionLoad(artifact) {
   void Promise.all([ensureResearchExtension(artifact), ensureFactoryResearchExtension()]).then(([updated]) => {
     if (!updated) return;
     activeArtifact = updated;
+    ResearchUniverse.hydrate(factoryResearchCatalog, updated);
+    renderResearchModeBanners();
     refreshResearchLabViews(updated);
+    renderTables(updated);
+    renderWorkstationPanels(updated);
+    renderCardsAndMatrices(updated);
+    renderWorkflow(updated);
+    renderDailyReport(updated);
+    refreshProposalStatusViews(updated);
   });
 }
 
@@ -903,6 +961,17 @@ function installShellControls() {
 function renderHistoricalResearchContext(artifact = activeArtifact) {
   const el = document.getElementById("historicalResearchContext");
   if (!el || !artifact) return;
+  const usingResearch = typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length;
+  if (usingResearch) {
+    const composite = ResearchUniverse.compositeItem()?.backtest || {};
+    el.innerHTML = `
+      <div class="research-context-banner">
+        <strong>Strategy 21 historical research context (not live PnL)</strong>
+        <span>Net return ${composite.net_metrics?.cumulative_return == null ? "N/A" : pct(composite.net_metrics.cumulative_return, 1)} · Sharpe ${composite.net_metrics?.sharpe == null ? "N/A" : num(composite.net_metrics.sharpe, 2)} · Max DD ${composite.net_metrics?.max_drawdown == null ? "N/A" : pct(composite.net_metrics.max_drawdown, 1)} · Members C2A2_020 50% / C2B2_004 50%</span>
+        <span class="status-muted">NOT LIVE · NOT ALLOCATION APPROVED · Pilot 500 survivorship-biased universe</span>
+      </div>`;
+    return;
+  }
   const hist = historicalResearchRiskSummary(artifact);
   const dq = artifact.data_quality || {};
   const recon = dq.static_current_weight_reconstruction || {};
@@ -1009,6 +1078,26 @@ function oklchToHex() {
 function renderRebalancePreview(artifact) {
   const el = document.getElementById("rebalancePreviewTable");
   if (!el) return;
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    const composite = ResearchUniverse.compositeItem()?.backtest || {};
+    const weights = ResearchUniverse.defaultResearchWeights();
+    el.innerHTML = `<tr><th>Strategy 21 Member</th><th>Research Weight</th><th>Status</th><th>Net Return</th><th>Sharpe</th><th>Action</th></tr>` +
+      Object.entries(weights).filter(([, weight]) => weight > 0).map(([strategyId, weight]) => {
+        const row = ResearchUniverse.itemById(strategyId);
+        const backtest = row?.backtest || {};
+        return `<tr>
+          <td><button class="table-link" data-open-research-lab="${strategyId}"><strong>${escapeHtml(backtest.name || strategyId)}</strong></button></td>
+          <td class="col-pct">${pct(weight, 0)}</td>
+          <td class="col-status">${statusBadge("research only")}</td>
+          <td>${backtest.net_metrics?.cumulative_return == null ? "N/A" : pct(backtest.net_metrics.cumulative_return, 1)}</td>
+          <td>${backtest.net_metrics?.sharpe == null ? "N/A" : num(backtest.net_metrics.sharpe, 3)}</td>
+          <td class="wrap-cell">Research composite member · not allocation approved</td>
+        </tr>`;
+      }).join("") +
+      `<tr><td><strong>Strategy 21 Composite</strong></td><td class="col-pct">100%</td><td class="col-status">${statusBadge(composite.lifecycle_status || "research composite")}</td><td>${composite.net_metrics?.cumulative_return == null ? "N/A" : pct(composite.net_metrics.cumulative_return, 1)}</td><td>${composite.net_metrics?.sharpe == null ? "N/A" : num(composite.net_metrics.sharpe, 3)}</td><td class="wrap-cell">NOT LIVE · NOT ALLOCATION APPROVED</td></tr>`;
+    el.querySelectorAll("[data-open-research-lab]").forEach((button) => button.addEventListener("click", () => openResearchLabForStrategy(button.dataset.openResearchLab)));
+    return;
+  }
   const rows = (artifact.strategies || []).filter((strategy) => {
     const proposed = sessionProposedWeight(strategy.strategy_id, strategy.proposed_weight || 0);
     return (strategy.current_weight || 0) > 0 || proposed > 0;
@@ -1089,17 +1178,16 @@ function renderCommandMarketMini(artifact) {
 function renderMonitorKpiStrip(artifact) {
   const el = document.getElementById("monitorKpiStrip");
   if (!el) return;
-  const strategies = artifact.strategies || [];
+  const strategies = uiStrategies(artifact);
   const allocated = strategies.filter((strategy) => strategy.current_weight > 0);
-  const warnings = allocated.filter((strategy) => ["watch", "warning"].includes(strategy.live_risk_status || strategy.risk_status)).length;
-  const breaches = allocated.filter((strategy) => (strategy.live_risk_status || strategy.risk_status) === "breach").length;
-  const openReviews = countOpenDecisionReviews(artifact, localDecisionEvents);
+  const retained = strategies.filter((strategy) => strategy.research_group === "RETAINED").length;
+  const composite = strategies.some((strategy) => strategy.strategy_id === "STRATEGY_21_RESEARCH_COMPOSITE_V1") ? 1 : 0;
   el.innerHTML = compactKpiStrip([
-    ["Monitored", strategies.length, "", ""],
-    ["Allocated", allocated.length, "", ""],
-    ["Warnings", warnings, "", warnings ? "warning-text" : ""],
-    ["Allocated Strategy Breaches", breaches, "", breaches ? "negative" : ""],
-    ["Open Decision Reviews", String(openReviews), `Policy: ${strategies.length} strategies`, openReviews ? "warning-text" : ""],
+    ["US-Equity Strategies", strategies.length, "Factory + Strategy 21", ""],
+    ["Retained", retained, "Research composite members", ""],
+    ["Strategy 21", composite, "Research composite", ""],
+    ["Research Weight", "50% / 50%", "C2A2_020 / C2B2_004", ""],
+    ["Allocation Approved", "No", "NOT LIVE", "warning-text"],
   ]);
 }
 
@@ -1107,9 +1195,35 @@ function renderMonitorKpiGrid(artifact) {
   renderMonitorKpiStrip(artifact);
 }
 
+function renderUsEquityFactorCards(artifact = activeArtifact) {
+  const el = document.getElementById("usEquityFactorCards");
+  if (!el) return;
+  if (typeof ResearchUniverse === "undefined" || ResearchUniverse.isLegacyProxyMode()) {
+    el.innerHTML = "";
+    return;
+  }
+  const cards = ResearchUniverse.factorCards();
+  el.innerHTML = cards.map((card) => `<p><span class="badge warning">${escapeHtml(card.kind || "INTERPRETATION")}</span> <strong>${escapeHtml(card.strategy_name || card.strategy_id)} · ${escapeHtml(card.label || "Factor")}:</strong> ${escapeHtml(card.detail || "NOT AVAILABLE IN CURRENT BASELINE")}</p>`).join("")
+    || `<p class="status-muted">NOT AVAILABLE IN CURRENT BASELINE</p>`;
+  const matrix = document.getElementById("factorMatrix");
+  if (matrix?.parentElement?.parentElement) {
+    matrix.parentElement.parentElement.classList.toggle("hidden-panel", true);
+  }
+}
+
 function renderFactorKpiGrid(artifact) {
   const el = document.getElementById("factorKpiGrid");
   if (!el) return;
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    const cards = ResearchUniverse.factorCards();
+    el.innerHTML = cards.slice(0, 12).map((card) => `<article class="kpi-card factor-proxy-card">
+      <span>${escapeHtml(card.strategy_name || card.strategy_id)} · ${escapeHtml(card.label || "Factor")}</span>
+      <strong>${escapeHtml(card.kind || "INTERPRETATION")}</strong>
+      <small>${escapeHtml(card.detail || "NOT AVAILABLE IN CURRENT BASELINE")}</small>
+    </article>`).join("") || `<article class="kpi-card factor-proxy-card"><span>US-Equity Strategy Risk Factors</span><strong>Pending</strong><small>Factory artifacts loading</small></article>`;
+    renderUsEquityFactorCards(artifact);
+    return;
+  }
   const exposureMap = artifact.factors?.portfolio_factor_exposure_current || {};
   const primaryMetrics = ["equity_beta", "credit_spread", "rates_duration", "usd_fx", "commodity_beta", "volatility"];
   const checksByMetric = Object.fromEntries((artifact.risk_limits?.factors?.checks || []).map((check) => [check.metric, check]));
@@ -1324,7 +1438,7 @@ function renderRebalanceTradeList(artifact) {
 }
 
 function renderWorkstationPanels(artifact) {
-  renderAllocationBars(artifact.strategies || []);
+  renderAllocationBars(uiStrategies(artifact));
   renderContributorsDetractorsTables(artifact);
   renderOperatingLedgerOrCharts(artifact);
   renderRiskActionCenter(artifact);
@@ -1595,7 +1709,7 @@ function populateResearchLabSelector(artifact) {
   const select = document.getElementById("researchLabSelector");
   if (!select) return;
   const results = mergedResearchResults.length ? mergedResearchResults : buildMergedResearchResults(artifact);
-  const groupOrder = ["CURRENT_US_EQUITY_RESEARCH", "ARCHIVED_US_EQUITY_RESEARCH", "STRATEGY_21", "LEGACY_PROXY"];
+  const groupOrder = ["CURRENT_US_EQUITY_RESEARCH", "STRATEGY_21", "ARCHIVED_US_EQUITY_RESEARCH", "LEGACY_PROXY"];
   const presentGroups = groupOrder.filter((group) => results.some((row) => (row.research_group || "LEGACY_PROXY") === group));
   select.innerHTML = presentGroups.map((group) => {
     const options = results
@@ -1608,6 +1722,11 @@ function populateResearchLabSelector(artifact) {
     const item = results[Number(select.value)];
     if (item) renderResearchLabPanels(item);
   };
+  const defaultItem = findResearchLabItem(DEFAULT_RESEARCH_STRATEGY_ID) || results[0];
+  if (defaultItem) {
+    select.value = String(defaultItem._index);
+    renderResearchLabPanels(defaultItem);
+  }
 }
 
 function renderUnavailablePanel(elementId, message = "NOT AVAILABLE IN CURRENT BASELINE") {
@@ -2516,40 +2635,46 @@ function renderKpis(artifact) {
 function renderCommandKpiStrip(artifact) {
   const el = document.getElementById("commandKpiStrip");
   if (!el) return;
-  const series = portfolioSeriesForDisplay(artifact);
+  const usingResearch = typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length;
+  const series = uiPortfolioSeries(artifact);
   const cumulative = series.cumulative_return || [];
-  const dailyPnlMetric = operatingPnlMetric(artifact, "daily_return");
-  const cumPnlMetric = operatingPnlMetric(artifact, "cumulative_return");
-  const latestCum = metricNumeric(cumPnlMetric) ?? cumulative.at(-1) ?? 0;
-  const latestReturn = metricNumeric(dailyPnlMetric) ?? series.returns?.at(-1) ?? 0;
-  const marks = artifact.intraday_marks || {};
-  const estimatedNav = marks.estimated_model_nav;
-  const estimatedIntradayPnl = marks.estimated_intraday_pnl;
-  const aumNow = estimatedNav ?? artifact.initial_capital * (1 + latestCum);
+  const composite = usingResearch ? ResearchUniverse.compositeItem()?.backtest : null;
+  const hist = composite?.net_metrics || historicalResearchRiskSummary(artifact);
+  const shadowComposite = usingResearch ? ResearchUniverse.intradayComposite() : null;
+  const latestCum = composite?.net_metrics?.cumulative_return ?? cumulative.at(-1) ?? 0;
+  const latestReturn = shadowComposite?.daily_return;
+  const pnlLabel = shadowComposite?.available === false || latestReturn == null ? "Unavailable" : "Intraday shadow estimate";
+  const dailyPnl = latestReturn == null ? null : latestReturn * (artifact.initial_capital || 0);
   const headline = canonicalRiskHeadline(artifact);
   const issueCounts = countIssueCategories(artifact);
   const breached = issueCounts.breached_controls;
   const dq = artifact.data_quality || {};
-  const intradayDq = dq.intraday || marks.data_quality || {};
+  const intradayDq = dq.intraday || artifact.intraday_marks?.data_quality || {};
   el.innerHTML = compactKpiStrip([
-    [estimatedNav ? "Est. Model NAV (proxy)" : "Current Model NAV", money(aumNow), estimatedNav ? "Intraday proxy mark · not realized" : `Operating since ${investmentStart(artifact)}`, cls(latestCum)],
-    [estimatedIntradayPnl != null ? "Est. Intraday PnL" : "Daily PnL", money(estimatedIntradayPnl ?? latestReturn * artifact.initial_capital), estimatedIntradayPnl != null ? "Estimated from proxy bars" : formatOperatingMetric(dailyPnlMetric), cls(estimatedIntradayPnl ?? latestReturn)],
-    ["Operating Cum. PnL", money(latestCum * artifact.initial_capital), formatOperatingMetric(cumPnlMetric), cls(latestCum)],
-    ["Current Drawdown", formatOperatingMetric(operatingMetric(artifact, "portfolio_max_drawdown"), { asPct: true }), "", "negative"],
-    ["Volatility", formatOperatingMetric(operatingMetric(artifact, "portfolio_volatility"), { asPct: true }), "Operating period", ""],
-    ["VaR 99%", formatOperatingMetric(operatingMetric(artifact, "portfolio_var_99"), { asPct: true }), "", "warning-text"],
-    ["Exp. Shortfall", formatOperatingMetric(operatingMetric(artifact, "portfolio_expected_shortfall_95"), { asPct: true }), "", "warning-text"],
+    ["Strategy 21 Status", composite?.lifecycle_status || "RESEARCH COMPOSITE", "NOT LIVE · NOT ALLOCATION APPROVED", "warning-text"],
+    ["Historical Net Return", composite?.net_metrics?.cumulative_return == null ? "N/A" : pct(composite.net_metrics.cumulative_return, 1), "Strategy 21 research baseline", cls(latestCum)],
+    ["Historical Sharpe", composite?.net_metrics?.sharpe == null ? "N/A" : num(composite.net_metrics.sharpe, 2), "Research composite", ""],
+    ["Historical Max DD", composite?.net_metrics?.max_drawdown == null ? "N/A" : pct(composite.net_metrics.max_drawdown, 1), "Research composite", "negative"],
+    ["Authoritative PnL", pnlLabel, shadowComposite?.status || "Shadow intraday incomplete", latestReturn == null ? "warning-text" : cls(latestReturn)],
+    ["Daily PnL", dailyPnl == null ? "Unavailable" : money(dailyPnl), pnlLabel, dailyPnl == null ? "warning-text" : cls(latestReturn)],
+    ["Research Weights", "50% / 50%", "C2A2_020 / C2B2_004", ""],
     ["Breached Controls", String(breached), `${issueCounts.current_model_issues} current-model issues`, breached ? "negative" : ""],
-    ["Data Quality", humanize(intradayDq.freshness || dq.overall_status || "monitor"), intradayDq.freshness ? "Intraday proxy" : dq.stale ? "Stale proxy" : "Proxy OK", intradayDq.freshness === "Stale" || intradayDq.freshness === "Failed" ? "warning-text" : ""],
+    ["Data Quality", humanize(intradayDq.freshness || dq.overall_status || "monitor"), intradayDq.freshness ? "Intraday shadow" : "Research baseline", intradayDq.freshness === "Stale" || intradayDq.freshness === "Failed" ? "warning-text" : ""],
   ]);
 }
 
 function renderOperatingLedgerOrCharts(artifact) {
-  const series = portfolioSeriesForDisplay(artifact);
+  const series = uiPortfolioSeries(artifact);
   const obs = (series.returns || []).length;
   const wrap = document.getElementById("operatingLedgerWrap");
   const pnlCanvas = document.getElementById("pnlCanvas");
   const ddPanel = document.getElementById("operatingDrawdownPanel");
+  const caption = document.getElementById("pnlChartCaption");
+  if (caption) {
+    caption.textContent = typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode()
+      ? "Strategy 21 historical research cumulative return · not live PnL"
+      : `Operating period since ${investmentStart(artifact)} · Historical research context in Research Lab`;
+  }
   const capital = artifact.initial_capital || 0;
   if (obs < 5 && wrap) {
     wrap.innerHTML = `<div class="table-viewport short operating-ledger-viewport"><div class="table-scroll"><table class="data-table dense operating-ledger-table"><tr><th>Date</th><th>Daily Return</th><th>Daily PnL</th><th>Model NAV</th><th>Cumulative Return</th><th>Drawdown</th></tr>
@@ -2570,18 +2695,23 @@ function renderOperatingLedgerOrCharts(artifact) {
 }
 
 function renderContributorsDetractorsTables(artifact) {
-  const strategies = (artifact.strategies || []).filter((s) => s.current_weight > 0);
+  const usingResearch = typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length;
+  const strategies = usingResearch
+    ? uiStrategies(artifact).filter((row) => row.current_weight > 0)
+    : (artifact.strategies || []).filter((s) => s.current_weight > 0);
   const positive = [...strategies].filter((s) => (s.daily_pnl || 0) > 0).sort((a, b) => (b.daily_pnl || 0) - (a.daily_pnl || 0)).slice(0, 6);
   const negative = [...strategies].filter((s) => (s.daily_pnl || 0) < 0).sort((a, b) => (a.daily_pnl || 0) - (b.daily_pnl || 0)).slice(0, 6);
   const row = (s) => {
-    const driver = s.risk_manager_question_answered?.why || s.hypothesis || "—";
+    const driver = s.primary_return_driver || s.risk_manager_question_answered?.why || s.hypothesis || "—";
     const shortDriver = driver.length > 48 ? `${driver.slice(0, 45)}…` : driver;
-    return `<tr><td>${s.name}</td><td class="col-num ${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td><td class="col-pct">${pct(s.current_weight || 0)}</td><td class="wrap-cell" title="${escapeHtml(driver)}">${escapeHtml(shortDriver)}</td></tr>`;
+    const pnlText = usingResearch ? "Unavailable" : money(s.daily_pnl || 0);
+    return `<tr><td>${s.name}</td><td class="col-num">${pnlText}</td><td class="col-pct">${pct(s.current_weight || 0)}</td><td class="wrap-cell" title="${escapeHtml(driver)}">${escapeHtml(shortDriver)}</td></tr>`;
   };
   const ct = document.getElementById("contributorsTable");
   const dt = document.getElementById("detractorsTable");
-  if (ct) ct.innerHTML = `<tr><th>Strategy</th><th>Daily PnL</th><th>Alloc.</th><th>Driver</th></tr>${positive.map(row).join("") || "<tr><td colspan='4'>No contributors today.</td></tr>"}`;
-  if (dt) dt.innerHTML = `<tr><th>Strategy</th><th>Daily PnL</th><th>Alloc.</th><th>Driver</th></tr>${negative.map(row).join("") || "<tr><td colspan='4'>No detractors today.</td></tr>"}`;
+  const emptyMsg = usingResearch ? "Intraday shadow contribution unavailable." : "No contributors today.";
+  if (ct) ct.innerHTML = `<tr><th>Strategy</th><th>Daily PnL</th><th>Research Wt</th><th>Driver</th></tr>${positive.map(row).join("") || `<tr><td colspan='4'>${emptyMsg}</td></tr>`}`;
+  if (dt) dt.innerHTML = `<tr><th>Strategy</th><th>Daily PnL</th><th>Research Wt</th><th>Driver</th></tr>${negative.map(row).join("") || `<tr><td colspan='4'>${emptyMsg}</td></tr>`}`;
 }
 
 function renderRiskActionCenter(artifact) {
@@ -2858,7 +2988,7 @@ function renderAllocationEditor(artifact) {
   const table = document.getElementById("allocationEditorTable");
   if (!table) return;
   table.innerHTML = "<tr><th>Strategy</th><th>Lifecycle</th><th>Eligibility</th><th>Current</th><th>Proposed</th><th>Change</th><th>Direction</th><th>Trade $</th><th>Est. Cost</th><th>Risk Contrib.</th><th>Action</th><th>Rationale</th></tr>" +
-    (artifact.strategies || []).map((strategy) => {
+    uiStrategies(artifact).map((strategy) => {
       const current = strategy.current_weight || 0;
       const target = proposalSession.weights[strategy.strategy_id] || 0;
       const change = target - current;
@@ -2882,7 +3012,7 @@ function renderAllocationEditor(artifact) {
       </tr>`;
     }).join("");
   table.querySelectorAll("[data-weight-id]").forEach((input) => input.addEventListener("input", () => {
-    const strategy = artifact.strategies.find((s) => s.strategy_id === input.dataset.weightId);
+    const strategy = uiStrategies(artifact).find((s) => s.strategy_id === input.dataset.weightId);
     let val = Math.max(0, Number(input.value || 0) / 100);
     if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) val = Math.min(val, strategy.current_weight);
     proposalSession.weights[input.dataset.weightId] = val;
@@ -2894,7 +3024,7 @@ function renderAllocationEditor(artifact) {
   table.querySelectorAll("[data-weight-delta]").forEach((button) => button.addEventListener("click", () => {
     const id = button.dataset.weightDelta;
     const delta = Number(button.dataset.delta || 0);
-    const strategy = artifact.strategies.find((s) => s.strategy_id === id);
+    const strategy = uiStrategies(artifact).find((s) => s.strategy_id === id);
     let next = Math.max(0, (proposalSession.weights[id] || 0) + delta);
     if (strategy && strategy.current_weight > 0 && !strategy.allocation_eligibility?.eligible) next = Math.min(next, strategy.current_weight);
     proposalSession.weights[id] = Math.min(next, 0.25);
@@ -3006,9 +3136,16 @@ function renderRealMatrix(id, rows, factors, mode = "exposure") {
 }
 
 function renderCardsAndMatrices(artifact) {
-  const strategies = artifact.strategies || [];
+  const strategies = uiStrategies(artifact);
   renderContributorsDetractorsTables(artifact);
-  renderRecommendationPanels(artifact.recommendations || []);
+  renderRecommendationPanels(typeof ResearchUniverse !== "undefined" && ResearchUniverse.isLegacyProxyMode() ? (artifact.recommendations || []) : []);
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    renderUsEquityCorrelationMatrix(artifact);
+    renderFactorKpiGrid(artifact);
+    renderSimulationResult(artifact);
+    renderNewsRiskSummary(artifact.news_risk);
+    return;
+  }
   const factorRows = artifact.factors?.strategy_by_factor_matrix || [];
   const factorNames = (artifact.factors?.factor_contribution_to_risk || []).slice(0, 6).map((row) => row.factor);
   renderRealMatrix("factorMatrix", factorRows, factorNames);
@@ -3023,13 +3160,72 @@ function renderCardsAndMatrices(artifact) {
     universeSelect.value = correlationUniverse;
     universeSelect.onchange = () => {
       correlationUniverse = universeSelect.value;
+      if (correlationUniverse === "LEGACY_PROXY") ResearchUniverse.setPortfolioViewMode("legacy");
+      else {
+        ResearchUniverse.setPortfolioViewMode("current");
+        ResearchUniverse.setCorrelationFilter(correlationUniverse);
+      }
+      renderResearchModeBanners();
+      renderCardsAndMatrices(artifact);
+      renderTables(artifact);
+      renderWorkstationPanels(artifact);
+      refreshProposalStatusViews(artifact);
+    };
+  }
+  renderLegacyCorrelationMatrix(artifact, strategies, allocatedIds);
+}
+
+function renderUsEquityCorrelationMatrix(artifact) {
+  const universeSelect = document.getElementById("correlationUniverse");
+  if (universeSelect) {
+    universeSelect.value = correlationUniverse;
+    universeSelect.onchange = () => {
+      correlationUniverse = universeSelect.value;
+      if (correlationUniverse === "LEGACY_PROXY") {
+        ResearchUniverse.setPortfolioViewMode("legacy");
+        renderResearchModeBanners();
+        renderCardsAndMatrices(artifact);
+        renderTables(artifact);
+        renderWorkstationPanels(artifact);
+        refreshProposalStatusViews(artifact);
+        return;
+      }
+      ResearchUniverse.setPortfolioViewMode("current");
+      ResearchUniverse.setCorrelationFilter(correlationUniverse);
+      renderResearchModeBanners();
       renderCardsAndMatrices(artifact);
     };
   }
+  const dataset = ResearchUniverse.correlationDataset(correlationUniverse);
+  const ids = dataset.ids || [];
+  const names = dataset.names || {};
+  const normalizedCorr = ids.map((left) => {
+    const out = { strategy: names[left] || left };
+    ids.forEach((right) => { out[right] = dataset.matrix?.[left]?.[right] ?? 0; });
+    return out;
+  });
+  const matrixTitle = document.getElementById("correlationMatrixTitle");
+  if (matrixTitle) {
+    matrixTitle.textContent = `${ResearchUniverse.CORRELATION_LABELS[correlationUniverse] || correlationUniverse} · ${ids.length}-Strategy Correlation Matrix`;
+  }
+  renderRealMatrix("correlationMatrix", normalizedCorr, ids, "correlation");
+  const pairs = dataset.pairs || [];
+  document.getElementById("correlationSummary").innerHTML = [
+    ["Universe", ResearchUniverse.CORRELATION_LABELS[correlationUniverse] || correlationUniverse],
+    ["Strategies", ids.length],
+    ["Pair count", Math.max(0, (ids.length * (ids.length - 1)) / 2)],
+    ["C2A2_002 / C2A2_020", num(pairs.find((row) => row.strategy_left === "C2A2_002" && row.strategy_right === "C2A2_020")?.daily_net_return_correlation ?? dataset.matrix?.C2A2_002?.C2A2_020 ?? 0, 3)],
+    ["C2A2_020 / C2B2_004", num(pairs.find((row) => row.strategy_left === "C2A2_020" && row.strategy_right === "C2B2_004")?.daily_net_return_correlation ?? dataset.matrix?.C2A2_020?.C2B2_004 ?? 0, 3)],
+    ["Duplicate decision", "C2A2_002 excluded from Strategy 21 as economic duplicate"],
+  ].map(([label, value]) => drawerMetric(label, value)).join("");
+  document.getElementById("correlationPairs").innerHTML = "<tr><th>Left Strategy</th><th>Right Strategy</th><th class='col-num'>Daily Corr</th><th class='col-num'>Rolling 60D</th><th class='wrap-cell'>Decision</th></tr>" +
+    pairs.map((pair) => `<tr><td>${escapeHtml(pair.strategy_left)}</td><td>${escapeHtml(pair.strategy_right)}</td><td class="col-num">${num(pair.daily_net_return_correlation, 3)}</td><td class="col-num">${pair.rolling_60d_correlation == null ? "N/A" : num(pair.rolling_60d_correlation, 3)}</td><td class="wrap-cell">${escapeHtml(pair.duplicate_decision || pair.overlap_note || "Review overlap")}</td></tr>`).join("") ||
+    ids.map((left, i) => ids.slice(i + 1).map((right) => `<tr><td>${escapeHtml(names[left] || left)}</td><td>${escapeHtml(names[right] || right)}</td><td class="col-num">${num(dataset.matrix?.[left]?.[right] ?? 0, 3)}</td><td class="col-num">N/A</td><td class="wrap-cell">Pairwise research correlation</td></tr>`).join("")).join("");
+}
+
+function renderLegacyCorrelationMatrix(artifact, strategies, allocatedIds) {
   const corrRowsAll = artifact.correlation?.matrix || [];
-  const corrRows = correlationUniverse === "allocated"
-    ? corrRowsAll.filter((row) => allocatedIds.has(row.strategy_id))
-    : corrRowsAll;
+  const corrRows = corrRowsAll;
   const corrNames = corrRows.map((row) => row.strategy_id);
   const normalizedCorr = corrRows.map((row) => {
     const out = { strategy: row.name };
@@ -3040,9 +3236,7 @@ function renderCardsAndMatrices(artifact) {
   });
   const matrixTitle = document.getElementById("correlationMatrixTitle");
   if (matrixTitle) {
-    matrixTitle.textContent = correlationUniverse === "allocated"
-      ? `Allocated ${corrRows.length}-Strategy Correlation Matrix`
-      : `All-Research ${corrRows.length}-Strategy Correlation Matrix`;
+    matrixTitle.textContent = `LEGACY PROXY FACTOR REFERENCE · ${corrRows.length}-Strategy Correlation Matrix`;
   }
   renderRealMatrix("correlationMatrix", normalizedCorr, corrNames, "correlation");
   const corrSummary = artifact.correlation?.summary || {};
@@ -3102,31 +3296,63 @@ function renderStaticTables(artifact) {
 
 function renderWorkflow(artifact) {
   const gateBadge = (status) => statusBadge(status || "pending");
-  document.getElementById("workflowTable").innerHTML = "<tr><th>Strategy</th><th>Hypothesis</th><th>Data</th><th>Signal</th><th>Backtest</th><th>Walk-Fwd</th><th>Risk Limits</th><th>Registry</th><th>Model Alloc</th><th>Approval</th><th>Next Action</th></tr>" +
-    artifact.strategies.map((s) => {
+  const workflowFilter = typeof ResearchUniverse !== "undefined" ? ResearchUniverse.getWorkflowFilter() : "US_EQUITY";
+  const rows = typeof ResearchUniverse !== "undefined" && workflowFilter !== "LEGACY_REFERENCE" && !ResearchUniverse.isLegacyProxyMode()
+    ? ResearchUniverse.workflowRows(workflowFilter)
+    : (artifact.strategies || []).map((row) => ({ ...row, research_group: "LEGACY_PROXY" }));
+  document.getElementById("workflowTable").innerHTML = "<tr><th>Strategy</th><th>Hypothesis</th><th>Data</th><th>Signal</th><th>Backtest</th><th>Cost</th><th>IC/Decile</th><th>Risk Review</th><th>Duplicate</th><th>Composite</th><th>Shadow</th><th>Approval</th><th>Next Action</th></tr>" +
+    rows.map((s) => {
       const wf = s.workflow_gates || {};
       const elig = formatEligibilityDisplay(s);
-      return `<tr>
-        <td><strong>${s.name}</strong><small>${s.current_weight > 0 ? `Allocated ${pct(s.current_weight)}` : "Research only"}</small></td>
-        <td class="wrap-cell">${s.hypothesis || "—"}</td>
+      const archived = s.research_group === "ARCHIVED" || s.research_group === "DUPLICATE";
+      return `<tr class="table-link-row" data-open-research-lab="${escapeHtml(s.strategy_id)}">
+        <td><strong>${escapeHtml(s.name)}</strong><small>${s.current_weight > 0 ? `Research ${pct(s.current_weight)}` : humanize(s.research_group || "research")}</small></td>
+        <td class="wrap-cell">${escapeHtml(s.hypothesis || "—")}</td>
         <td>${gateBadge(wf.data_validation || s.evidence_status)}</td>
         <td>${gateBadge(wf.signal || s.signal_status)}</td>
-        <td>${gateBadge(wf.backtest || s.research_quality_status)}</td>
-        <td>${gateBadge(wf.walk_forward || (s.walk_forward?.windows?.length ? "complete" : "pending"))}</td>
-        <td>${gateBadge(s.current_weight > 0 ? (s.live_risk_status || s.risk_status) : (s.research_quality_status || "research review"))}</td>
-        <td>${gateBadge(wf.registry || s.registry_status || "registered")}</td>
-        <td>${statusBadge(elig.label)}</td>
+        <td>${gateBadge(wf.backtest || "complete")}</td>
+        <td>${gateBadge("complete")}</td>
+        <td>${gateBadge(archived ? "archived" : "complete")}</td>
+        <td>${gateBadge(wf.risk_limits || s.research_quality_status || "research review")}</td>
+        <td>${gateBadge(s.research_group === "DUPLICATE" ? "economic duplicate" : "cleared")}</td>
+        <td>${gateBadge(wf.composite_eligibility || "not eligible")}</td>
+        <td>${gateBadge(wf.shadow_eligibility || "not eligible")}</td>
         <td>${s.human_approval_required ? gateBadge("required") : gateBadge("not required")}</td>
         <td>${statusBadge(s.final_action_after_double_check || s.recommended_action || "review")}</td>
       </tr>`;
     }).join("");
   const workflowBanner = document.getElementById("workflowFilters");
   if (workflowBanner) {
-    workflowBanner.innerHTML = [
-      "Hypothesis", "Data validation", "Signal", "Backtest", "Walk-forward",
-      "Risk limits", "Registry", "Model allocation", "Human approval",
-    ].map((label) => `<span class="workflow-filter-chip">${label}</span>`).join("");
+    workflowBanner.innerHTML = `
+      <label>Pipeline view
+        <select id="workflowPipelineFilter">
+          <option value="US_EQUITY">US-Equity Research Pipeline</option>
+          <option value="LEGACY_REFERENCE">Legacy Proxy Reference</option>
+        </select>
+      </label>
+      <span class="workflow-filter-chip">Hypothesis</span>
+      <span class="workflow-filter-chip">Baseline backtest</span>
+      <span class="workflow-filter-chip">Cost analysis</span>
+      <span class="workflow-filter-chip">IC / decile</span>
+      <span class="workflow-filter-chip">Duplicate review</span>
+      <span class="workflow-filter-chip">Composite eligibility</span>
+      <span class="workflow-filter-chip">Shadow eligibility</span>`;
+    const select = document.getElementById("workflowPipelineFilter");
+    if (select) {
+      select.value = workflowFilter;
+      select.onchange = () => {
+        const value = select.value;
+        if (value === "LEGACY_REFERENCE") ResearchUniverse.setPortfolioViewMode("legacy");
+        else ResearchUniverse.setPortfolioViewMode("current");
+        ResearchUniverse.setWorkflowFilter(value);
+        renderResearchModeBanners();
+        renderWorkflow(artifact);
+      };
+    }
   }
+  document.querySelectorAll("#workflowTable [data-open-research-lab]").forEach((row) => {
+    row.addEventListener("click", () => openResearchLabForStrategy(row.dataset.openResearchLab));
+  });
 }
 
 function renderRiskSidebar(artifact) {
@@ -3513,17 +3739,46 @@ function latestHumanDecision() {
 }
 
 function reportNavEstimate(artifact) {
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    const model = ResearchUniverse.dailyReportModel();
+    const composite = ResearchUniverse.compositeItem()?.backtest || {};
+    const cum = composite.net_metrics?.cumulative_return ?? 0;
+    const daily = model.intraday_estimate?.daily_return;
+    return {
+      nav: daily == null ? null : artifact.initial_capital * (1 + cum),
+      dailyPnl: daily == null ? null : daily * artifact.initial_capital,
+      cumPnl: cum * artifact.initial_capital,
+      cumReturn: cum,
+      dailyReturn: daily,
+      pnlLabel: model.pnl_label || "Unavailable",
+    };
+  }
   const marks = artifact.intraday_marks || {};
   const cum = metricNumeric(operatingPnlMetric(artifact, "cumulative_return")) ?? artifact.portfolio_series?.cumulative_return?.at(-1) ?? 0;
   const daily = metricNumeric(operatingPnlMetric(artifact, "daily_return")) ?? artifact.portfolio_series?.returns?.at(-1) ?? 0;
   const nav = marks.estimated_model_nav ?? artifact.initial_capital * (1 + cum);
   const dailyPnl = marks.estimated_intraday_pnl ?? daily * artifact.initial_capital;
-  return { nav, dailyPnl, cumPnl: cum * artifact.initial_capital, cumReturn: cum, dailyReturn: daily };
+  return { nav, dailyPnl, cumPnl: cum * artifact.initial_capital, cumReturn: cum, dailyReturn: daily, pnlLabel: "Proxy estimate" };
 }
 
 function renderReportStatusStrip(artifact) {
   const el = document.getElementById("reportStatusStrip");
   if (!el) return;
+  const usingResearch = typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length;
+  if (usingResearch) {
+    const model = ResearchUniverse.dailyReportModel();
+    const hist = model.historical_metrics || {};
+    el.innerHTML = `
+      <span>Report date <strong>${model.report_date || "n/a"}</strong></span>
+      <span>Market data <strong>${escapeHtml(String(model.latest_market_data))}</strong></span>
+      <span>Position date <strong>${escapeHtml(String(model.latest_position_date || "n/a"))}</strong></span>
+      <span>Coverage <strong>${escapeHtml(String(model.coverage))}</strong></span>
+      <span>Strategy 21 <strong>${escapeHtml(model.strategy_21_status || "RESEARCH COMPOSITE")}</strong></span>
+      <span>Historical net <strong>${hist.cumulative_return == null ? "N/A" : pct(hist.cumulative_return, 1)}</strong></span>
+      <span>Authoritative PnL <strong class="warning-text">${escapeHtml(model.pnl_label || "Unavailable")}</strong></span>
+      <span>Execution <strong>LIVE — NOT AVAILABLE</strong></span>`;
+    return;
+  }
   const proxyState = deriveCanonicalProxyDataState(artifact);
   const est = reportNavEstimate(artifact);
   const openReviews = countOpenDecisionReviews(artifact, localDecisionEvents);
@@ -3628,7 +3883,7 @@ function renderReportRebalancePanel(artifact) {
     </div>`;
     return;
   }
-  const rows = (artifact.strategies || []).filter((s) => Math.abs((proposalSession.weights[s.strategy_id] || 0) - (s.current_weight || 0)) > 1e-6);
+  const rows = uiStrategies(artifact).filter((s) => Math.abs((proposalSession.weights[s.strategy_id] || 0) - (s.current_weight || 0)) > 1e-6);
   el.innerHTML = `<div class="rebalance-summary-card">
     <p><strong>${proposal.status}</strong> · ${proposal.detail}</p>
     <p>Estimated cost: ${money(proposalSession.simulation.estimatedCost || 0)} · Turnover: ${pct(proposalSession.simulation.turnover || 0, 1)}</p>
@@ -3664,6 +3919,18 @@ function renderReportMonitoringPanel(artifact) {
 function renderReportDataQualityPanel(artifact) {
   const el = document.getElementById("reportDataQualityPanel");
   if (!el) return;
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    const model = ResearchUniverse.dailyReportModel();
+    el.innerHTML = `
+      <p><strong>Report mode:</strong> Strategy 21 research/shadow · HISTORICAL RESEARCH + optional INTRADAY SHADOW ESTIMATE</p>
+      <p><strong>Latest market-data timestamp:</strong> ${escapeHtml(String(model.latest_market_data))}</p>
+      <p><strong>Latest position date:</strong> ${escapeHtml(String(model.latest_position_date || "n/a"))}</p>
+      <p><strong>Data coverage:</strong> ${escapeHtml(String(model.coverage))}</p>
+      <p><strong>Missing tickers:</strong> ${escapeHtml((model.missing_tickers || []).join(", ") || "None flagged")}</p>
+      <p><strong>Live trading:</strong> LIVE — NOT AVAILABLE</p>
+      <p><strong>Limitations:</strong> Pilot 500 survivorship bias · point-in-time limitation · borrow/market-impact not modeled · walk-forward not in current baseline.</p>`;
+    return;
+  }
   const dq = artifact.data_quality || {};
   const proxy = deriveCanonicalProxyDataState(artifact);
   const intraday = artifact.intraday_marks?.data_quality || dq.intraday || {};
@@ -3679,8 +3946,26 @@ function renderReportDataQualityPanel(artifact) {
 }
 
 function buildDailyMemoSections(artifact) {
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    const model = ResearchUniverse.dailyReportModel();
+    const hist = model.historical_metrics || {};
+    const intraday = model.intraday_estimate || {};
+    const weights = model.member_weights || ResearchUniverse.defaultResearchWeights();
+    const missing = (model.missing_tickers || []).join(", ") || "None flagged";
+    return [
+      ["Executive risk conclusion", `Strategy 21 research/shadow daily report. ${model.strategy_21_status}. NOT LIVE · NOT ALLOCATION APPROVED.`],
+      ["Historical research metrics", `Net return ${hist.cumulative_return == null ? "N/A" : pct(hist.cumulative_return, 1)} · Sharpe ${hist.sharpe == null ? "N/A" : num(hist.sharpe, 2)} · Vol ${hist.volatility == null ? "N/A" : pct(hist.volatility, 1)} · Max DD ${hist.max_drawdown == null ? "N/A" : pct(hist.max_drawdown, 1)}.`],
+      ["Strategy 21 member weights", `C2A2_020 ${pct(weights.C2A2_020 || 0, 0)} · C2B2_004 ${pct(weights.C2B2_004 || 0, 0)} · Excluded duplicate ${model.excluded_member || "C2A2_002"}.`],
+      ["Intraday shadow estimate", intraday.available === false || intraday.daily_return == null ? "HISTORICAL RESEARCH ONLY · INTRADAY SHADOW ESTIMATE unavailable." : `INTRADAY SHADOW ESTIMATE ${pct(intraday.daily_return, 2)} · status ${intraday.status || "partial"}.`],
+      ["Finalized shadow return", intraday.finalized_return == null ? "FINALIZED SHADOW RETURN not present in current snapshot." : `FINALIZED SHADOW RETURN ${pct(intraday.finalized_return, 2)}.`],
+      ["Alerts", `Drawdown ${model.alerts?.drawdown || "monitor"} · Correlation ${model.alerts?.correlation || "monitor"} · Concentration ${model.alerts?.concentration || "monitor"} · Data quality ${model.alerts?.data_quality || "monitor"}.`],
+      ["Data coverage", `Coverage ${model.coverage}. Missing tickers: ${missing}.`],
+      ["Next monitoring action", "Continue Strategy 21 shadow research monitoring; do not treat proxy ETF NAV as authoritative PnL."],
+      ["Human decision notes", latestHumanDecision()?.note || "No human decision recorded in this browser session."],
+    ];
+  }
   const est = reportNavEstimate(artifact);
-  const allocated = (artifact.strategies || []).filter((s) => s.current_weight > 0);
+  const allocated = uiStrategies(artifact).filter((s) => s.current_weight > 0);
   const winners = allocated.filter((s) => (s.daily_pnl || 0) > 0).sort((a, b) => b.daily_pnl - a.daily_pnl);
   const losers = allocated.filter((s) => (s.daily_pnl || 0) < 0).sort((a, b) => a.daily_pnl - b.daily_pnl);
   const issues = groupedCurrentPortfolioIssues(artifact).slice(0, 5);
@@ -3709,10 +3994,13 @@ function renderDailyMemo(artifact) {
   const sections = buildDailyMemoSections(artifact);
   const html = sections.map(([title, body]) => `<section><h3>${escapeHtml(title)}</h3><p>${escapeHtml(humanizeUserFacingText(body, artifact))}</p></section>`).join("");
   document.getElementById("dailyRiskMemo").innerHTML = html;
+  const headerNote = typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode()
+    ? "Strategy 21 research/shadow daily report · NOT LIVE · NOT ALLOCATION APPROVED"
+    : "Prototype model portfolio · Research proxy data · Not live positions or fills";
   document.getElementById("generatedReport").innerHTML = `
     <header class="report-print-header">
       <h2>Daily Risk Report — ${artifact.as_of_date}</h2>
-      <p>Prototype model portfolio · Research proxy data · Not live positions or fills</p>
+      <p>${headerNote}</p>
       ${reportFrozenAt ? `<p>Frozen at ${reportFrozenAt}</p>` : ""}
     </header>${html}`;
   const caption = document.getElementById("reportPreviewCaption");
@@ -3780,7 +4068,7 @@ function installOperationalControls(artifact) {
   }, null, 2)));
   document.getElementById("exportCsv").addEventListener("click", () => {
     const rows = [["strategy_id", "strategy", "current_weight", "target_weight", "change", "estimated_cost"]];
-    (artifact.strategies || []).forEach((strategy) => {
+    uiStrategies(artifact).forEach((strategy) => {
       const target = proposalSession.weights[strategy.strategy_id] || 0;
       const change = target - (strategy.current_weight || 0);
       rows.push([strategy.strategy_id, strategy.name, strategy.current_weight || 0, target, change, Math.abs(change) * artifact.initial_capital * .0005]);
@@ -3799,8 +4087,11 @@ async function init() {
     loadLiveOverlay(),
   ]);
   mergeLiveOverlay(artifact, overlay);
+  await ensureFactoryResearchExtension();
+  ResearchUniverse.hydrate(factoryResearchCatalog, artifact);
   activeArtifact = artifact;
   initProposalSession(artifact);
+  renderResearchModeBanners();
   renderTopHeader(artifact);
   renderKpis(artifact);
   renderTables(artifact);

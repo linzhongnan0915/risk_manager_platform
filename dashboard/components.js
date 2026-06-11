@@ -678,6 +678,10 @@ function countOpenDecisionReviews(artifact, localEvents = []) {
 }
 
 function proposalIsUnchanged(artifact, simulatedWeights) {
+  if (typeof ResearchUniverse !== "undefined" && !ResearchUniverse.isLegacyProxyMode() && ResearchUniverse.strategyRows().length) {
+    const baseline = ResearchUniverse.defaultResearchWeights();
+    return Object.keys(baseline).every((key) => Math.abs((simulatedWeights[key] || 0) - (baseline[key] || 0)) < 1e-6);
+  }
   return (artifact.strategies || []).every((s) => Math.abs((simulatedWeights[s.strategy_id] || 0) - (s.current_weight || 0)) < 1e-6);
 }
 
