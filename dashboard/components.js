@@ -782,3 +782,54 @@ function formatOosWindows(walk = {}) {
 function tableViewport(contentHtml, className = "") {
   return `<div class="table-viewport ${className}"><div class="table-scroll">${contentHtml}</div></div>`;
 }
+
+const RESEARCH_STRATEGY_IDS = new Set(["C2A2_020", "C2B2_004", "STRATEGY_21_RESEARCH_COMPOSITE_V1"]);
+const RESEARCH_MEMBER_IDS = new Set(["C2A2_020", "C2B2_004"]);
+const RESEARCH_COMPOSITE_ID = "STRATEGY_21_RESEARCH_COMPOSITE_V1";
+
+function humanizeResearchRegistryStatus(status) {
+  const labels = {
+    RESEARCH_COMPOSITE_MEMBER: "RESEARCH COMPOSITE MEMBER",
+    RESEARCH_COMPOSITE: "RESEARCH COMPOSITE",
+    RESEARCH_CANDIDATE: "RESEARCH CANDIDATE",
+    ARCHIVE: "ARCHIVED",
+    BLOCKED: "ARCHIVED",
+  };
+  return labels[status] || String(status || "").replaceAll("_", " ");
+}
+
+function extractShadowPortfolioState(artifact = activeArtifact) {
+  const status = artifact?.intraday_refresh_status || {};
+  const shadow = status.shadow_intraday || artifact?.intraday_marks?.shadow_intraday || {};
+  const rows = shadow.strategies || [];
+  return {
+    shadow,
+    rows,
+    composite: rows.find((row) => row.strategy_id === RESEARCH_COMPOSITE_ID) || null,
+    members: rows.filter((row) => RESEARCH_MEMBER_IDS.has(row.strategy_id)),
+    status,
+  };
+}
+
+function formatShadowCoverageWarning(shadowState) {
+  const status = shadowState.status || {};
+  const requested = status.ticker_count_requested;
+  const successful = status.ticker_count_successful;
+  const missing = [...new Set(shadowState.rows.flatMap((row) => row.missing_tickers || []))];
+  const composite = shadowState.composite;
+  if (!requested && !missing.length && composite?.available !== false) return "";
+  let message = `Data incomplete: ${successful ?? "n/a"}/${requested ?? "n/a"} tickers available.`;
+  if (composite?.available === false) message += " Strategy 21 PnL withheld.";
+  if (missing.length) message += ` Missing: ${missing.join(", ")}.`;
+  return message;
+}
+
+function countShadowDataAlerts(shadowState) {
+  const incomplete = shadowState.rows.filter((row) => row.available === false).length;
+  const missingTickers = [...new Set(shadowState.rows.flatMap((row) => row.missing_tickers || []))].length;
+  return incomplete + (missingTickers ? 1 : 0);
+}
+
+function formatUnavailableLabel(detail = "DATA INCOMPLETE") {
+  return { text: "Unavailable", detail, tone: "warning-text" };
+}

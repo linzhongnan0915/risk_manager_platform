@@ -258,18 +258,50 @@ async function loadLiveOverlay() {
   return null;
 }
 
-async function renderShadowStrategyRegistry(status = "ALL") {
+async function renderShadowStrategyRegistry(status = "CURRENT_RESEARCH") {
   const table = document.getElementById("shadowStrategyTable");
   if (!table) return;
+  if (status === "LEGACY_PROXY") {
+    applyStrategyPageView("legacy");
+    return;
+  }
+  applyStrategyPageView("research");
   try {
-    const response = await fetch(`/api/strategy-shadow?status=${encodeURIComponent(status)}`, { cache: "no-store" });
+    const apiStatus = status === "CURRENT_RESEARCH" ? "ALL" : status;
+    const response = await fetch(`/api/strategy-shadow?status=${encodeURIComponent(apiStatus)}`, { cache: "no-store" });
     const payload = await response.json();
-    const rows = payload.strategies || [];
+    let rows = payload.strategies || [];
+    if (status === "CURRENT_RESEARCH") {
+      rows = rows.filter((row) => RESEARCH_STRATEGY_IDS.has(row.strategy_id));
+    } else if (status === "RESEARCH_COMPOSITE") {
+      rows = rows.filter((row) => row.status === "RESEARCH_COMPOSITE" || row.status === "RESEARCH_COMPOSITE_MEMBER");
+    }
+    shadowRegistryCache = rows;
     table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Allocation Eligible</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th></tr>` +
-      rows.map((row) => `<tr><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.name)}</td><td>${statusBadge(row.status)}</td><td>${row.allocation_eligible ? "YES" : "NO"}</td><td>${pct(row.net_return || 0, 1)}</td><td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td><td>${pct(row.max_drawdown || 0, 1)}</td><td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td><td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td><td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td><td class="wrap-cell">${escapeHtml(row.status_reason)}</td><td>${escapeHtml(row.latest_data_date)}</td></tr>`).join("");
+      rows.map((row) => `<tr><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.name)}</td><td>${statusBadge(humanizeResearchRegistryStatus(row.status))}</td><td>${row.allocation_eligible ? "YES" : "NO"}</td><td>${pct(row.net_return || 0, 1)}</td><td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td><td>${pct(row.max_drawdown || 0, 1)}</td><td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td><td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td><td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td><td class="wrap-cell">${escapeHtml(row.status_reason)}</td><td>${escapeHtml(row.latest_data_date)}</td></tr>`).join("");
+    if (activeArtifact) {
+      renderResearchCommandPanels(activeArtifact);
+      renderCommandKpiStrip(activeArtifact);
+    }
   } catch (error) {
     table.innerHTML = "<tr><td>Shadow registry unavailable.</td></tr>";
   }
+}
+
+function applyStrategyPageView(mode) {
+  const legacyPanel = document.getElementById("legacyStrategyMonitorPanel");
+  const shadowPanel = document.getElementById("shadowStrategyPanel");
+  if (mode === "legacy") {
+    legacyPanel?.classList.remove("hidden-panel");
+    shadowPanel?.classList.add("hidden-panel");
+  } else {
+    legacyPanel?.classList.add("hidden-panel");
+    shadowPanel?.classList.remove("hidden-panel");
+  }
+}
+
+function registryRow(strategyId) {
+  return shadowRegistryCache.find((row) => row.strategy_id === strategyId) || null;
 }
 
 function mergeLiveOverlay(artifact, overlay) {
@@ -330,8 +362,34 @@ function mergeIntradaySnapshot(artifact, snapshot) {
 }
 
 function renderLiveDataState(artifact) {
+  renderHeaderDataWarning(artifact);
+  renderCommandDataQualityExpanded(artifact);
   renderIntradayRefreshStrip(artifact);
   renderTruthDisclosure(artifact);
+}
+
+function renderHeaderDataWarning(artifact) {
+  const warningEl = document.getElementById("headerDataWarning");
+  const commandWarningEl = document.getElementById("commandDataWarning");
+  const shadowState = extractShadowPortfolioState(artifact);
+  const warning = formatShadowCoverageWarning(shadowState);
+  const html = warning ? escapeHtml(warning) : "";
+  if (warningEl) warningEl.textContent = warning || "";
+  if (commandWarningEl) commandWarningEl.textContent = warning || "";
+}
+
+function renderCommandDataQualityExpanded(artifact) {
+  const el = document.getElementById("commandDataQualityExpanded");
+  if (!el) return;
+  const shadowState = extractShadowPortfolioState(artifact);
+  const status = shadowState.status || {};
+  const rows = shadowState.rows || [];
+  el.innerHTML = rows.map((row) => `
+    <p><strong>${escapeHtml(row.strategy_id)}</strong> · ${escapeHtml(row.status || "UNKNOWN")} · available=${row.available ? "yes" : "no"} · uncovered gross ${pct(row.uncovered_gross_weight || 0, 2)} · missing ${escapeHtml((row.missing_tickers || []).join(", ") || "none")}</p>
+  `).join("") || "<p>No shadow estimate rows loaded.</p>";
+  el.innerHTML += `<p><strong>Requested tickers:</strong> ${status.ticker_count_requested ?? "n/a"} · <strong>Successful:</strong> ${status.ticker_count_successful ?? "n/a"} · <strong>Failed:</strong> ${status.failed_ticker_count ?? (status.missing_tickers || []).length ?? "n/a"}</p>`;
+  el.innerHTML += `<p><strong>Missing tickers:</strong> ${escapeHtml((status.missing_tickers || []).join(", ") || "none")}</p>`;
+  el.innerHTML += `<p><strong>Scheduler:</strong> ${escapeHtml(status.scheduler_display || status.scheduler_label || "n/a")} · <strong>Snapshot:</strong> ${escapeHtml(artifact.intraday_snapshot_id || status.snapshot_id || "daily artifact")}</p>`;
 }
 
 function renderIntradayRefreshStrip(artifact) {
@@ -437,10 +495,12 @@ async function refreshLiveDataFromServer(artifact) {
 function applyIntradayUiRefresh(artifact) {
   renderTopHeader(artifact);
   renderLiveDataState(artifact);
+  renderResearchCommandPanels(artifact);
   renderNewsRiskSummary(artifact.news_risk);
   renderRecommendationPanels(artifact.recommendations);
   renderKpis(artifact);
   renderStaticTables(artifact);
+  renderWorkstationPanels(artifact);
   redrawAllCharts(artifact);
 }
 
@@ -529,7 +589,8 @@ function installLiveControls(artifact) {
   button.addEventListener("click", () => refreshLiveDataFromServer(artifact));
 }
 
-let riskActionFilter = "current_model";
+let riskActionFilter = "data";
+let shadowRegistryCache = [];
 let reportFrozenAt = null;
 let intradayMonitoringOffline = false;
 let activeArtifact = null;
@@ -779,28 +840,28 @@ function renderTopHeader(artifact = activeArtifact) {
   const el = document.getElementById("topbarMeta");
   if (!el || !artifact) return;
   const monitoring = formatMonitoringState(artifact);
+  const status = artifact.intraday_refresh_status || {};
+  const latestBar = status.latest_completed_market_bar_at || status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
+  const nextRefresh = status.next_scheduled_refresh_at;
+  const freshness = status.data_freshness || status.canonical_data_state || monitoring.stripDataState;
+  const schedulerDisplay = status.scheduler_display || status.scheduler_label || monitoring.schedulerLabel || "idle";
+  const requested = status.ticker_count_requested;
+  const successful = status.ticker_count_successful;
   el.innerHTML = `
-    <span class="mode-badge">Prototype Model Portfolio</span>
-    <span>As-of <strong>${artifact.as_of_date || "n/a"}</strong></span>
-    <span>Initial Model Capital <strong>${money(artifact.initial_capital || 0)}</strong></span>
-    <span>Monitored <strong>${artifact.strategy_count || 0}</strong></span>
     <span>Market <strong>${monitoring.headerMarket}</strong></span>
-    <span>Data <strong class="${monitoring.tone || ""}">${monitoring.headerData}</strong></span>`;
+    <span>Freshness <strong class="${monitoring.tone || ""}">${escapeHtml(String(freshness))}</strong></span>
+    <span>Latest bar <strong>${formatTimestamp(latestBar)}</strong></span>
+    <span>Next refresh <strong>${formatTimestamp(nextRefresh)}</strong></span>
+    <span>Coverage <strong>${successful ?? "n/a"}/${requested ?? "n/a"}</strong></span>
+    <span>Scheduler <strong>${escapeHtml(String(schedulerDisplay))}</strong></span>`;
+  renderHeaderDataWarning(artifact);
   renderSecondaryStatusStrip(artifact);
 }
 
 function renderSecondaryStatusStrip(artifact, meta = artifact?.build_metadata || {}, marketAsOf = meta.market_as_of || artifact?.as_of_date) {
   const el = document.getElementById("secondaryStatusStrip");
   if (!el) return;
-  const monitoring = formatMonitoringState(artifact);
-  const disclosure = artifact?.data_classification?.disclosure || "Prototype · ETF proxy · Not live fills";
-  el.innerHTML = `
-    <span title="${escapeHtml(disclosure)}">Build ${meta.build_id || "n/a"}</span>
-    <span>Retrieved ${meta.data_retrieved_at || meta.artifact_generated_at || "n/a"}</span>
-    <span>Operating since ${investmentStart(artifact)}</span>
-    <span>${monitoring.stripMonitoring} · ${monitoring.stripDataState}</span>
-    <span>Proxy as-of ${marketAsOf}</span>
-    <span>${disclosure.length > 90 ? `${disclosure.slice(0, 87)}…` : disclosure}</span>`;
+  el.innerHTML = "";
 }
 
 function renderGlobalStatusBar() {
@@ -1003,17 +1064,16 @@ function renderCommandMarketMini(artifact) {
 function renderMonitorKpiStrip(artifact) {
   const el = document.getElementById("monitorKpiStrip");
   if (!el) return;
-  const strategies = artifact.strategies || [];
-  const allocated = strategies.filter((strategy) => strategy.current_weight > 0);
-  const warnings = allocated.filter((strategy) => ["watch", "warning"].includes(strategy.live_risk_status || strategy.risk_status)).length;
-  const breaches = allocated.filter((strategy) => (strategy.live_risk_status || strategy.risk_status) === "breach").length;
-  const openReviews = countOpenDecisionReviews(artifact, localDecisionEvents);
+  const shadowState = extractShadowPortfolioState(artifact);
+  const incomplete = shadowState.rows.filter((row) => row.available === false).length;
+  const legacyStrategies = (artifact.strategies || []).filter((strategy) => strategy.current_weight > 0);
+  const legacyBreaches = legacyStrategies.filter((strategy) => (strategy.live_risk_status || strategy.risk_status) === "breach").length;
   el.innerHTML = compactKpiStrip([
-    ["Monitored", strategies.length, "", ""],
-    ["Allocated", allocated.length, "", ""],
-    ["Warnings", warnings, "", warnings ? "warning-text" : ""],
-    ["Allocated Strategy Breaches", breaches, "", breaches ? "negative" : ""],
-    ["Open Decision Reviews", String(openReviews), `Policy: ${strategies.length} strategies`, openReviews ? "warning-text" : ""],
+    ["Current Research", String(RESEARCH_STRATEGY_IDS.size), "SHADOW registry", ""],
+    ["Shadow Incomplete", String(incomplete), incomplete ? "DATA INCOMPLETE" : "All members complete", incomplete ? "warning-text" : "positive"],
+    ["Legacy Proxy Strategies", String(legacyStrategies.length), "ETF benchmark model", ""],
+    ["Legacy Proxy Breaches", String(legacyBreaches), "Legacy model only", legacyBreaches ? "negative" : ""],
+    ["Open Decision Reviews", String(countOpenDecisionReviews(artifact, localDecisionEvents)), "Local review queue", ""],
   ]);
 }
 
@@ -1238,6 +1298,7 @@ function renderRebalanceTradeList(artifact) {
 }
 
 function renderWorkstationPanels(artifact) {
+  renderResearchCommandPanels(artifact);
   renderAllocationBars(artifact.strategies || []);
   renderContributorsDetractorsTables(artifact);
   renderOperatingLedgerOrCharts(artifact);
@@ -1245,6 +1306,7 @@ function renderWorkstationPanels(artifact) {
   renderRebalancePreview(artifact);
   renderCommandMarketMini(artifact);
   renderCommandWatchlistPanels(artifact);
+  renderHistoricalResearchContext(artifact);
   renderMonitorKpiStrip(artifact);
   renderFactorKpiGrid(artifact);
   renderAllocationBeforeAfterStrip(artifact);
@@ -2285,32 +2347,97 @@ function renderKpis(artifact) {
 function renderCommandKpiStrip(artifact) {
   const el = document.getElementById("commandKpiStrip");
   if (!el) return;
-  const series = portfolioSeriesForDisplay(artifact);
-  const cumulative = series.cumulative_return || [];
-  const dailyPnlMetric = operatingPnlMetric(artifact, "daily_return");
-  const cumPnlMetric = operatingPnlMetric(artifact, "cumulative_return");
-  const latestCum = metricNumeric(cumPnlMetric) ?? cumulative.at(-1) ?? 0;
-  const latestReturn = metricNumeric(dailyPnlMetric) ?? series.returns?.at(-1) ?? 0;
+  const shadowState = extractShadowPortfolioState(artifact);
+  const composite = shadowState.composite;
+  const status = shadowState.status || {};
   const marks = artifact.intraday_marks || {};
-  const estimatedNav = marks.estimated_model_nav;
-  const estimatedIntradayPnl = marks.estimated_intraday_pnl;
-  const aumNow = estimatedNav ?? artifact.initial_capital * (1 + latestCum);
-  const headline = canonicalRiskHeadline(artifact);
+  const compositeRegistry = registryRow(RESEARCH_COMPOSITE_ID);
+  const memberRegistry = shadowState.members.map((row) => registryRow(row.strategy_id)).filter(Boolean);
+  const avgVol = memberRegistry.length
+    ? memberRegistry.reduce((sum, row) => sum + Math.abs(row.max_drawdown || 0), 0) / memberRegistry.length
+    : null;
   const issueCounts = countIssueCategories(artifact);
-  const breached = issueCounts.breached_controls;
-  const dq = artifact.data_quality || {};
-  const intradayDq = dq.intraday || marks.data_quality || {};
+  const alertCount = countShadowDataAlerts(shadowState) + (issueCounts.data_quality || 0);
+  const latestBar = status.latest_completed_market_bar_at || status.latest_market_observation_at || status.latest_observation || artifact.live_market_as_of;
+  const intradayPnl = composite?.estimated_pnl;
+  const researchNav = marks.estimated_model_nav;
+  const s21Status = composite?.available ? "RESEARCH COMPOSITE" : "DATA INCOMPLETE";
+  const pnlUnavailable = formatUnavailableLabel(composite?.missing_tickers?.length ? `Missing: ${composite.missing_tickers.join(", ")}` : "Strategy 21 withheld until both members complete");
+  const navUnavailable = formatUnavailableLabel("Intraday NAV withheld when composite incomplete");
   el.innerHTML = compactKpiStrip([
-    [estimatedNav ? "Est. Model NAV (proxy)" : "Current Model NAV", money(aumNow), estimatedNav ? "Intraday proxy mark · not realized" : `Operating since ${investmentStart(artifact)}`, cls(latestCum)],
-    [estimatedIntradayPnl != null ? "Est. Intraday PnL" : "Daily PnL", money(estimatedIntradayPnl ?? latestReturn * artifact.initial_capital), estimatedIntradayPnl != null ? "Estimated from proxy bars" : formatOperatingMetric(dailyPnlMetric), cls(estimatedIntradayPnl ?? latestReturn)],
-    ["Operating Cum. PnL", money(latestCum * artifact.initial_capital), formatOperatingMetric(cumPnlMetric), cls(latestCum)],
-    ["Current Drawdown", formatOperatingMetric(operatingMetric(artifact, "portfolio_max_drawdown"), { asPct: true }), "", "negative"],
-    ["Volatility", formatOperatingMetric(operatingMetric(artifact, "portfolio_volatility"), { asPct: true }), "Operating period", ""],
-    ["VaR 99%", formatOperatingMetric(operatingMetric(artifact, "portfolio_var_99"), { asPct: true }), "", "warning-text"],
-    ["Exp. Shortfall", formatOperatingMetric(operatingMetric(artifact, "portfolio_expected_shortfall_95"), { asPct: true }), "", "warning-text"],
-    ["Breached Controls", String(breached), `${issueCounts.current_model_issues} current-model issues`, breached ? "negative" : ""],
-    ["Data Quality", humanize(intradayDq.freshness || dq.overall_status || "monitor"), intradayDq.freshness ? "Intraday proxy" : dq.stale ? "Stale proxy" : "Proxy OK", intradayDq.freshness === "Stale" || intradayDq.freshness === "Failed" ? "warning-text" : ""],
+    ["Strategy 21 Status", s21Status, composite?.available ? "Both members complete" : "SHADOW estimate withheld", composite?.available ? "positive" : "warning-text"],
+    ["Intraday Shadow PnL", intradayPnl == null ? pnlUnavailable.text : money(intradayPnl), intradayPnl == null ? pnlUnavailable.detail : "SHADOW · session open to latest 5m close", intradayPnl == null ? pnlUnavailable.tone : cls(intradayPnl)],
+    ["Data Coverage", `${status.ticker_count_successful ?? "n/a"}/${status.ticker_count_requested ?? "n/a"}`, `${status.failed_ticker_count ?? (status.missing_tickers || []).length ?? 0} failed`, (status.ticker_count_successful || 0) < (status.ticker_count_requested || 0) ? "warning-text" : ""],
+    ["Latest Completed Bar", formatTimestamp(latestBar), "5m yfinance proxy", ""],
+    ["Research-Composite NAV", researchNav == null ? navUnavailable.text : money(researchNav), researchNav == null ? navUnavailable.detail : "Intraday shadow mark", researchNav == null ? navUnavailable.tone : ""],
+    ["Drawdown", compositeRegistry ? pct(compositeRegistry.max_drawdown || 0, 1) : "N/A", "Research backtest max", "negative"],
+    ["Volatility", avgVol == null ? "N/A" : pct(avgVol, 1), "Member research context", ""],
+    ["Active Data/Risk Alerts", String(alertCount), "Shadow + data quality scope", alertCount ? "warning-text" : ""],
   ]);
+}
+
+function renderResearchAllocationBars(artifact) {
+  const el = document.getElementById("researchAllocationBars");
+  if (!el) return;
+  const members = [
+    registryRow("C2A2_020"),
+    registryRow("C2B2_004"),
+  ].filter(Boolean);
+  el.innerHTML = members.map((row) => `
+    <div class="allocation-bar-row">
+      <span>${escapeHtml(row.name)} <small class="status-muted">SHADOW · 50% of Strategy 21</small></span>
+      <div class="allocation-bar-track"><span class="allocation-bar-fill" style="width:50%"></span></div>
+      <strong class="col-pct">50.0%</strong>
+    </div>`).join("") || "<p class='empty-state'>Current research members unavailable.</p>";
+  if (registryRow(RESEARCH_COMPOSITE_ID)) {
+    el.innerHTML += `<p class="status-muted">Strategy 21 composite shown only when both member marks are complete.</p>`;
+  }
+}
+
+function renderStrategy21StatusPanel(artifact) {
+  const el = document.getElementById("strategy21StatusPanel");
+  if (!el) return;
+  const shadowState = extractShadowPortfolioState(artifact);
+  const composite = shadowState.composite;
+  const registry = registryRow(RESEARCH_COMPOSITE_ID);
+  if (!composite && !registry) {
+    el.innerHTML = emptyState("Strategy 21 composite unavailable.");
+    return;
+  }
+  const withheld = composite?.available === false;
+  el.innerHTML = `
+    <p><strong>Status:</strong> ${statusBadge(withheld ? "DATA INCOMPLETE" : "RESEARCH COMPOSITE")}</p>
+    <p><strong>Intraday return:</strong> ${composite?.estimated_return == null ? "Unavailable" : pct(composite.estimated_return, 3)}</p>
+    <p><strong>Intraday PnL:</strong> ${composite?.estimated_pnl == null ? "Unavailable" : money(composite.estimated_pnl)}</p>
+    <p><strong>Research cumulative return:</strong> ${registry ? pct(registry.net_return || 0, 1) : "N/A"}</p>
+    <p><strong>Latest research data:</strong> ${escapeHtml(registry?.latest_data_date || "n/a")}</p>
+    ${withheld ? `<p class="warning-text">Composite withheld. Missing: ${escapeHtml((composite?.missing_tickers || []).join(", ") || "member marks incomplete")}</p>` : ""}`;
+}
+
+function renderShadowMemberEstimatesTable(artifact) {
+  const el = document.getElementById("shadowMemberEstimatesTable");
+  if (!el) return;
+  const shadowState = extractShadowPortfolioState(artifact);
+  const rows = shadowState.members.map((row) => {
+    const registry = registryRow(row.strategy_id);
+    return `<tr>
+      <td>${escapeHtml(row.strategy_id)}</td>
+      <td>${escapeHtml(registry?.name || row.strategy_id)}</td>
+      <td>${statusBadge(row.available ? "COMPLETE" : "DATA INCOMPLETE")}</td>
+      <td class="col-num">${row.estimated_return == null ? "Unavailable" : pct(row.estimated_return, 3)}</td>
+      <td class="col-num">${row.estimated_pnl == null ? "Unavailable" : money(row.estimated_pnl)}</td>
+      <td class="wrap-cell">${escapeHtml((row.missing_tickers || []).join(", ") || "none")}</td>
+    </tr>`;
+  }).join("");
+  el.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Return</th><th>PnL</th><th>Missing</th></tr>${rows || "<tr><td colspan='6'>No member estimates loaded.</td></tr>"}`;
+}
+
+function renderResearchCommandPanels(artifact) {
+  renderResearchAllocationBars(artifact);
+  renderStrategy21StatusPanel(artifact);
+  renderShadowMemberEstimatesTable(artifact);
+  renderHeaderDataWarning(artifact);
+  renderCommandDataQualityExpanded(artifact);
 }
 
 function renderOperatingLedgerOrCharts(artifact) {
@@ -2379,16 +2506,18 @@ function renderRiskActionCenter(artifact) {
 
 function renderCommandWatchlistPanels(artifact) {
   const recs = artifact.recommendations || [];
+  const shadowState = extractShadowPortfolioState(artifact);
   const proposal = deriveProposalStatus(artifact, proposalSession.simulation, proposalSession.weights);
-  const workflowView = deriveWorkflowPresentation(artifact, proposal);
   document.getElementById("commandWatchlist").innerHTML = recs.slice(0, 5).map((rec) => `<p>${statusBadge(rec.priority || "watch")} <strong>${escapeHtml(humanizeUserFacingText(rec.action, artifact))}</strong> — ${escapeHtml(humanizeUserFacingText(rec.rationale, artifact))}</p>`).join("") || emptyState("No watchlist items.");
   const dq = artifact.data_quality || {};
+  const intradayDq = dq.intraday || artifact.intraday_marks?.data_quality || {};
   document.getElementById("commandDataQuality").innerHTML = `
-    <p><strong>Active proposal:</strong> ${statusBadge(proposal.status)} ${proposal.detail}</p>
-    <p><strong>Missing series:</strong> ${(dq.missing_return_series || []).length || 0}</p>
-    <p><strong>Common window:</strong> ${dq.common_portfolio_risk_window_observations || 0} obs</p>
-    <p><strong>Governance:</strong> ${humanize(workflowView.workflowStatus, "monitoring")}</p>
-    <p><strong>Open decision reviews:</strong> ${countOpenDecisionReviews(artifact, localDecisionEvents)} · Approval policy applies to ${artifact.strategy_count || 0} strategies</p>`;
+    <p><strong>Shadow label:</strong> INTRADAY_SHADOW_ESTIMATE</p>
+    <p><strong>Composite status:</strong> ${statusBadge(shadowState.composite?.available ? "RESEARCH COMPOSITE" : "DATA INCOMPLETE")}</p>
+    <p><strong>Coverage:</strong> ${shadowState.status.ticker_count_successful ?? "n/a"}/${shadowState.status.ticker_count_requested ?? "n/a"} tickers</p>
+    <p><strong>Data freshness:</strong> ${escapeHtml(intradayDq.freshness || shadowState.status.data_freshness || dq.overall_status || "monitor")}</p>
+    <p><strong>Legacy proxy rebalance:</strong> ${statusBadge(proposal.status)} ${proposal.detail}</p>
+    <p><strong>Execution:</strong> Not authorized · SHADOW research only</p>`;
 }
 
 function renderTables(artifact) {
@@ -2409,7 +2538,7 @@ function renderTables(artifact) {
         : num(typeof opSharpe === "object" ? opSharpe.value : opSharpe);
       return `<tr class="${live ? "" : "research-only-row"}" data-strategy="${s.strategy_id}">
       <td>${idx + 1}</td><td><button class="table-link" data-open-strategy="${s.strategy_id}"><strong>${s.name}</strong></button></td><td>${s.strategy_type}</td>
-      <td>${live ? statusBadge("model allocated") : statusBadge("research only")}</td>
+      <td>${live ? statusBadge("LEGACY PROXY") : statusBadge("research only")}</td>
       <td>${pct(s.current_weight || 0)}</td><td>${pct(sessionProposedWeight(s.strategy_id, s.proposed_weight || 0))}</td>
       <td class="${cls(s.daily_pnl || 0)}">${money(s.daily_pnl || 0)}</td>
       <td class="${cls(s.daily_return || 0)}">${pct(s.daily_return || 0, 2)}</td>
@@ -2455,7 +2584,7 @@ function renderTables(artifact) {
     return `<tr data-strategy="${s.strategy_id}" data-risk="${live ? (s.live_risk_status || s.risk_status) : "not-applicable"}" data-allocated="${live ? "active" : "research"}" data-family="${(s.strategy_type || "").toLowerCase()}" data-action="${(s.final_action_after_double_check || s.recommended_action || "").toLowerCase()}" data-search="${`${s.name} ${s.strategy_type} ${positionSummary(s)}`.toLowerCase()}">
     <td><strong>${s.name}</strong></td>
     <td>${s.strategy_type || "—"}</td>
-    <td class="col-status">${statusBadge(live ? "allocated" : "research")}</td>
+    <td class="col-status">${statusBadge(live ? "LEGACY PROXY" : "research")}</td>
     <td class="col-pct">${pct(s.current_weight || 0)}</td>
     <td class="col-pct">${pct(sessionProposedWeight(s.strategy_id, s.proposed_weight || 0))}</td>
     <td class="col-status" title="${escapeHtml(elig.detail)}">${statusBadge(elig.label)}</td>
@@ -3570,6 +3699,7 @@ async function init() {
   mergeLiveOverlay(artifact, overlay);
   activeArtifact = artifact;
   initProposalSession(artifact);
+  await renderShadowStrategyRegistry();
   renderTopHeader(artifact);
   renderKpis(artifact);
   renderTables(artifact);
@@ -3582,7 +3712,6 @@ async function init() {
   installStrategyDrawerControls(artifact);
   const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
   if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
-  renderShadowStrategyRegistry();
   installChartObservers(artifact);
   refreshProposalStatusViews(artifact);
   document.body.classList.remove("app-loading");
