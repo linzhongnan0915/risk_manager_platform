@@ -35,17 +35,28 @@ def main() -> int:
     bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
     research = bundle["factory_strategy_research"]
     arch = research["architecture"]
-    active = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("composite_eligible"))
+    active = sum(
+        1
+        for row in research["results"]
+        if row.get("backtest", {}).get("factory_research", {}).get("research_composite_eligible")
+        or row.get("backtest", {}).get("factory_research", {}).get("composite_eligible")
+    )
     reference = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "REFERENCE_ONLY")
     composite = sum(1 for row in research["results"] if row.get("strategy_id") == "COMBINED_PORTFOLIO_V1")
-    if active != 13:
-        errors.append(f"expected 13 ACTIVE, found {active}")
-    if reference != 18:
-        errors.append(f"expected 18 REFERENCE_ONLY, found {reference}")
+    if active < 1:
+        errors.append(f"expected at least 1 eligible ACTIVE strategy, found {active}")
+    if arch.get("eligible_active_count") != active:
+        errors.append("architecture eligible_active_count must match eligible ACTIVE count")
+    if arch.get("composite_constituent_count") != active:
+        errors.append("architecture composite_constituent_count must match eligible ACTIVE count")
     if composite != 1:
         errors.append(f"expected 1 Combined Portfolio, found {composite}")
-    if arch.get("target_underlying_count") != 20:
-        errors.append("architecture target_underlying_count must be 20")
+    if arch.get("live_allocation_approved") is not False:
+        errors.append("architecture live_allocation_approved must be false for research bundle")
+    if arch.get("dynamic_membership") is not True:
+        errors.append("architecture dynamic_membership must be true")
+    if "target_underlying_count" in arch:
+        errors.append("architecture must not include fixed target_underlying_count")
     etf_active = [row for row in research["results"] if "ETF" in (row.get("backtest", {}).get("name") or "") and row.get("backtest", {}).get("factory_research", {}).get("composite_eligible")]
     if etf_active:
         errors.append("ETF strategy appears ACTIVE")
@@ -60,7 +71,7 @@ def main() -> int:
             print("-", error)
         return 1
     print("SMOKE PASS")
-    print(f"ACTIVE={active} REFERENCE={reference} COMPOSITE={composite} interim_weight={arch.get('interim_equal_weight'):.4f}")
+    print(f"ACTIVE={active} REFERENCE={reference} COMPOSITE={composite} equal_weight={arch.get('composite_equal_weight'):.4f}")
     return 0
 
 

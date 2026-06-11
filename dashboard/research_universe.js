@@ -1,9 +1,7 @@
-/* US-equity research universe: interim 13-member composite vs target 20-member architecture. */
+/* US-equity research universe: dynamic Combined Portfolio equal-weight 1/N over eligible ACTIVE underlyings. */
 const ResearchUniverse = (() => {
-  const TARGET_PLATFORM_SLOTS = 20;
-  const TARGET_EQUAL_WEIGHT = 0.05;
   const COMPOSITE_ID = "COMBINED_PORTFOLIO_V1";
-  const COMPOSITE_INTERIM_LABEL = "INTERIM RESEARCH COMPOSITE — TARGET ARCHITECTURE 20 UNDERLYING STRATEGIES";
+  const COMPOSITE_DYNAMIC_LABEL = "Combined Portfolio includes all currently eligible ACTIVE strategies";
 
   let catalog = null;
   let artifact = null;
@@ -17,18 +15,57 @@ const ResearchUniverse = (() => {
     artifact = loadedArtifact || artifact;
   }
 
+  function compositeMeta() {
+    return itemById(COMPOSITE_ID)?.backtest?.factory_research?.combined_portfolio
+      || itemById(COMPOSITE_ID)?.backtest?.factory_research?.strategy_21
+      || {};
+  }
+
+  function activeUnderlyingIds() {
+    const meta = compositeMeta();
+    const fromMeta = meta.eligible_member_ids || meta.constituent_ids;
+    if (fromMeta?.length) return [...fromMeta].sort();
+    return (catalog?.results || [])
+      .filter((row) => row.strategy_id !== COMPOSITE_ID && (
+        row.backtest?.factory_research?.research_composite_eligible
+        ?? row.backtest?.factory_research?.composite_eligible
+      ))
+      .map((row) => row.strategy_id)
+      .sort();
+  }
+
   function architecture() {
     const fromCatalog = catalog?.architecture || {};
     const activeIds = activeUnderlyingIds();
+    const meta = compositeMeta();
+    const n = Number(meta.N || activeIds.length || 0);
+    const weight = Number(
+      meta.equal_weight ?? fromCatalog.composite_equal_weight ?? (n ? 1 / n : 0),
+    );
     const referenceCount = strategyRows().filter((row) => row.research_group === "REFERENCE").length;
     return {
-      target_underlying_count: fromCatalog.target_underlying_count || TARGET_PLATFORM_SLOTS,
-      target_equal_weight: fromCatalog.target_equal_weight || TARGET_EQUAL_WEIGHT,
+      dynamic_membership: fromCatalog.dynamic_membership !== false,
+      equal_weight_formula: fromCatalog.equal_weight_formula || meta.weight_formula || "1/N",
+      eligible_active_count: fromCatalog.eligible_active_count || activeIds.length,
+      composite_constituent_count: fromCatalog.composite_constituent_count || n,
+      composite_equal_weight: weight,
       tested_candidate_count: fromCatalog.tested_candidate_count || ((catalog?.results || []).length - 1),
       active_retained_count: fromCatalog.active_retained_count || activeIds.length,
       reference_only_count: fromCatalog.reference_only_count || referenceCount,
-      interim_composite_count: fromCatalog.interim_composite_count || activeIds.length,
-      interim_equal_weight: fromCatalog.interim_equal_weight || (activeIds.length ? 1 / activeIds.length : 0),
+    };
+  }
+
+  function compositeMembershipSummary() {
+    const arch = architecture();
+    const weightPct = (arch.composite_equal_weight * 100).toFixed(2);
+    return {
+      headline: COMPOSITE_DYNAMIC_LABEL,
+      eligibleActive: arch.eligible_active_count,
+      constituents: arch.composite_constituent_count,
+      formula: arch.equal_weight_formula,
+      weightPct,
+      dynamicMembership: arch.dynamic_membership !== false,
+      expansionNote: "The portfolio expands or contracts automatically as strategy eligibility changes.",
     };
   }
 
@@ -56,21 +93,10 @@ const ResearchUniverse = (() => {
     return (catalog?.results || []).find((row) => (row.strategy_id || row.backtest?.strategy_id) === strategyId) || null;
   }
 
-  function compositeMeta() {
-    return itemById(COMPOSITE_ID)?.backtest?.factory_research?.combined_portfolio
-      || itemById(COMPOSITE_ID)?.backtest?.factory_research?.strategy_21
-      || {};
-  }
-
-  function activeUnderlyingIds() {
-    return (catalog?.results || [])
-      .filter((row) => row.strategy_id !== COMPOSITE_ID && row.backtest?.factory_research?.composite_eligible)
-      .map((row) => row.strategy_id);
-  }
-
   function researchWeights() {
     const meta = compositeMeta();
     if (meta.weights && Object.keys(meta.weights).length) return meta.weights;
+    if (meta.constituent_weights && Object.keys(meta.constituent_weights).length) return meta.constituent_weights;
     const activeIds = activeUnderlyingIds();
     const weight = activeIds.length ? 1 / activeIds.length : 0;
     return Object.fromEntries(activeIds.map((id) => [id, weight]));
@@ -96,7 +122,13 @@ const ResearchUniverse = (() => {
     const weights = researchWeights();
     const weight = strategyId === COMPOSITE_ID
       ? 0
-      : (factory.composite_eligible ? (weights[strategyId] || 0) : 0);
+      : ((factory.research_composite_eligible ?? factory.composite_eligible)
+        ? (weights[strategyId] || 0)
+        : 0);
+    const researchCompositeEligible = factory.research_composite_eligible === true
+      || factory.composite_eligible === true;
+    const liveAllocationApproved = backtest.live_allocation_approved === true
+      || factory.live_allocation_approved === true;
     const holdings = backtest.holdings || null;
     return {
       strategy_id: strategyId,
@@ -106,8 +138,16 @@ const ResearchUniverse = (() => {
       proposed_weight: weight,
       lifecycle_status: backtest.lifecycle_status || group.replaceAll("_", " "),
       research_group: group,
-      allocation_eligible: false,
-      allocation_eligibility: { eligible: false, label: "Not allocation approved", detail: "Research/shadow only" },
+      allocation_eligible: liveAllocationApproved,
+      allocation_eligibility: {
+        eligible: liveAllocationApproved,
+        label: liveAllocationApproved ? "Live allocation approved" : "Not live allocation approved",
+        detail: liveAllocationApproved
+          ? "Approved for live capital allocation"
+          : "Research only — inclusion in Combined Portfolio does not approve live allocation",
+      },
+      research_composite_eligible: researchCompositeEligible,
+      live_allocation_approved: liveAllocationApproved,
       net_return: backtest.net_metrics?.cumulative_return,
       gross_return: backtest.gross_metrics?.cumulative_return,
       daily_return: 0,
@@ -131,7 +171,7 @@ const ResearchUniverse = (() => {
       live_risk_status: "not applicable",
       research_source: backtest.research_source,
       membership: factory.membership || "REFERENCE_ONLY",
-      composite_eligible: factory.composite_eligible === true,
+      composite_eligible: researchCompositeEligible,
       holdings,
       factory_item: item,
       return_series: backtest.return_series,
@@ -179,7 +219,7 @@ const ResearchUniverse = (() => {
       returns,
       cumulative_return: cumulativeReturn,
       drawdown,
-      label: COMPOSITE_INTERIM_LABEL,
+      label: COMPOSITE_DYNAMIC_LABEL,
     };
   }
 
@@ -261,8 +301,8 @@ const ResearchUniverse = (() => {
     return {
       report_date: artifact?.as_of_date,
       combined_portfolio_status: composite.lifecycle_status || "RESEARCH COMPOSITE",
-      strategy_21_status: COMPOSITE_INTERIM_LABEL,
-      member_weights: meta.weights || researchWeights(),
+      strategy_21_status: COMPOSITE_DYNAMIC_LABEL,
+      member_weights: meta.weights || meta.constituent_weights || researchWeights(),
       historical_metrics: {
         cumulative_return: composite.net_metrics?.cumulative_return,
         cumulative_gross_return: composite.gross_metrics?.cumulative_return,
@@ -272,11 +312,9 @@ const ResearchUniverse = (() => {
         cost_drag: composite.turnover?.total_cost_drag,
       },
       pnl_label: "Unavailable",
-      weight_formula: meta.weight_formula || "weight_i = 1 / N",
-      N: meta.N || arch.interim_composite_count,
-      target_N: arch.target_underlying_count,
-      target_weight: arch.target_equal_weight,
-      interim_label: meta.interim_label || COMPOSITE_INTERIM_LABEL,
+      weight_formula: meta.weight_formula || arch.equal_weight_formula,
+      N: meta.N || arch.composite_constituent_count,
+      dynamic_membership: arch.dynamic_membership,
     };
   }
 
@@ -295,10 +333,8 @@ const ResearchUniverse = (() => {
   }
 
   return {
-    TARGET_PLATFORM_SLOTS,
-    TARGET_EQUAL_WEIGHT,
     COMPOSITE_ID,
-    COMPOSITE_INTERIM_LABEL,
+    COMPOSITE_DYNAMIC_LABEL,
     GROUP_LABELS: {
       ACTIVE: "Active US-Equity Research",
       COMBINED_PORTFOLIO: "Combined Portfolio",
@@ -315,6 +351,7 @@ const ResearchUniverse = (() => {
     },
     hydrate,
     architecture,
+    compositeMembershipSummary,
     counts,
     isLegacyProxyMode,
     setPortfolioViewMode,

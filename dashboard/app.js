@@ -114,8 +114,10 @@ function scopeSummary(artifact, scopeName) {
 }
 
 function renderTruthDisclosure(artifact = activeArtifact) {
-  const disclosure = artifact?.data_classification?.disclosure
-    || "Prototype model portfolio · ETF proxy research data · Not live positions or fills";
+  const disclosure = hasFactoryResearch()
+    ? "US-Equity Research Backtest · Research Only · Not live allocation or fills"
+    : (artifact?.data_classification?.disclosure
+      || "Prototype model portfolio · ETF proxy research data · Not live positions or fills");
   const node = document.getElementById("truthDisclosure");
   if (node) node.textContent = disclosure;
   const build = document.getElementById("buildTrace");
@@ -196,7 +198,16 @@ function redrawAllCharts(artifact = activeArtifact) {
   renderFactorExposureBars("portfolioFactorBars", artifact.factors?.portfolio_factor_exposure_current, artifact);
   renderFactorExposureBars("riskFactorBars", artifact.factors?.portfolio_factor_exposure_current, artifact);
   renderFactorNotes(artifact);
-  if (selectedLiteratureItem?.backtest) renderResearchLabPanels(selectedLiteratureItem);
+  if (selectedLiteratureItem?.backtest) {
+    if (hasFactoryResearch()) {
+      const item = selectedLiteratureItem.strategy_id
+        ? selectedLiteratureItem
+        : ResearchUniverse.itemById(selectedFactoryResearchId || ResearchUniverse.COMPOSITE_ID);
+      if (item) renderFactoryResearchLabPanels(item);
+    } else {
+      renderResearchLabPanels(selectedLiteratureItem);
+    }
+  }
   document.querySelectorAll("[data-spark]").forEach((canvas) => {
     if (canvas.__sparkValues) drawSparkline(canvas, canvas.__sparkValues, canvas.__sparkColor || "#1ac8ff");
   });
@@ -260,43 +271,65 @@ async function loadLiveOverlay() {
 
 async function renderShadowStrategyRegistry(status = "ALL") {
   const table = document.getElementById("shadowStrategyTable");
+  const heading = table?.closest(".strategy-monitor-panel")?.querySelector(".panel-title");
+  if (heading && hasFactoryResearch()) {
+    heading.textContent = "US-Equity Research Backtest · Research Only";
+  } else if (heading) {
+    heading.textContent = "Retained Research / Shadow Registry";
+  }
   if (!table) return;
   if (hasFactoryResearch()) {
     const rows = ResearchUniverse.strategyRows().filter((row) => {
       if (status === "ALL") return true;
       if (status === "RESEARCH_COMPOSITE" || status === "RESEARCH_COMPOSITE_MEMBER") {
-        return row.strategy_id === ResearchUniverse.COMPOSITE_ID || row.composite_eligible;
+        return row.strategy_id === ResearchUniverse.COMPOSITE_ID || row.research_composite_eligible;
       }
       if (status === "RESEARCH_CANDIDATE") return row.research_group === "REFERENCE";
       return true;
     });
     const renderSection = (label, subset) => {
       if (!subset.length) return "";
-      return `<tr class="section-row"><td colspan="12"><strong>${escapeHtml(label)} (${subset.length})</strong></td></tr>` +
-        subset.map((row) => `<tr class="factory-research-row" data-factory-strategy="${escapeHtml(row.strategy_id)}">
+      return `<tr class="section-row"><td colspan="14"><strong>${escapeHtml(label)} (${subset.length})</strong></td></tr>` +
+        subset.map((row) => `<tr class="factory-research-row${row.strategy_id === selectedFactoryResearchId ? " selected" : ""}" data-factory-strategy="${escapeHtml(row.strategy_id)}" tabindex="0" role="link" aria-label="View details for ${escapeHtml(row.strategy_id)}">
           <td>${escapeHtml(row.strategy_id)}</td>
           <td>${escapeHtml(row.name)}</td>
           <td>${statusBadge(row.membership || row.research_group)}</td>
-          <td>${row.composite_eligible ? "ACTIVE MEMBER" : row.strategy_id === ResearchUniverse.COMPOSITE_ID ? "COMPOSITE" : "NO"}</td>
+          <td>${row.research_composite_eligible ? "YES" : row.strategy_id === ResearchUniverse.COMPOSITE_ID ? "COMPOSITE" : "NO"}</td>
+          <td>${row.live_allocation_approved ? "YES" : "NO"}</td>
           <td>${pct(row.net_return || 0, 1)}</td>
           <td>${row.sharpe == null ? "N/A" : num(row.sharpe, 3)}</td>
           <td>${pct(row.max_drawdown || 0, 1)}</td>
-          <td>${row.turnover == null ? "N/A" : num(row.turnover, 3)}</td>
+          <td>${row.turnover == null ? "N/A" : `${num(row.turnover, 3)} avg daily`}</td>
           <td>${row.ic == null ? "N/A" : num(row.ic, 4)}</td>
           <td>${row.decile_spread == null ? "N/A" : num(row.decile_spread, 5)}</td>
           <td class="wrap-cell">${escapeHtml(row.status_reason || "")}</td>
           <td>${escapeHtml(row.latest_data_date || "n/a")}</td>
+          <td><button type="button" class="table-link view-details-link" data-factory-strategy="${escapeHtml(row.strategy_id)}">View Details</button></td>
         </tr>`).join("");
     };
     const activeRows = rows.filter((row) => row.research_group === "ACTIVE");
     const referenceRows = rows.filter((row) => row.research_group === "REFERENCE");
     const compositeRows = rows.filter((row) => row.strategy_id === ResearchUniverse.COMPOSITE_ID);
-    table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Composite</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th></tr>` +
+    table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Research Composite</th><th>Live Allocation</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover (avg daily)</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th><th>Action</th></tr>` +
       renderSection("ACTIVE US-Equity Research", activeRows) +
       renderSection("REFERENCE ONLY", referenceRows) +
       renderSection("Combined Portfolio", compositeRows);
-    table.querySelectorAll("[data-factory-strategy]").forEach((row) => {
-      row.addEventListener("click", () => openFactoryResearchStrategy(row.dataset.factoryStrategy));
+    table.querySelectorAll("tr[data-factory-strategy]").forEach((row) => {
+      const strategyId = row.dataset.factoryStrategy;
+      if (!strategyId) return;
+      const open = () => openFactoryResearchStrategy(strategyId);
+      row.addEventListener("click", (event) => {
+        if (event.target.closest("button.view-details-link")) {
+          event.preventDefault();
+        }
+        open();
+      });
+      row.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          open();
+        }
+      });
     });
     return;
   }
@@ -721,14 +754,15 @@ function renderFactoryResearchArchitectureBanner() {
   if (!hasFactoryResearch()) return;
   const arch = ResearchUniverse.architecture();
   const counts = ResearchUniverse.counts();
+  const composite = compositeDynamicSummary();
   const el = document.getElementById("historicalResearchContext");
   if (el) {
     el.innerHTML = `
       <div class="research-context-banner">
-        <strong>US-Equity Research Platform (interim retained pool — not target architecture yet)</strong>
-        <span>Target architecture: <strong>${arch.target_underlying_count}</strong> underlying @ ${(arch.target_equal_weight * 100).toFixed(0)}% each + Combined Portfolio</span>
-        <span>Current tested candidates: <strong>${arch.tested_candidate_count}</strong> · ACTIVE retained: <strong>${counts.active}</strong> · REFERENCE_ONLY: <strong>${counts.reference}</strong> · Interim composite: <strong>${counts.active}</strong> @ ${(arch.interim_equal_weight * 100).toFixed(2)}%</span>
-        <span class="status-muted">${ResearchUniverse.COMPOSITE_INTERIM_LABEL}. ETF proxy strategies are not ACTIVE members.</span>
+        <strong>US-Equity Research Platform · Dynamic Combined Portfolio</strong>
+        <span>${escapeHtml(composite.headline)}</span>
+        <span>Current eligible ACTIVE strategies: <strong>${arch.eligible_active_count}</strong> · Combined Portfolio constituents: <strong>${arch.composite_constituent_count}</strong> · Equal-weight baseline: <strong>${arch.equal_weight_formula}</strong> · Current weight per strategy: <strong>${composite.weightPct}%</strong></span>
+        <span class="status-muted">${escapeHtml(composite.expansionNote)} Legacy ETF proxy references are retained for comparison only.</span>
       </div>`;
   }
   const summary = document.getElementById("monitorSummary");
@@ -737,8 +771,98 @@ function renderFactoryResearchArchitectureBanner() {
       <span><strong>${counts.active}</strong> ACTIVE</span>
       <span><strong>${counts.reference}</strong> REFERENCE_ONLY</span>
       <span><strong>${counts.composite}</strong> Combined Portfolio</span>
-      <span>Target ${arch.target_underlying_count}×${(arch.target_equal_weight * 100).toFixed(0)}% · Interim ${counts.active}×${(arch.interim_equal_weight * 100).toFixed(2)}%</span>`;
+      <span>${arch.composite_constituent_count} × ${composite.weightPct}% · Dynamic membership: ${composite.dynamicMembership ? "Enabled" : "Disabled"}</span>`;
   }
+}
+
+function scrollResearchLabToTop() {
+  const anchor = document.getElementById("researchLabDetailAnchor")
+    || document.getElementById("researchLabOverview")
+    || document.querySelector('[data-tab-panel="Backtesting & Research Lab"]');
+  anchor?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setResearchNotice(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  if (message) {
+    el.textContent = message;
+    el.hidden = false;
+  } else {
+    el.textContent = "";
+    el.hidden = true;
+  }
+}
+
+function factoryResearchStatusLabel(backtest = {}, strategyId = "") {
+  if (strategyId === ResearchUniverse.COMPOSITE_ID) return "COMPOSITE";
+  const membership = backtest.factory_research?.membership;
+  if (membership === "ACTIVE") return "ACTIVE";
+  if (membership === "REFERENCE_ONLY") return "REFERENCE_ONLY";
+  return membership || backtest.lifecycle_status || "REFERENCE_ONLY";
+}
+
+function compositeConstituentIds(backtest = {}) {
+  const meta = backtest.factory_research?.combined_portfolio || {};
+  const fromMeta = meta.eligible_member_ids || meta.constituent_ids;
+  if (fromMeta?.length) return [...fromMeta].sort();
+  const fromRows = (meta.current_constituents || meta.members || []).map((row) => row.strategy_id).filter(Boolean);
+  if (fromRows.length) return fromRows.sort();
+  return ResearchUniverse.activeUnderlyingIds();
+}
+
+function compositeDynamicSummary() {
+  return ResearchUniverse.compositeMembershipSummary();
+}
+
+function buildUnderlyingOverviewFields(item) {
+  const backtest = item.backtest || {};
+  const logic = factoryResearchLogicFields(backtest);
+  return [
+    ["Strategy ID", item.strategy_id],
+    ["Strategy Name", backtest.name],
+    ["Status", factoryResearchStatusLabel(backtest, item.strategy_id)],
+    ["Economic Hypothesis", logic.economicHypothesis, true],
+    ["Signal Definition", logic.signalDefinition, true],
+    ["Long Rule", logic.longRule],
+    ["Short Rule", logic.shortRule],
+    ["Rebalance Frequency", logic.rebalanceFrequency],
+    ["Execution Timing", logic.executionTiming],
+    ["Universe", logic.universe, true],
+    ["Backtest Period", factoryResearchBacktestDates(item), true],
+  ];
+}
+
+function buildCompositeOverviewFields(item) {
+  const backtest = item.backtest || {};
+  const arch = ResearchUniverse.architecture();
+  const composite = compositeDynamicSummary();
+  const turnover = backtest.turnover || {};
+  const ids = compositeConstituentIds(backtest);
+  return [
+    ["Strategy ID", item.strategy_id],
+    ["Strategy Name", backtest.name],
+    ["Status", "COMPOSITE"],
+    ["Membership Rule", composite.headline, true],
+    ["Current Eligible ACTIVE Strategies", String(arch.eligible_active_count)],
+    ["Combined Portfolio Constituents", String(arch.composite_constituent_count)],
+    ["Equal-Weight Formula", arch.equal_weight_formula],
+    ["Current Weight per Strategy", `${composite.weightPct}%`],
+    ["Dynamic Membership", composite.dynamicMembership ? "Enabled" : "Disabled"],
+    ["Research Status", "Research only · not allocation approved", true],
+    ["Gross Return", formatMetricNa(backtest.gross_metrics?.cumulative_return, (v) => pct(v, 1))],
+    ["Net Return", formatMetricNa(backtest.net_metrics?.cumulative_return, (v) => pct(v, 1))],
+    ["Sharpe", formatMetricNa(backtest.net_metrics?.sharpe, (v) => num(v, 3))],
+    ["Max Drawdown", formatMetricNa(backtest.net_metrics?.max_drawdown, (v) => pct(v, 1))],
+    ["Cost Drag", formatCostDragRatio(turnover.total_cost_drag)],
+    ["Backtest Period", factoryResearchBacktestDates(item), true],
+    ["Constituent IDs", ids.join(", ") || "Bundle field combined_portfolio.eligible_member_ids not populated.", true],
+    ["Expansion Note", composite.expansionNote, true],
+  ];
+}
+
+function renderOverviewFields(fields) {
+  return fields.map(([label, value, span]) => renderOverviewField(label, value, Boolean(span))).join("");
 }
 
 function openFactoryResearchStrategy(strategyId) {
@@ -746,86 +870,329 @@ function openFactoryResearchStrategy(strategyId) {
   selectedFactoryResearchId = strategyId;
   const item = ResearchUniverse.itemById(strategyId);
   if (!item) return;
-  renderFactoryResearchLabPanels(item);
   setActiveTab("Backtesting & Research Lab");
+  renderFactoryResearchLabPanels(item);
+  renderShadowStrategyRegistry(document.getElementById("shadowStrategyStatusFilter")?.value || "ALL");
+  requestAnimationFrame(() => {
+    scrollResearchLabToTop();
+    redrawAllCharts(activeArtifact);
+  });
 }
 
-function renderFactoryResearchHoldings(backtest) {
-  if (backtest?.strategy_id === ResearchUniverse.COMPOSITE_ID) {
-    const meta = backtest.factory_research?.combined_portfolio || {};
-    const rows = (meta.current_constituents || meta.members || []).map((row) =>
-      `<li>${escapeHtml(row.strategy_id)} · ${(Number(row.weight || 0) * 100).toFixed(2)}% · constituent</li>`,
-    ).join("");
-    return rows
-      ? `<div class="panel-title sub">Composite Constituents (${meta.N || (meta.current_constituents || meta.members || []).length})</div><ul class="compact-list">${rows}</ul>`
-      : "";
+function formatMetricNa(value, formatter) {
+  if (value == null || !Number.isFinite(Number(value))) return "N/A";
+  return formatter(Number(value));
+}
+
+function formatDailyTurnover(value) {
+  return formatMetricNa(value, (v) => `${num(v, 3)} avg daily`);
+}
+
+function formatAnnualizedTurnover(value) {
+  return formatMetricNa(value, (v) => `${num(v, 1)}x annualized`);
+}
+
+function formatCostDragRatio(value) {
+  return formatMetricNa(value, (v) => pct(v, 2));
+}
+
+function factoryResearchSharedDates() {
+  return factoryResearchBundle?.shared_dates || [];
+}
+
+function resolveFactoryResearchSeries(item) {
+  const backtest = item?.backtest || {};
+  const series = backtest.return_series || {};
+  const gross = series.gross_returns || [];
+  const net = series.net_returns || [];
+  const sharedDates = factoryResearchSharedDates();
+  const dates = series.dates?.length ? series.dates : sharedDates;
+  const length = Math.min(gross.length, net.length, dates.length || gross.length || net.length);
+  const missingFields = [];
+  if (!gross.length) missingFields.push("return_series.gross_returns");
+  if (!net.length) missingFields.push("return_series.net_returns");
+  if (!series.dates?.length && !sharedDates.length && (gross.length || net.length)) {
+    missingFields.push("shared_dates");
   }
-  const holdings = backtest?.holdings;
-  if (!holdings) return `<p class="status-muted"><strong>Holdings:</strong> unavailable in current bundle.</p>`;
-  const longRows = (holdings.current_long_holdings || []).slice(0, 8).map((row) =>
-    `<li>${escapeHtml(row.ticker)} · ${(Number(row.weight || 0) * 100).toFixed(2)}% · long</li>`,
-  ).join("");
-  const shortRows = (holdings.current_short_holdings || []).slice(0, 8).map((row) =>
-    `<li>${escapeHtml(row.ticker)} · ${(Number(row.weight || 0) * 100).toFixed(2)}% · short</li>`,
-  ).join("");
+  if (!length) {
+    return {
+      dates: [],
+      gross: [],
+      net: [],
+      start: backtest.test_period_start || backtest.latest_data_date,
+      end: backtest.test_period_end || backtest.latest_data_date,
+      missingMessage: missingFields.length
+        ? `Bundle field for gross/net series not mapped yet: ${missingFields.join(", ")}.`
+        : "Bundle field for gross/net series not mapped yet: return_series.",
+    };
+  }
+  return {
+    dates: (dates.length ? dates : sharedDates).slice(0, length),
+    gross: gross.slice(0, length),
+    net: net.slice(0, length),
+    start: backtest.test_period_start || backtest.latest_data_date,
+    end: backtest.test_period_end || backtest.latest_data_date,
+    missingMessage: "",
+  };
+}
+
+function factoryResearchBacktestDates(item) {
+  const resolved = resolveFactoryResearchSeries(item);
+  if (resolved.start && resolved.end) return `${resolved.start} to ${resolved.end}`;
+  if (resolved.dates.length) return `${resolved.dates[0]} to ${resolved.dates.at(-1)}`;
+  return "N/A";
+}
+
+function factoryResearchMembershipLabel(backtest = {}) {
+  return backtest.factory_research?.membership || backtest.lifecycle_status || "REFERENCE_ONLY";
+}
+
+function factoryResearchLogicFields(backtest = {}) {
+  const logic = backtest.factory_research?.logic || {};
+  return {
+    economicHypothesis: logic.economic_hypothesis || backtest.hypothesis || "N/A",
+    signalDefinition: backtest.signal_summary || logic.expected_return_driver || logic.signal_inputs || "N/A",
+    longRule: logic.long_leg || "N/A",
+    shortRule: logic.short_leg || "N/A",
+    rebalanceFrequency: backtest.rebalance || logic.rebalance_frequency || "N/A",
+    executionTiming: logic.execution_timing || "N/A",
+    universe: backtest.universe || "N/A",
+  };
+}
+
+function renderOverviewField(label, value, span = false) {
+  return `<p class="research-overview-item${span ? " research-overview-span" : ""}"><strong>${escapeHtml(label)}</strong>${escapeHtml(value || "N/A")}</p>`;
+}
+
+function renderFactoryResearchOverview(item) {
+  const overview = document.getElementById("researchLabOverview");
+  if (!overview || !item?.backtest) return;
+  const isComposite = item.strategy_id === ResearchUniverse.COMPOSITE_ID;
+  overview.innerHTML = renderOverviewFields(
+    isComposite ? buildCompositeOverviewFields(item) : buildUnderlyingOverviewFields(item),
+  );
+}
+
+function renderFactoryResearchMainPanel(item, resolved) {
+  const chartSection = document.getElementById("researchLabChartSection");
+  const mainDetail = document.getElementById("researchLabMainDetail");
+  const hasSeries = Boolean(resolved.gross.length && resolved.net.length);
+  if (hasSeries) {
+    if (chartSection) chartSection.hidden = false;
+    if (mainDetail) {
+      mainDetail.hidden = true;
+      mainDetail.innerHTML = "";
+    }
+    setResearchNotice(
+      "researchLabChartNotice",
+      "",
+    );
+    return;
+  }
+  if (chartSection) chartSection.hidden = true;
+  if (mainDetail) {
+    mainDetail.hidden = false;
+    const isComposite = item.strategy_id === ResearchUniverse.COMPOSITE_ID;
+    mainDetail.innerHTML = `
+      <div class="panel-title sub">Structured Strategy Overview</div>
+      <div class="research-overview-grid">
+        ${renderOverviewFields(isComposite ? buildCompositeOverviewFields(item) : buildUnderlyingOverviewFields(item))}
+      </div>`;
+  }
+  const missing = resolved.missingMessage
+    || "Bundle field for gross/net series not mapped yet: return_series.gross_returns, return_series.net_returns.";
+  setResearchNotice(
+    "researchLabChartNotice",
+    `${missing} This strategy currently has summary/risk data only; holdings and risk charts are shown below.`,
+  );
+}
+
+function renderHoldingsTable(title, rows) {
+  if (!rows.length) {
+    return `<div><div class="panel-title sub">${escapeHtml(title)}</div><p class="status-muted">No ${escapeHtml(title.toLowerCase())} available in bundle.</p></div>`;
+  }
   return `
-    <p class="status-muted">Last rebalance: ${escapeHtml(holdings.last_rebalance_date || "n/a")}</p>
-    <div class="panel-title sub">Long Holdings (top 8)</div><ul class="compact-list">${longRows || "<li>None</li>"}</ul>
-    <div class="panel-title sub">Short Holdings (top 8)</div><ul class="compact-list">${shortRows || "<li>None</li>"}</ul>`;
+    <div>
+      <div class="panel-title sub">${escapeHtml(title)}</div>
+      <div class="table-viewport short"><div class="table-scroll">
+        <table class="data-table dense research-holdings-table">
+          <tr><th>Ticker</th><th>Side</th><th>Weight</th></tr>
+          ${rows.map((row) => `<tr>
+            <td>${escapeHtml(row.ticker || "N/A")}</td>
+            <td>${escapeHtml(row.side || "N/A")}</td>
+            <td>${row.weight == null ? "N/A" : `${(Number(row.weight) * 100).toFixed(2)}%`}</td>
+          </tr>`).join("")}
+        </table>
+      </div></div>
+    </div>`;
+}
+
+function renderFactoryResearchHoldings(backtest, isComposite = false) {
+  const panel = document.getElementById("researchLabHoldingsPanel");
+  const compositePanel = document.getElementById("researchLabCompositePanel");
+  const el = document.getElementById("researchLabHoldings");
+  if (isComposite) {
+    if (panel) panel.hidden = true;
+    if (el) el.innerHTML = "";
+    return;
+  }
+  if (panel) panel.hidden = false;
+  if (compositePanel) compositePanel.hidden = true;
+  if (!el) return;
+  const holdings = backtest?.holdings;
+  if (!holdings) {
+    el.innerHTML = `<p class="research-notice">Current holdings unavailable: bundle field <strong>holdings</strong> is missing for this strategy. Summary metrics and risk charts above are still loaded from the research bundle.</p>`;
+    return;
+  }
+  const longRows = (holdings.current_long_holdings || []).map((row) => ({ ...row, side: "long" }));
+  const shortRows = (holdings.current_short_holdings || []).map((row) => ({ ...row, side: "short" }));
+  if (!longRows.length && !shortRows.length) {
+    el.innerHTML = `<p class="research-notice">Holdings object present but both <strong>holdings.current_long_holdings</strong> and <strong>holdings.current_short_holdings</strong> are empty.</p>`;
+    return;
+  }
+  el.innerHTML = `
+    <p class="status-muted">Last rebalance: <strong>${escapeHtml(holdings.last_rebalance_date || "N/A")}</strong></p>
+    <div class="research-holdings-split">
+      ${renderHoldingsTable("Current Long Holdings", longRows)}
+      ${renderHoldingsTable("Current Short Holdings", shortRows)}
+    </div>`;
+}
+
+function renderFactoryResearchCompositeDetail(item) {
+  const panel = document.getElementById("researchLabCompositePanel");
+  const el = document.getElementById("researchLabCompositeDetail");
+  const holdingsPanel = document.getElementById("researchLabHoldingsPanel");
+  if (!panel || !el) return;
+  if (item.strategy_id !== ResearchUniverse.COMPOSITE_ID) {
+    panel.hidden = true;
+    el.innerHTML = "";
+    return;
+  }
+  panel.hidden = false;
+  if (holdingsPanel) holdingsPanel.hidden = true;
+  const backtest = item.backtest || {};
+  const arch = ResearchUniverse.architecture();
+  const composite = compositeDynamicSummary();
+  const turnover = backtest.turnover || {};
+  const ids = compositeConstituentIds(backtest);
+  const weightPct = composite.weightPct;
+  el.innerHTML = `
+    <div class="research-composite-metrics">
+      <span>Eligible ACTIVE <strong>${arch.eligible_active_count}</strong></span>
+      <span>Constituents <strong>${arch.composite_constituent_count}</strong></span>
+      <span>Equal-weight <strong>${arch.equal_weight_formula} = ${weightPct}%</strong></span>
+      <span>Dynamic membership <strong>${composite.dynamicMembership ? "Enabled" : "Disabled"}</strong></span>
+      <span>Gross return <strong>${formatMetricNa(backtest.gross_metrics?.cumulative_return, (v) => pct(v, 1))}</strong></span>
+      <span>Net return <strong>${formatMetricNa(backtest.net_metrics?.cumulative_return, (v) => pct(v, 1))}</strong></span>
+      <span>Sharpe <strong>${formatMetricNa(backtest.net_metrics?.sharpe, (v) => num(v, 3))}</strong></span>
+      <span>Max drawdown <strong>${formatMetricNa(backtest.net_metrics?.max_drawdown, (v) => pct(v, 1))}</strong></span>
+      <span>Cost drag <strong>${formatCostDragRatio(turnover.total_cost_drag)}</strong></span>
+    </div>
+    <p class="status-muted">${escapeHtml(composite.expansionNote)}</p>
+    <div class="panel-title sub">Constituent IDs (${ids.length})</div>
+    <ul class="compact-list">${ids.map((id) => `<li><strong>${escapeHtml(id)}</strong> · ${weightPct}%</li>`).join("") || "<li>No constituent IDs in bundle.</li>"}</ul>`;
+}
+
+function latestSeriesValue(values = []) {
+  const finite = (values || []).map((value) => Number(value)).filter(Number.isFinite);
+  return finite.length ? finite.at(-1) : null;
+}
+
+function renderFactoryResearchPerformanceMetrics(backtest) {
+  const el = document.getElementById("researchLabPerformanceMetrics");
+  if (!el) return;
+  el.innerHTML = `
+    <span>Gross cum. <strong>${formatMetricNa(backtest.gross_metrics?.cumulative_return, (v) => pct(v, 1))}</strong></span>
+    <span>Net cum. <strong>${formatMetricNa(backtest.net_metrics?.cumulative_return, (v) => pct(v, 1))}</strong></span>
+    <span>Ann. net <strong>${formatMetricNa(backtest.net_metrics?.annual_return, (v) => pct(v, 1))}</strong></span>
+    <span>Sharpe <strong>${formatMetricNa(backtest.net_metrics?.sharpe, (v) => num(v, 3))}</strong></span>
+    <span>Volatility <strong>${formatMetricNa(backtest.net_metrics?.annual_volatility, (v) => pct(v, 1))}</strong></span>
+    <span>Max DD <strong>${formatMetricNa(backtest.net_metrics?.max_drawdown, (v) => pct(v, 1))}</strong></span>`;
+}
+
+function renderFactoryResearchRiskMetrics(backtest, packetSeries = {}, isComposite = false) {
+  const el = document.getElementById("researchLabRiskMetrics");
+  if (!el) return;
+  const turnover = backtest.turnover || {};
+  const currentDrawdown = latestSeriesValue(packetSeries.drawdown);
+  if (isComposite) {
+    el.innerHTML = `
+      <span>Turnover <strong>${formatDailyTurnover(turnover.average_daily_turnover)}</strong></span>
+      <span>Cost drag <strong>${formatCostDragRatio(turnover.total_cost_drag)}</strong></span>
+      <span>Current drawdown <strong>${formatMetricNa(currentDrawdown, (v) => pct(v, 2))}</strong></span>`;
+    return;
+  }
+  el.innerHTML = `
+    <span>Turnover <strong>${formatDailyTurnover(turnover.average_daily_turnover)} · ${formatAnnualizedTurnover(turnover.annualized_turnover)}</strong></span>
+    <span>Cost drag <strong>${formatCostDragRatio(turnover.total_cost_drag ?? turnover.annualized_cost_drag)}</strong></span>
+    <span>Current drawdown <strong>${formatMetricNa(currentDrawdown, (v) => pct(v, 2))}</strong></span>`;
 }
 
 function renderFactoryResearchLabPanels(item) {
   if (!item?.backtest) return;
   selectedLiteratureItem = item;
+  selectedFactoryResearchId = item.strategy_id;
   const backtest = item.backtest;
-  const series = backtest.return_series || {};
-  const sharedDates = factoryResearchBundle?.shared_dates || series.dates || [];
-  const gross = series.gross_returns || [];
-  const net = series.net_returns || [];
-  const dates = series.dates?.length ? series.dates : sharedDates;
+  const resolved = resolveFactoryResearchSeries(item);
+  const { dates, gross, net, missingMessage } = resolved;
   const packetSeries = backtest.risk_packet?.chart_series || {};
   const isComposite = item.strategy_id === ResearchUniverse.COMPOSITE_ID;
   const arch = ResearchUniverse.architecture();
+  renderFactoryResearchOverview(item);
+  renderFactoryResearchMainPanel(item, resolved);
+  renderFactoryResearchPerformanceMetrics(backtest);
+  renderFactoryResearchRiskMetrics(backtest, packetSeries, isComposite);
+  if (isComposite) {
+    renderFactoryResearchCompositeDetail(item);
+  } else {
+    renderFactoryResearchCompositeDetail({ strategy_id: "" });
+    renderFactoryResearchHoldings(backtest, false);
+  }
   const caption = document.getElementById("researchLabCaption");
   if (caption) {
+    const composite = compositeDynamicSummary();
     caption.textContent = isComposite
-      ? `${ResearchUniverse.COMPOSITE_INTERIM_LABEL} · N=${arch.interim_composite_count} · weight=${(arch.interim_equal_weight * 100).toFixed(2)}% · target ${arch.target_underlying_count}×${(arch.target_equal_weight * 100).toFixed(0)}%`
-      : `${backtest.name} (${item.strategy_id}) · ${backtest.factory_research?.membership || "research"} · ${dates[0] || "n/a"} to ${dates.at(-1) || "n/a"}`;
+      ? `${composite.headline} · ${factoryResearchBacktestDates(item)} · N=${arch.composite_constituent_count} · weight=${composite.weightPct}% · dynamic membership enabled`
+      : `${backtest.name} (${item.strategy_id}) · US-Equity Research Backtest · Research Only · ${factoryResearchBacktestDates(item)}`;
   }
-  const summary = document.getElementById("researchLabSummaryStrip");
-  if (summary) {
-    const costDrag = backtest.turnover?.total_cost_drag;
-    summary.innerHTML = isComposite ? `
-      <span>Status <strong>${escapeHtml(backtest.lifecycle_status || "RESEARCH COMPOSITE")}</strong></span>
-      <span>Gross cum. <strong>${pct(backtest.gross_metrics?.cumulative_return || 0, 1)}</strong></span>
-      <span>Net cum. <strong>${pct(backtest.net_metrics?.cumulative_return || 0, 1)}</strong></span>
-      <span>Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong></span>
-      <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>
-      <span>Cost drag <strong>${pct(costDrag || 0, 2)}</strong></span>
-      <span>N <strong>${arch.interim_composite_count}</strong></span>
-      <span>Weight <strong>${(arch.interim_equal_weight * 100).toFixed(2)}%</strong></span>` : `
-      <span>Status <strong>${escapeHtml(backtest.lifecycle_status || item.research_group || "research")}</strong></span>
-      <span>Gross cum. <strong>${pct(backtest.gross_metrics?.cumulative_return || 0, 1)}</strong></span>
-      <span>Net cum. <strong>${pct(backtest.net_metrics?.cumulative_return || 0, 1)}</strong></span>
-      <span>Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong></span>
-      <span>Vol <strong>${pct(backtest.net_metrics?.annual_volatility || 0, 1)}</strong></span>
-      <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>
-      <span>Membership <strong>${escapeHtml(backtest.factory_research?.membership || "REFERENCE_ONLY")}</strong></span>`;
-  }
-  drawGrossNetEquityChart(document.getElementById("backtestCanvas"), dates, gross, net);
-  drawDrawdownChart(document.getElementById("researchDrawdownCanvas"), packetSeries.drawdown || []);
-  drawRollingSharpeChart(document.getElementById("researchRollingCanvas"), packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || []);
-  drawReturnDistributionChart(document.getElementById("researchDistributionCanvas"), net);
-  const decision = document.getElementById("researchLabDecision");
-  if (decision) {
-    const logic = backtest.signal_summary || backtest.hypothesis || "Strategy logic unavailable.";
-    const status = backtest.factory_research?.membership || backtest.lifecycle_status || "research";
-    decision.innerHTML = `
-      <p>${statusBadge(status)} <strong>${escapeHtml(backtest.name)}</strong></p>
-      <p class="status-muted"><strong>Logic:</strong> ${escapeHtml(logic)}</p>
-      <p class="status-muted">${escapeHtml(backtest.factory_research?.decision_reason || backtest.action?.interpretation || "")}</p>
-      ${renderFactoryResearchHoldings(backtest)}`;
-  }
+  const chartEmptyMessage = missingMessage
+    || "Bundle field for gross/net series not mapped yet: return_series.gross_returns, return_series.net_returns.";
+  drawGrossNetEquityChart(
+    document.getElementById("backtestCanvas"),
+    dates,
+    gross,
+    net,
+    chartEmptyMessage,
+  );
+  const drawdown = packetSeries.drawdown || [];
+  setResearchNotice(
+    "researchDrawdownNotice",
+    drawdown.length ? "" : "Drawdown series missing from bundle field: risk_packet.chart_series.drawdown.",
+  );
+  drawDrawdownChart(
+    document.getElementById("researchDrawdownCanvas"),
+    drawdown,
+    drawdown.length ? "" : "Drawdown series missing from bundle field: risk_packet.chart_series.drawdown.",
+  );
+  const rolling = packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || [];
+  setResearchNotice(
+    "researchRollingNotice",
+    rolling.length ? "" : "Rolling Sharpe missing from bundle field: risk_packet.chart_series.rolling_63d_sharpe.",
+  );
+  drawRollingSharpeChart(
+    document.getElementById("researchRollingCanvas"),
+    rolling,
+    rolling.length ? "" : "Rolling Sharpe missing from bundle field: risk_packet.chart_series.rolling_63d_sharpe.",
+  );
+  setResearchNotice(
+    "researchDistributionNotice",
+    net.length ? "" : "Return distribution missing from bundle field: return_series.net_returns.",
+  );
+  drawReturnDistributionChart(
+    document.getElementById("researchDistributionCanvas"),
+    net,
+    net.length ? "" : "Return distribution missing from bundle field: return_series.net_returns.",
+  );
   document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr><tr><td colspan='6'>Walk-forward unavailable in current US-equity research baseline.</td></tr>";
   renderResearchChecklistUnavailable("No-look-ahead checklist available for literature prototypes only in this panel.");
   const selector = document.getElementById("researchLabSelector");
@@ -978,8 +1345,11 @@ function renderTopHeader(artifact = activeArtifact) {
   const el = document.getElementById("topbarMeta");
   if (!el || !artifact) return;
   const monitoring = formatMonitoringState(artifact);
+  const modeLabel = hasFactoryResearch()
+    ? "US-Equity Research Backtest · Research Only"
+    : "Prototype Model Portfolio";
   el.innerHTML = `
-    <span class="mode-badge">Prototype Model Portfolio</span>
+    <span class="mode-badge">${modeLabel}</span>
     <span>As-of <strong>${artifact.as_of_date || "n/a"}</strong></span>
     <span>Initial Model Capital <strong>${money(artifact.initial_capital || 0)}</strong></span>
     <span>Monitored <strong>${artifact.strategy_count || 0}</strong></span>
@@ -992,7 +1362,9 @@ function renderSecondaryStatusStrip(artifact, meta = artifact?.build_metadata ||
   const el = document.getElementById("secondaryStatusStrip");
   if (!el) return;
   const monitoring = formatMonitoringState(artifact);
-  const disclosure = artifact?.data_classification?.disclosure || "Prototype · ETF proxy · Not live fills";
+  const disclosure = hasFactoryResearch()
+    ? "US-Equity Research Backtest · Research Only · Not live allocation or fills"
+    : (artifact?.data_classification?.disclosure || "Prototype · ETF proxy · Not live fills");
   el.innerHTML = `
     <span title="${escapeHtml(disclosure)}">Build ${meta.build_id || "n/a"}</span>
     <span>Retrieved ${meta.data_retrieved_at || meta.artifact_generated_at || "n/a"}</span>
@@ -1556,7 +1928,11 @@ function drawSingleMetricChart(canvas, values = [], options = {}) {
   ctx.font = "11px Inter, system-ui";
   ctx.fillText(options.label || "Series", pad.l, 12);
   ctx.textAlign = "right";
-  ctx.fillText(options.format ? options.format(series.at(-1) || 0) : num(series.at(-1) || 0), w - 8, 12);
+  const latest = series.at(-1) || 0;
+  const latestLabel = options.currentLabel
+    ? `${options.currentLabel}: ${options.format ? options.format(latest) : num(latest, 2)}`
+    : (options.format ? options.format(latest) : num(latest, 2));
+  ctx.fillText(latestLabel, w - 8, 12);
   ctx.textAlign = "left";
 }
 
@@ -1615,23 +1991,24 @@ function drawDualAxisChart(canvas, series, options = {}) {
   ctx.textAlign = "left";
 }
 
-function drawGrossNetEquityChart(canvas, dates, grossReturns, netReturns) {
+function drawGrossNetEquityChart(canvas, dates, grossReturns, netReturns, emptyMessage = "Bundle field for gross/net series not mapped yet: return_series.gross_returns, return_series.net_returns.") {
   if (!canvas) return;
   const { ctx, w, h } = canvasScale(canvas);
   ctx.clearRect(0, 0, w, h);
-  if (!dates.length || !grossReturns.length || !netReturns.length) {
-    ctx.fillStyle = "rgba(211, 234, 240, .72)";
-    ctx.font = "12px Inter, system-ui";
-    ctx.fillText("Gross and net return series unavailable for this prototype.", 12, 24);
+  const length = Math.min((grossReturns || []).length, (netReturns || []).length);
+  if (!length) {
+    drawDrawerChartMessage(canvas, emptyMessage);
     return;
   }
+  const grossSlice = grossReturns.slice(0, length);
+  const netSlice = netReturns.slice(0, length);
   const grossCurve = [];
   const netCurve = [];
   let grossWealth = 1;
   let netWealth = 1;
-  grossReturns.forEach((value, index) => {
-    grossWealth *= 1 + Number(grossReturns[index] || 0);
-    netWealth *= 1 + Number(netReturns[index] || 0);
+  grossSlice.forEach((value, index) => {
+    grossWealth *= 1 + Number(grossSlice[index] || 0);
+    netWealth *= 1 + Number(netSlice[index] || 0);
     grossCurve.push(grossWealth - 1);
     netCurve.push(netWealth - 1);
   });
@@ -1667,13 +2044,13 @@ function drawGrossNetEquityChart(canvas, dates, grossReturns, netReturns) {
   ctx.fillText("Net after 5 bps/side costs", pad.l + 150, 12);
 }
 
-function drawReturnDistributionChart(canvas, returns = []) {
+function drawReturnDistributionChart(canvas, returns = [], emptyMessage = "Return distribution missing from bundle field: return_series.net_returns.") {
   if (!canvas) return;
   const { ctx, w, h } = canvasScale(canvas);
   ctx.clearRect(0, 0, w, h);
   const values = (returns || []).filter(Number.isFinite);
   if (!values.length) {
-    drawDrawerChartMessage(canvas, "Chart unavailable — no strategy series supplied");
+    drawDrawerChartMessage(canvas, emptyMessage);
     return;
   }
   const bins = 24;
@@ -1745,31 +2122,104 @@ function renderResearchLabPanels(item) {
   const net = series.net_returns || [];
   const dates = series.dates || [];
   const packetSeries = backtest.risk_packet?.chart_series || {};
+  const overview = document.getElementById("researchLabOverview");
+  if (overview) {
+    overview.innerHTML = [
+      renderOverviewField("Strategy Name", backtest.name),
+      renderOverviewField("Source", backtest.literature_source || "literature prototype"),
+      renderOverviewField("Hypothesis", backtest.hypothesis || "N/A", true),
+      renderOverviewField("Backtest Period", `${dates[0] || "N/A"} to ${dates.at(-1) || "N/A"}`, true),
+    ].join("");
+  }
   const caption = document.getElementById("researchLabCaption");
   if (caption) {
-    caption.textContent = `${backtest.name} | ${backtest.literature_source || "literature prototype"} | ${dates[0] || "n/a"} to ${dates.at(-1) || "n/a"}`;
+    caption.textContent = `${backtest.name} | ${backtest.literature_source || "literature prototype"} | ${dates[0] || "N/A"} to ${dates.at(-1) || "N/A"}`;
   }
-  const summary = document.getElementById("researchLabSummaryStrip");
-  if (summary) {
-    summary.innerHTML = `
+  const performance = document.getElementById("researchLabPerformanceMetrics");
+  if (performance) {
+    performance.innerHTML = `
       <span>Net ann. return <strong>${pct(backtest.net_metrics?.annual_return || 0, 1)}</strong></span>
       <span>Sharpe <strong>${num(backtest.net_metrics?.sharpe)}</strong></span>
-      <span>Vol <strong>${pct(backtest.net_metrics?.annual_volatility || 0, 1)}</strong></span>
-      <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>
-      <span>Turnover <strong>${num(backtest.turnover?.annualized_turnover, 1)}x</strong></span>
-      <span>Cost drag <strong>${pct(backtest.turnover?.annualized_cost_drag || 0, 2)}</strong></span>
+      <span>Volatility <strong>${pct(backtest.net_metrics?.annual_volatility || 0, 1)}</strong></span>
+      <span>Max DD <strong>${pct(backtest.net_metrics?.max_drawdown || 0, 1)}</strong></span>`;
+  }
+  const risk = document.getElementById("researchLabRiskMetrics");
+  if (risk) {
+    risk.innerHTML = `
+      <span>Turnover <strong>${formatAnnualizedTurnover(backtest.turnover?.annualized_turnover)}</strong></span>
+      <span>Cost drag <strong>${formatCostDragRatio(backtest.turnover?.annualized_cost_drag)}</strong></span>
+      <span>Current drawdown <strong>${formatMetricNa(latestSeriesValue(packetSeries.drawdown), (v) => pct(v, 2))}</strong></span>
       <span>OOS avg Sharpe <strong>${num(walk.average_test_sharpe)}</strong></span>
       <span>Positive OOS windows <strong>${formatOosWindows(walk)}</strong></span>`;
   }
-  drawGrossNetEquityChart(document.getElementById("backtestCanvas"), dates, gross, net);
-  drawDrawdownChart(document.getElementById("researchDrawdownCanvas"), packetSeries.drawdown || []);
-  drawRollingSharpeChart(document.getElementById("researchRollingCanvas"), packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || []);
-  drawReturnDistributionChart(document.getElementById("researchDistributionCanvas"), net);
-  const decision = document.getElementById("researchLabDecision");
-  if (decision) {
-    const label = researchDecisionLabel(backtest, walk);
-    decision.innerHTML = `<p>${statusBadge(label)} <strong>Research decision:</strong> ${label}</p><p class="status-muted">${escapeHtml(backtest.action?.interpretation || backtest.hypothesis || "Based on literature backtest evidence only.")}</p>`;
+  const holdingsPanel = document.getElementById("researchLabHoldingsPanel");
+  const compositePanel = document.getElementById("researchLabCompositePanel");
+  if (holdingsPanel) holdingsPanel.hidden = true;
+  if (compositePanel) compositePanel.hidden = true;
+  const mainDetail = document.getElementById("researchLabMainDetail");
+  const chartSection = document.getElementById("researchLabChartSection");
+  if (chartSection) chartSection.hidden = false;
+  if (mainDetail) {
+    mainDetail.hidden = true;
+    mainDetail.innerHTML = "";
   }
+  const missingGrossNet = [];
+  if (!gross.length) missingGrossNet.push("return_series.gross_returns");
+  if (!net.length) missingGrossNet.push("return_series.net_returns");
+  const chartEmptyMessage = missingGrossNet.length
+    ? `Bundle field for gross/net series not mapped yet: ${missingGrossNet.join(", ")}.`
+    : "Bundle field for gross/net series not mapped yet: return_series.gross_returns, return_series.net_returns.";
+  if (!gross.length || !net.length) {
+    if (chartSection) chartSection.hidden = true;
+    if (mainDetail) {
+      mainDetail.hidden = false;
+      mainDetail.innerHTML = `<div class="panel-title sub">Structured Strategy Overview</div><div class="research-overview-grid">${overview?.innerHTML || ""}</div>`;
+    }
+    setResearchNotice(
+      "researchLabChartNotice",
+      `${chartEmptyMessage} This strategy currently has summary/risk data only; risk charts are shown below.`,
+    );
+  } else {
+    setResearchNotice("researchLabChartNotice", "");
+  }
+  drawGrossNetEquityChart(
+    document.getElementById("backtestCanvas"),
+    dates,
+    gross,
+    net,
+    chartEmptyMessage,
+  );
+  setResearchNotice(
+    "researchDrawdownNotice",
+    (packetSeries.drawdown || []).length ? "" : "Drawdown series missing from bundle field: risk_packet.chart_series.drawdown.",
+  );
+  drawDrawdownChart(
+    document.getElementById("researchDrawdownCanvas"),
+    packetSeries.drawdown || [],
+    (packetSeries.drawdown || []).length ? "" : "Drawdown series missing from bundle field: risk_packet.chart_series.drawdown.",
+  );
+  setResearchNotice(
+    "researchRollingNotice",
+    (packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || []).length
+      ? ""
+      : "Rolling Sharpe missing from bundle field: risk_packet.chart_series.rolling_63d_sharpe.",
+  );
+  drawRollingSharpeChart(
+    document.getElementById("researchRollingCanvas"),
+    packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || [],
+    (packetSeries.rolling_63d_sharpe || packetSeries.rolling_sharpe || []).length
+      ? ""
+      : "Rolling Sharpe missing from bundle field: risk_packet.chart_series.rolling_63d_sharpe.",
+  );
+  setResearchNotice(
+    "researchDistributionNotice",
+    net.length ? "" : "Return distribution missing from bundle field: return_series.net_returns.",
+  );
+  drawReturnDistributionChart(
+    document.getElementById("researchDistributionCanvas"),
+    net,
+    net.length ? "" : "Return distribution missing from bundle field: return_series.net_returns.",
+  );
   document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
     (walk.windows || []).slice(-12).map((window) => `<tr><td>${window.train_start} → ${window.train_end}</td><td>${window.test_start} → ${window.test_end}</td><td>${num(window.train_sharpe)}</td><td>${num(window.test_sharpe)}</td><td class="${cls(window.test_return || 0)}">${pct(window.test_return || 0, 2)}</td><td class="negative">${pct(window.test_max_drawdown || 0, 2)}</td></tr>`).join("") ||
     "<tr><td colspan='6'>Walk-forward windows unavailable.</td></tr>";
@@ -2044,7 +2494,7 @@ function drawRollingSeries(canvas, values) {
   ctx.stroke();
 }
 
-const DRAWER_CHART_UNAVAILABLE = "Chart unavailable — no strategy series supplied";
+const DRAWER_CHART_UNAVAILABLE = "Chart series missing from bundle.";
 
 function strategyChartSeries(strategy) {
   const series = strategy?.risk_packet?.chart_series || {};
@@ -2105,6 +2555,7 @@ function drawDrawerLineChart(canvas, values, options = {}) {
     (values || []).map((value) => Number(value)).filter(Number.isFinite),
     {
       label: options.label || "Series",
+      currentLabel: options.currentLabel,
       color: options.color || "#1ac8ff",
       format: options.format || ((value) => num(value, 2)),
     },
@@ -2120,20 +2571,23 @@ function drawCumulativeReturnChart(canvas, values, options = {}) {
   });
 }
 
-function drawDrawdownChart(canvas, values) {
+function drawDrawdownChart(canvas, values, emptyMessage = "Drawdown series missing from bundle field: risk_packet.chart_series.drawdown.") {
   drawDrawerLineChart(canvas, values, {
     label: "Drawdown",
+    currentLabel: "Current Drawdown",
     color: "#ff5a4f",
     format: (value) => pct(value, 2),
+    emptyMessage,
   });
 }
 
-function drawRollingSharpeChart(canvas, values) {
+function drawRollingSharpeChart(canvas, values, emptyMessage = "Rolling Sharpe missing from bundle field: risk_packet.chart_series.rolling_63d_sharpe.") {
   const rolling = (values || []).map((value) => (value == null ? NaN : Number(value))).filter(Number.isFinite);
   drawDrawerLineChart(canvas, rolling, {
     label: "Rolling Sharpe (63D)",
     color: "#f5c542",
     format: (value) => num(value, 2),
+    emptyMessage,
   });
 }
 
@@ -2393,9 +2847,13 @@ function renderCandidateStrategies() {
 
 function renderLiteratureStrategies(snapshot) {
   const results = snapshot.results || [];
+  const table = document.getElementById("literatureStrategyTable");
+  if (!table) return;
   if (!results.length) {
-    document.getElementById("literatureStrategyTable").innerHTML = "<tr><td>No literature strategy backtest yet. Run refresh_platform.py.</td></tr>";
-    renderResearchChecklistUnavailable("No literature strategy backtests loaded. No-look-ahead checklist unavailable until refresh_platform.py generates research evidence.");
+    table.innerHTML = "<tr><td>No literature strategy backtest yet. Run refresh_platform.py.</td></tr>";
+    if (!hasFactoryResearch()) {
+      renderResearchChecklistUnavailable("No literature strategy backtests loaded. No-look-ahead checklist unavailable until refresh_platform.py generates research evidence.");
+    }
     return;
   }
   document.getElementById("literatureStrategyTable").innerHTML = "<tr><th>Prototype</th><th>Source</th><th>Net Sharpe</th><th>Ann. Return</th><th>Max DD</th><th>Cost Drag</th><th>WFO</th><th>Avg Test Sharpe</th><th>Positive Windows</th><th>Action</th><th>Reason</th></tr>" +
@@ -2424,6 +2882,7 @@ function renderLiteratureStrategies(snapshot) {
     }).join("");
   document.querySelectorAll("[data-literature-strategy]").forEach((row) => {
     row.addEventListener("click", () => {
+      if (hasFactoryResearch()) return;
       const item = results[Number(row.dataset.literatureStrategy)];
       item._index = Number(row.dataset.literatureStrategy);
       renderResearchLabPanels(item);
@@ -2431,7 +2890,7 @@ function renderLiteratureStrategies(snapshot) {
       openLiteratureStrategyReview(item, activeArtifact || fallbackArtifact);
     });
   });
-  if (results.length) {
+  if (results.length && !hasFactoryResearch()) {
     const first = { ...results[0], _index: 0 };
     renderResearchLabPanels(first);
   }
@@ -2667,7 +3126,15 @@ function renderTables(artifact) {
   };
   const monitorHeader = `<tr>${sortableHeader("Strategy", "name")}<th>Family</th><th>Lifecycle</th><th class="col-pct">Current</th><th class="col-pct">Proposed</th><th>Eligibility</th>${sortableHeader("Daily PnL", "daily_pnl")}<th>MTD</th><th>Hist. Sharpe</th><th>Roll. Sharpe</th><th>Vol</th>${sortableHeader("Current DD", "current_drawdown")}<th>Turnover</th><th>Cost Drag</th><th>Model Risk</th><th>Research</th><th class="wrap-cell">Required Action</th></tr>`;
   const monitorTable = document.getElementById("monitorTable");
-  if (!monitorTable) return;
+  const monitorPanel = monitorTable?.closest(".strategy-monitor-panel");
+  if (monitorPanel) {
+    if (hasFactoryResearch()) {
+      monitorPanel.style.display = "none";
+    } else {
+      monitorPanel.style.display = "";
+    }
+  }
+  if (!monitorTable || hasFactoryResearch()) return;
   monitorTable.innerHTML = monitorHeader + sortedStrategies.map((s) => {
     const elig = formatEligibilityDisplay(s);
     const live = s.current_weight > 0;
@@ -3077,8 +3544,10 @@ function renderStaticTables(artifact) {
     }).join("");
 
   const selected = artifact.strategies?.[0];
-  document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
-    (selected?.walk_forward?.windows || []).slice(-12).map((window) => `<tr><td>${window.train_start} → ${window.train_end}</td><td>${window.test_start} → ${window.test_end}</td><td>${num(window.train_sharpe)}</td><td>${num(window.test_sharpe)}</td><td class="${cls(window.test_return || 0)}">${pct(window.test_return || 0, 2)}</td><td class="negative">${pct(window.test_max_drawdown || 0, 2)}</td></tr>`).join("");
+  if (!hasFactoryResearch()) {
+    document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr>" +
+      (selected?.walk_forward?.windows || []).slice(-12).map((window) => `<tr><td>${window.train_start} → ${window.train_end}</td><td>${window.test_start} → ${window.test_end}</td><td>${num(window.train_sharpe)}</td><td>${num(window.test_sharpe)}</td><td class="${cls(window.test_return || 0)}">${pct(window.test_return || 0, 2)}</td><td class="negative">${pct(window.test_max_drawdown || 0, 2)}</td></tr>`).join("");
+  }
   renderLiteratureStrategies(artifact.literature_strategy_backtests || {});
   renderCandidateStrategies();
   renderReplicationClone(artifact.replication_clone || {});
@@ -3805,7 +4274,10 @@ async function init() {
   const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
   if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
   renderShadowStrategyRegistry();
-  if (hasFactoryResearch()) renderFactoryResearchArchitectureBanner();
+  if (hasFactoryResearch()) {
+    renderFactoryResearchArchitectureBanner();
+    refreshResearchLabViews(artifact);
+  }
   installChartObservers(artifact);
   refreshProposalStatusViews(artifact);
   document.body.classList.remove("app-loading");

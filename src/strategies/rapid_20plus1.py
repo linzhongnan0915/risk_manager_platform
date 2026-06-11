@@ -9,14 +9,18 @@ import json
 import pandas as pd
 
 from src.risk.performance import cumulative_returns, drawdown_series, max_drawdown, sharpe_ratio, volatility
+from src.strategies.composite_membership import (
+    composite_membership_for,
+    composite_weights,
+    eligible_composite_constituent_ids,
+    equal_composite_weight,
+    passes_composite_gate,
+)
 from src.strategies.platform_registry import (
-    COMBINED_PORTFOLIO_MEMBER_IDS,
     COMPOSITE_ID,
     COMPOSITE_LABEL,
     COMPOSITE_NAME,
-    RAPID_ACTIVE_UNDERLYING_IDS,
     RAPID_BACKTEST_IDS,
-    REPLACEMENT_CANDIDATE_IDS,
     SPEC_BY_ID,
 )
 from src.strategies.literature_backtests import _annual_return
@@ -65,64 +69,13 @@ def load_aligned_return_panels(
     return gross.loc[valid], net.loc[valid]
 
 
-def passes_composite_gate(summary: dict[str, object]) -> bool:
-    return bool(summary.get("run_valid", False)) and float(summary.get("cumulative_net_return") or 0) > 0 and float(
-        summary.get("net_sharpe") or 0
-    ) > 0
-
-
-def _load_summary(factory_root: Path, strategy_id: str) -> dict[str, object]:
-    return json.loads((factory_root / strategy_id / "summary.json").read_text(encoding="utf-8"))
-
-
-def _max_abs_corr_to_pool(strategy_id: str, pool_ids: tuple[str, ...], returns: pd.DataFrame) -> float:
-    if not pool_ids:
-        return 0.0
-    columns = [strategy_id, *pool_ids]
-    subset = returns[columns].dropna(how="any")
-    if subset.empty or len(subset) < 2:
-        return 0.0
-    corr = subset.corr()[strategy_id].drop(strategy_id).abs()
-    return float(corr.max()) if len(corr) else 0.0
-
-
 def resolve_composite_active_ids(
     factory_root: Path, returns_all: pd.DataFrame
 ) -> tuple[tuple[str, ...], list[dict[str, object]]]:
-    summaries = {strategy_id: _load_summary(factory_root, strategy_id) for strategy_id in RAPID_BACKTEST_IDS}
-    active = [
-        strategy_id
-        for strategy_id in COMBINED_PORTFOLIO_MEMBER_IDS
-        if passes_composite_gate(summaries[strategy_id])
-    ]
-    replacement_notes: list[dict[str, object]] = []
-    candidate_pool = [
-        strategy_id
-        for strategy_id in RAPID_BACKTEST_IDS
-        if strategy_id not in COMBINED_PORTFOLIO_MEMBER_IDS and strategy_id not in active
-    ]
-    while len(active) < len(COMBINED_PORTFOLIO_MEMBER_IDS):
-        eligible = [
-            strategy_id
-            for strategy_id in candidate_pool
-            if strategy_id not in active and passes_composite_gate(summaries[strategy_id])
-        ]
-        if not eligible:
-            break
-        pick = min(eligible, key=lambda strategy_id: _max_abs_corr_to_pool(strategy_id, tuple(active), returns_all))
-        replacement_notes.append(
-            {
-                "replacement_strategy_id": pick,
-                "replaced_platform_slot": "in-sample screened replacement",
-                "max_abs_correlation_to_active_pool": _max_abs_corr_to_pool(pick, tuple(active), returns_all),
-                "cumulative_net_return": summaries[pick].get("cumulative_net_return"),
-                "net_sharpe": summaries[pick].get("net_sharpe"),
-                "disclosure": "In-sample candidate selection after platform member failed composite gate.",
-            }
-        )
-        active.append(pick)
-        candidate_pool.remove(pick)
-    return tuple(active), replacement_notes
+    """Derive composite members dynamically from the canonical registry gate (1/N equal weight)."""
+    del returns_all  # membership does not depend on correlation backfill slots
+    active = eligible_composite_constituent_ids(factory_root)
+    return active, []
 
 
 def classify_research_status(
@@ -139,9 +92,8 @@ def classify_research_status(
 
 
 def composite_membership(strategy_id: str, status: str, summary: dict[str, object], composite_active_ids: set[str]) -> str:
-    if strategy_id in composite_active_ids:
-        return "ACTIVE"
-    return "REFERENCE_ONLY"
+    del status, summary
+    return composite_membership_for(strategy_id, composite_active_ids)
 
 
 def correlation_diagnostics(returns: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, list[dict[str, object]]]:
@@ -167,8 +119,8 @@ def build_equal_weight_composite(
     gross_returns: pd.DataFrame, net_returns: pd.DataFrame
 ) -> tuple[pd.DataFrame, dict[str, object]]:
     n = len(net_returns.columns)
-    weight = 1.0 / n
-    weights = {strategy_id: weight for strategy_id in net_returns.columns}
+    weight = equal_composite_weight(n)
+    weights = composite_weights(tuple(net_returns.columns))
     gross_composite = gross_returns.mul(weight).sum(axis=1)
     net_composite = net_returns.mul(weight).sum(axis=1)
     cost = gross_composite - net_composite
@@ -189,11 +141,14 @@ def build_equal_weight_composite(
     summary = {
         "strategy_id": COMPOSITE_ID,
         "name": COMPOSITE_NAME,
-        "label": COMPOSITE_LABEL.replace("20 platform", f"{n} effective platform"),
+        "label": COMPOSITE_LABEL.replace("eligible ACTIVE underlying strategies", f"{n} eligible ACTIVE underlying strategies"),
         "research_only": True,
         "not_allocation_approved": True,
         "N": n,
         "equal_weight": weight,
+        "weight_formula": "weight_i = 1 / N",
+        "dynamic_membership": True,
+        "eligible_member_ids": list(net_returns.columns),
         "constituent_ids": list(net_returns.columns),
         "constituent_weights": weights,
         "constituent_sharpes": {col: float(sharpe_ratio(net_returns[col])) for col in net_returns.columns},
@@ -209,7 +164,6 @@ def build_equal_weight_composite(
         "max_drawdown": float(max_drawdown(net_composite)),
         "cost_drag": float(cost_total / gross_total) if gross_total > 0 else None,
         "composite_cost_total": cost_total,
-        "platform_member_ids": list(COMBINED_PORTFOLIO_MEMBER_IDS),
         "weight_formula": "weight_i = 1 / N",
     }
     return daily, summary
@@ -290,8 +244,8 @@ def write_summary_markdown(path: Path, leaderboard: pd.DataFrame, composite_summ
     lines = [
         "# Combined Portfolio Research Summary",
         "",
-        f"- Platform Combined Portfolio member slots: {len(COMBINED_PORTFOLIO_MEMBER_IDS)}",
-        f"- Total backtested underlying strategies: {len(RAPID_ACTIVE_UNDERLYING_IDS)}",
+        f"- Combined Portfolio includes all currently eligible ACTIVE strategies",
+        f"- Total backtested underlying strategies: {len(RAPID_BACKTEST_IDS)}",
         f"- ACTIVE Combined Portfolio members: {active_count}",
         f"- REFERENCE ONLY (excluded from Combined Portfolio): {reference_count}",
         f"- PASS: {status_counts.get('PASS', 0)}",
@@ -399,7 +353,7 @@ def write_evidence_manifest(
     manifest = {
         "composite_id": COMPOSITE_ID,
         "composite_name": COMPOSITE_NAME,
-        "platform_member_slots": len(COMBINED_PORTFOLIO_MEMBER_IDS),
+        "dynamic_membership": True,
         "active_member_count": int(len(active)),
         "reference_only_count": int(len(reference)),
         "weight_formula": composite_summary.get("weight_formula"),
@@ -418,7 +372,7 @@ def write_evidence_manifest(
                 "net_sharpe > 0",
                 "selected into composite active set",
             ],
-            "reference_only_if": ["net_sharpe <= 0", "run_valid == false", "not in platform member list"],
+            "reference_only_if": ["net_sharpe <= 0", "run_valid == false", "fails composite eligibility gate"],
             "allocation_approved": False,
             "research_only": True,
             "data_source": "yfinance OHLCV Pilot 500",
@@ -458,7 +412,7 @@ def write_combined_portfolio_report(
         "",
         "## Summary",
         f"- Composite: **{COMPOSITE_NAME}** (`{COMPOSITE_ID}`)",
-        f"- Platform member slots: {len(COMBINED_PORTFOLIO_MEMBER_IDS)}",
+        f"- Combined Portfolio includes all currently eligible ACTIVE strategies",
         f"- Active members in composite: {len(active)}",
         f"- Reference-only (excluded): {len(reference)}",
         f"- Weight formula: {composite_summary['weight_formula']} (N={composite_summary['N']}, weight={composite_summary['equal_weight']:.2%})",
@@ -544,11 +498,12 @@ def finalize_rapid_artifacts(project_root: Path) -> dict[str, object]:
         json.dumps(
             {
                 "composite_id": COMPOSITE_ID,
-                "platform_member_ids": list(COMBINED_PORTFOLIO_MEMBER_IDS),
                 "tested_underlying_ids": list(RAPID_BACKTEST_IDS),
                 "active_member_ids": list(active_ids),
+                "eligible_member_ids": list(active_ids),
                 "reference_only_ids": list(reference_ids),
                 "replacement_notes": replacement_notes,
+                "dynamic_membership": True,
                 "N": composite_summary["N"],
                 "equal_weight": composite_summary["equal_weight"],
             },

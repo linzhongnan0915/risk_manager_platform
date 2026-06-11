@@ -42,7 +42,7 @@ from src.strategies.strategy_factory import StrategySpec
 
 COMPOSITE_ID = "COMBINED_PORTFOLIO_V1"
 COMPOSITE_NAME = "Combined Portfolio"
-COMPOSITE_LABEL = "Equal-weight composite of 20 platform underlying strategies — research only."
+COMPOSITE_LABEL = "Equal-weight composite of all eligible ACTIVE underlying strategies — research only."
 
 C3A2_SPECS: tuple[StrategySpec, ...] = (
     StrategySpec("C3A2_001", "c3a2_001_short_term_reversal_5d_v1", "Short-Term Reversal 5D",
@@ -71,7 +71,9 @@ FAILED_PLATFORM_MEMBER_IDS: tuple[str, ...] = ("C3A2_001",)
 
 C3A2_IDS = tuple(spec.strategy_id for spec in C3A2_SPECS)
 
-COMBINED_PORTFOLIO_MEMBER_IDS: tuple[str, ...] = (
+# Deprecated historical pre-registration list. Runtime Combined Portfolio membership
+# is derived only via eligible_composite_constituent_ids() — never this tuple.
+DEPRECATED_HISTORICAL_PLATFORM_MEMBER_IDS: tuple[str, ...] = (
     "C2A2_002",
     "C2A2_020",
     "C2B2_004",
@@ -95,13 +97,15 @@ COMBINED_PORTFOLIO_MEMBER_IDS: tuple[str, ...] = (
 )
 
 REFERENCE_ONLY_IDS: tuple[str, ...] = tuple(
-    strategy_id for strategy_id in C3A1_IDS if strategy_id not in COMBINED_PORTFOLIO_MEMBER_IDS
+    strategy_id for strategy_id in C3A1_IDS if strategy_id not in DEPRECATED_HISTORICAL_PLATFORM_MEMBER_IDS
 )
 
 # Additional backtested candidates eligible for in-sample composite replacement screening.
 REPLACEMENT_CANDIDATE_IDS: tuple[str, ...] = ("C2B2_003", "C2A2_004")
 
-RAPID_ACTIVE_UNDERLYING_IDS = COMBINED_PORTFOLIO_MEMBER_IDS + REFERENCE_ONLY_IDS + FAILED_PLATFORM_MEMBER_IDS
+RAPID_ACTIVE_UNDERLYING_IDS = (
+    DEPRECATED_HISTORICAL_PLATFORM_MEMBER_IDS + REFERENCE_ONLY_IDS + FAILED_PLATFORM_MEMBER_IDS
+)
 RAPID_BACKTEST_IDS: tuple[str, ...] = tuple(
     dict.fromkeys(RAPID_ACTIVE_UNDERLYING_IDS + REPLACEMENT_CANDIDATE_IDS)
 )

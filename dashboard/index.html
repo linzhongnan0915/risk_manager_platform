@@ -95,7 +95,7 @@
 
           <section class="tab-panel" data-tab-panel="Strategy Monitor">
             <div id="monitorKpiStrip"></div>
-            <article class="panel v2-panel strategy-monitor-panel">
+            <article class="panel v2-panel strategy-monitor-panel strategy-registry-panel">
               <div class="monitor-heading">
                 <div class="panel-title">Retained Research / Shadow Registry</div>
                 <select id="shadowStrategyStatusFilter" aria-label="Shadow strategy status">
@@ -107,7 +107,7 @@
                   <option value="BLOCKED">BLOCKED</option>
                 </select>
               </div>
-              <div class="table-viewport"><div class="table-scroll">
+              <div class="table-viewport strategy-registry-viewport"><div class="table-scroll strategy-registry-scroll">
                 <table class="data-table dense sticky-head" id="shadowStrategyTable"></table>
               </div></div>
             </article>
@@ -230,21 +230,61 @@
           </section>
 
           <section class="tab-panel" data-tab-panel="Backtesting & Research Lab">
+            <div id="researchLabDetailAnchor" class="research-detail-anchor"></div>
             <section class="research-lab-toolbar">
-              <label class="research-selector-label">Strategy prototype
-                <select id="researchLabSelector" aria-label="Research lab strategy selector"></select>
+              <label class="research-selector-label">US-Equity Research Backtest · Research Only
+                <select id="researchLabSelector" aria-label="US-equity research strategy selector"></select>
               </label>
-              <div id="researchLabSummaryStrip" class="research-summary-strip"></div>
+              <p class="research-nav-hint status-muted">Select a strategy above, or open <strong>View Details</strong> from the Strategies page.</p>
+              <article class="panel v2-panel research-lab-overview-panel">
+                <div class="panel-title">Strategy Overview</div>
+                <div id="researchLabOverview" class="research-overview-grid"></div>
+              </article>
             </section>
             <section class="research-lab-grid">
-              <article class="panel v2-panel research-lab-main"><div class="panel-title">Gross vs Net Cumulative Return</div><p id="researchLabCaption" class="research-caption"></p><canvas id="backtestCanvas" width="800" height="220"></canvas></article>
-              <article class="panel v2-panel research-lab-side"><div class="panel-title">Research Decision</div><div id="researchLabDecision" class="compact-list"></div><div class="panel-title sub">Drawdown</div><canvas id="researchDrawdownCanvas" class="drawer-canvas" width="380" height="120"></canvas><div class="panel-title sub">Rolling Sharpe (63D)</div><canvas id="researchRollingCanvas" class="drawer-canvas" width="380" height="120"></canvas><div class="panel-title sub">Return Distribution</div><canvas id="researchDistributionCanvas" class="drawer-canvas" width="380" height="120"></canvas></article>
+              <article class="panel v2-panel research-lab-main">
+                <div class="panel-title">Strategy Details</div>
+                <p id="researchLabChartNotice" class="research-notice status-muted" hidden></p>
+                <div id="researchLabChartSection">
+                  <div class="panel-title sub">Gross vs Net Cumulative Return</div>
+                  <div id="researchLabPerformanceMetrics" class="research-summary-strip"></div>
+                  <p id="researchLabCaption" class="research-caption"></p>
+                  <canvas id="backtestCanvas" width="800" height="220"></canvas>
+                </div>
+                <div id="researchLabMainDetail" class="research-main-detail" hidden></div>
+              </article>
+              <article class="panel v2-panel research-lab-side">
+                <div class="panel-title">Risk and Costs</div>
+                <div id="researchLabRiskMetrics" class="research-summary-strip compact"></div>
+                <div class="panel-title sub">Drawdown</div>
+                <p id="researchDrawdownNotice" class="research-notice status-muted" hidden></p>
+                <canvas id="researchDrawdownCanvas" class="drawer-canvas" width="380" height="120"></canvas>
+                <div class="panel-title sub">Rolling Sharpe (63D)</div>
+                <p id="researchRollingNotice" class="research-notice status-muted" hidden></p>
+                <canvas id="researchRollingCanvas" class="drawer-canvas" width="380" height="120"></canvas>
+                <div class="panel-title sub">Return Distribution</div>
+                <p id="researchDistributionNotice" class="research-notice status-muted" hidden></p>
+                <canvas id="researchDistributionCanvas" class="drawer-canvas" width="380" height="120"></canvas>
+              </article>
+              <article class="panel v2-panel research-lab-span-12" id="researchLabHoldingsPanel">
+                <div class="panel-title">Current Holdings</div>
+                <div id="researchLabHoldings"></div>
+              </article>
+              <article class="panel v2-panel research-lab-span-12" id="researchLabCompositePanel" hidden>
+                <div class="panel-title">Combined Portfolio Composition</div>
+                <div id="researchLabCompositeDetail"></div>
+              </article>
               <article class="panel v2-panel research-lab-span-6"><div class="panel-title">No-Look-Ahead Checklist</div><div class="checklist compact-checklist" id="researchChecklist"></div></article>
               <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Walk-Forward Results</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="walkForwardTable"></table></div></div></article>
-              <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Literature Strategy Prototypes</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="literatureStrategyTable"></table></div></div></article>
-              <article class="panel v2-panel research-lab-span-6"><div class="panel-title">ETF Candidate Shelf</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="candidateStrategyTable"></table></div></div></article>
-              <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Literature Modules</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="literatureModuleTable"></table></div></div></article>
-              <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Replication Clone</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="replicationSummaryTable"></table></div></div><div class="factor-review" id="replicationBetas"></div></article>
+              <details class="panel v2-panel research-lab-span-12 legacy-research-references">
+                <summary class="panel-title">LEGACY RESEARCH REFERENCES — NOT ACTIVE PORTFOLIO</summary>
+                <div class="legacy-research-grid">
+                  <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Literature Strategy Prototypes</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="literatureStrategyTable"></table></div></div></article>
+                  <article class="panel v2-panel research-lab-span-6"><div class="panel-title">ETF Candidate Shelf</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="candidateStrategyTable"></table></div></div></article>
+                  <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Literature Modules</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="literatureModuleTable"></table></div></div></article>
+                  <article class="panel v2-panel research-lab-span-6"><div class="panel-title">Replication Clone</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="replicationSummaryTable"></table></div></div><div class="factor-review" id="replicationBetas"></div></article>
+                </div>
+              </details>
             </section>
           </section>
 

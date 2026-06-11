@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.strategies.composite_membership import passes_composite_gate
 from src.strategies.platform_registry import COMPOSITE_ID, RAPID_BACKTEST_IDS, SPEC_BY_ID
 from src.strategies.literature_backtests import TRADING_DAYS, _annual_return, _risk_packet
 from src.strategies.strategy_factory import StrategySpec
@@ -16,9 +17,11 @@ FACTORY_STRATEGY_IDS = RAPID_BACKTEST_IDS
 DEFAULT_STRATEGY_ID = "C2A2_020"
 
 
-def _active_composite_ids(root: Path) -> set[str]:
-    board = _load_leaderboard(root)
-    return {strategy_id for strategy_id, row in board.items() if row.get("membership") == "ACTIVE"}
+def _research_composite_eligible(summary: dict[str, Any], board: dict[str, Any]) -> bool:
+    """Research composite gate only — not live capital allocation approval."""
+    if board.get("membership") != "ACTIVE":
+        return False
+    return passes_composite_gate(summary)
 
 RESEARCH_GROUPS = (
     {"id": "CURRENT_US_EQUITY_RESEARCH", "label": "Active US-Equity Research (Combined Portfolio eligible)"},
@@ -44,7 +47,7 @@ FACTOR_INTERPRETATIONS: dict[str, list[dict[str, str]]] = {
 }
 
 DECISION_REASONS: dict[str, str] = {
-    "C2A2_002": "ACTIVE Combined Portfolio member with high overlap to C2A2_020; retained for research composite at 5% weight — not allocation approved.",
+    "C2A2_002": "ACTIVE Combined Portfolio member with high overlap to C2A2_020; retained for research composite at equal-weight 1/N — not allocation approved.",
     "C2A2_020": "Retained research-composite member with positive cost-adjusted baseline; not allocation approved.",
     "C2B2_004": "Retained research-composite member with positive cost-adjusted baseline; not allocation approved.",
 }
@@ -275,6 +278,8 @@ def _build_factory_item(
             "strategy_family": candidate.get("strategy_family") or spec.version,
             "lifecycle_status": lifecycle,
             "allocation_eligible": False,
+            "live_allocation_approved": False,
+            "research_composite_eligible": _research_composite_eligible(summary, board),
             "test_period_start": daily["date"].iloc[0].date().isoformat(),
             "test_period_end": daily["date"].iloc[-1].date().isoformat(),
             "latest_data_date": daily["date"].iloc[-1].date().isoformat(),
@@ -317,7 +322,9 @@ def _build_factory_item(
                 ),
                 "research_status": board.get("status"),
                 "membership": board.get("membership"),
-                "composite_eligible": board.get("membership") == "ACTIVE",
+                "research_composite_eligible": _research_composite_eligible(summary, board),
+                "live_allocation_approved": False,
+                "composite_eligible": _research_composite_eligible(summary, board),
                 "average_abs_correlation": board.get("average_abs_correlation"),
                 "max_abs_correlation": board.get("max_abs_correlation"),
                 "highest_corr_partner": board.get("highest_corr_partner"),
@@ -392,11 +399,11 @@ def _build_combined_portfolio_item(composite_root: Path, factory_root: Path, lea
         "N": n,
         "equal_weight": weight,
         "weight_formula": summary.get("weight_formula") or "weight_i = 1 / N",
-        "target_platform_slots": 20,
-        "target_equal_weight": 0.05,
-        "interim_label": "INTERIM RESEARCH COMPOSITE — TARGET ARCHITECTURE 20 UNDERLYING STRATEGIES",
+        "dynamic_membership": summary.get("dynamic_membership", True),
+        "membership_rule": "Includes all currently eligible ACTIVE underlying strategies; equal-weight 1/N.",
         "members": members,
         "constituent_ids": active_ids,
+        "eligible_member_ids": summary.get("eligible_member_ids") or active_ids,
         "reference_only_ids": reference_ids,
         "current_constituents": [
             {"strategy_id": strategy_id, "weight": weight, "side": "constituent"}
@@ -427,6 +434,8 @@ def _build_combined_portfolio_item(composite_root: Path, factory_root: Path, lea
             "strategy_family": "research_composite",
             "lifecycle_status": "RESEARCH COMPOSITE",
             "allocation_eligible": False,
+            "live_allocation_approved": False,
+            "research_composite_eligible": False,
             "test_period_start": daily["date"].iloc[0].date().isoformat(),
             "test_period_end": daily["date"].iloc[-1].date().isoformat(),
             "latest_data_date": daily["date"].iloc[-1].date().isoformat(),
@@ -449,8 +458,10 @@ def _build_combined_portfolio_item(composite_root: Path, factory_root: Path, lea
             "factory_research": {
                 "combined_portfolio": composite_payload,
                 "strategy_21": composite_payload,
+                "research_composite_eligible": False,
+                "live_allocation_approved": False,
                 "limitations": _limitations({"survivorship_biased_current_listed_universe": True}),
-                "decision_reason": f"Equal-weight Combined Portfolio of {n} active underlying strategies; research only.",
+                "decision_reason": f"Equal-weight Combined Portfolio of {n} research-composite-eligible strategies; research only — not live allocation approved.",
                 "artifacts_present": {
                     name: (composite_root / name).exists() or (factory_root.parents[2] / "artifacts/rapid_20plus1" / name).exists()
                     for name in (
@@ -485,18 +496,22 @@ def build_factory_research_catalog(project_root: str | Path) -> dict[str, Any]:
         results.append(composite_item)
     active_count = sum(1 for row in leaderboard.values() if row.get("membership") == "ACTIVE")
     reference_count = sum(1 for row in leaderboard.values() if row.get("membership") == "REFERENCE_ONLY")
+    composite_weight = (1.0 / active_count) if active_count else 0.0
     return {
         "source": "rapid_20plus1",
         "default_strategy_id": DEFAULT_STRATEGY_ID,
         "groups": list(RESEARCH_GROUPS),
         "architecture": {
-            "target_underlying_count": 20,
-            "target_equal_weight": 0.05,
+            "dynamic_membership": True,
+            "equal_weight_formula": "1/N",
+            "research_composite_eligible_count": active_count,
+            "eligible_active_count": active_count,
+            "composite_constituent_count": active_count,
+            "composite_equal_weight": composite_weight,
+            "live_allocation_approved": False,
             "tested_candidate_count": len(RAPID_BACKTEST_IDS),
             "active_retained_count": active_count,
             "reference_only_count": reference_count,
-            "interim_composite_count": active_count,
-            "interim_equal_weight": (1.0 / active_count) if active_count else 0.0,
         },
         "results": results,
         "results_count": len(results),
