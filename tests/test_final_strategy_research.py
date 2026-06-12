@@ -37,7 +37,7 @@ def test_legacy_duplicate_and_diversifier_decisions_use_daily_returns():
     }
     decisions = legacy_diagnostics(rows, returns).set_index("strategy_id")
 
-    assert decisions.loc["C3A2_009", "recommendation"] == "ACTIVE"
+    assert decisions.loc["C3A2_009", "recommendation"] == "REPAIR"
     assert decisions.loc["C3A1_005", "recommendation"] == "REPAIR"
     assert decisions.loc["C3A1_015", "recommendation"] == "ACTIVE"
 
@@ -45,21 +45,23 @@ def test_legacy_duplicate_and_diversifier_decisions_use_daily_returns():
 def test_final_research_outputs_are_research_only_and_reconciled():
     manifest = json.loads((FINAL_ROOT / "run_manifest.json").read_text(encoding="utf-8"))
     recommendations = pd.read_csv(FINAL_ROOT / "final_recommendations.csv")
-    regimes = pd.read_csv(FINAL_ROOT / "regime_analysis.csv")
+    regimes = pd.read_csv(FINAL_ROOT / "market_proxy_regime_v0.csv")
     trades = pd.read_csv(FUNDAMENTAL_ROOT / "trade_log.csv")
     daily = pd.read_csv(FUNDAMENTAL_ROOT / "daily_net_returns.csv")
 
-    assert manifest["registry_updated"] is False
-    assert manifest["combined_portfolio_updated"] is False
-    assert manifest["dashboard_updated"] is False
+    assert manifest["registry_updated"] is True
+    assert manifest["combined_portfolio_updated"] is True
+    assert manifest["dashboard_updated"] is True
+    assert manifest["live_allocation_percent"] == 0.0
+    assert manifest["execution_enabled"] is False
     assert recommendations.groupby("recommendation").size().to_dict() == {
-        "ACTIVE": 10, "ARCHIVED": 4, "REPAIR": 11
+        "ACTIVE": 9, "ARCHIVED": 4, "REPAIR": 12
     }
     assert set(regimes["regime"]) == {
-        "GROWTH_DOWN_INFLATION_DOWN",
-        "GROWTH_DOWN_INFLATION_UP",
-        "GROWTH_UP_INFLATION_DOWN",
-        "GROWTH_UP_INFLATION_UP",
+        "MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN",
+        "MARKET_PROXY_GROWTH_DOWN_INFLATION_UP",
+        "MARKET_PROXY_GROWTH_UP_INFLATION_DOWN",
+        "MARKET_PROXY_GROWTH_UP_INFLATION_UP",
     }
     for strategy_id in daily["strategy_id"].unique():
         trade_cost = trades.loc[trades["strategy_id"].eq(strategy_id), "estimated_transaction_cost"].sum()

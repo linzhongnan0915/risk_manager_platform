@@ -1,4 +1,4 @@
-"""Final legacy, fundamental, and Growth x Inflation regime research diagnostics."""
+"""Final strategy research with MARKET_PROXY_REGIME_V0 diagnostics."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ FUNDAMENTAL_ROOT = ROOT / "output/research/final_fundamental_research_v1"
 OUTPUT_ROOT = ROOT / "output/research/final_strategy_research_v1"
 REGIME_CACHE = ROOT / "data/raw/fundamental_research/growth_inflation_proxy_ohlcv.csv"
 LEGACY_ACTIVE_BASE = (
-    "C3A1_001", "C3A1_002", "C3A1_003", "C3A1_013", "C3A1_015", "C3A2_008", "C3A2_009",
+    "C3A1_001", "C3A1_002", "C3A1_003", "C3A1_013", "C3A1_015", "C3A2_008",
 )
 ECONOMIC_FAMILIES = {
     "C2A2_004": "overnight reversal",
@@ -123,12 +123,7 @@ def legacy_diagnostics(rows: dict[str, dict], returns: pd.DataFrame) -> pd.DataF
         records.append(record)
     frame = pd.DataFrame(records).set_index("strategy_id")
     frame["recommendation"] = frame["prior_status"]
-    frame.loc["C3A2_009", "recommendation"] = (
-        "ACTIVE"
-        if frame.loc["C3A2_009", "average_abs_correlation_with_retained"] < 0.30
-        or frame.loc["C3A2_009", "marginal_sharpe_vs_current_active"] > 0
-        else "REPAIR"
-    )
+    frame.loc["C3A2_009", "recommendation"] = "REPAIR"
     frame.loc["C3A1_005", "recommendation"] = "REPAIR"
     frame.loc["C3A1_015", "recommendation"] = "ACTIVE"
     return frame.reset_index()
@@ -180,10 +175,10 @@ def _regime_labels(index: pd.DatetimeIndex) -> pd.Series:
     growth = close["SPY"].pct_change(63).shift(1)
     inflation = (close["TIP"].pct_change(63) - close["IEF"].pct_change(63)).shift(1)
     labels = pd.Series(index=close.index, dtype=object)
-    labels.loc[growth.ge(0) & inflation.ge(0)] = "GROWTH_UP_INFLATION_UP"
-    labels.loc[growth.ge(0) & inflation.lt(0)] = "GROWTH_UP_INFLATION_DOWN"
-    labels.loc[growth.lt(0) & inflation.ge(0)] = "GROWTH_DOWN_INFLATION_UP"
-    labels.loc[growth.lt(0) & inflation.lt(0)] = "GROWTH_DOWN_INFLATION_DOWN"
+    labels.loc[growth.ge(0) & inflation.ge(0)] = "MARKET_PROXY_GROWTH_UP_INFLATION_UP"
+    labels.loc[growth.ge(0) & inflation.lt(0)] = "MARKET_PROXY_GROWTH_UP_INFLATION_DOWN"
+    labels.loc[growth.lt(0) & inflation.ge(0)] = "MARKET_PROXY_GROWTH_DOWN_INFLATION_UP"
+    labels.loc[growth.lt(0) & inflation.lt(0)] = "MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN"
     return labels.reindex(index).ffill()
 
 
@@ -234,7 +229,7 @@ def final_recommendations(
             "reason", FUNDAMENTAL_REASONS.get(row["strategy_id"], "Retain credible standalone or diversification value.")
         )
         if row["strategy_id"] == "C3A2_009":
-            reason = "Retain only for measurable diversification; average absolute correlation below 0.30."
+            reason = "REPAIR: diversification is measurable, but accepted decision reflects negative marginal portfolio contribution."
         elif row["strategy_id"] == "C3A1_005":
             reason = "REPAIR: correlation 0.961 with C3A1_015, which has lower drawdown and slightly lower cost."
         elif row["strategy_id"] == "C3A1_015":
@@ -272,15 +267,19 @@ def main() -> int:
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     legacy.to_csv(OUTPUT_ROOT / "legacy_diagnostics.csv", index=False)
     fundamentals.to_csv(OUTPUT_ROOT / "fundamental_diagnostics.csv", index=False)
-    regimes.to_csv(OUTPUT_ROOT / "regime_analysis.csv", index=False)
+    regimes.to_csv(OUTPUT_ROOT / "market_proxy_regime_v0.csv", index=False)
     final.to_csv(OUTPUT_ROOT / "final_recommendations.csv", index=False)
     (OUTPUT_ROOT / "run_manifest.json").write_text(
         json.dumps(
             {
                 "status": "RESEARCH_ONLY",
-                "registry_updated": False,
-                "combined_portfolio_updated": False,
-                "dashboard_updated": False,
+                "registry_updated": True,
+                "combined_portfolio_updated": True,
+                "dashboard_updated": True,
+                "live_allocation_percent": 0.0,
+                "execution_enabled": False,
+                "regime_id": "MARKET_PROXY_REGIME_V0",
+                "regime_disclosure": "Market-proxy diagnostic only; not a true macro Growth x Inflation model.",
                 "regime_method": (
                     "Prior-day 63-day SPY return sign is the growth proxy; prior-day 63-day TIP minus IEF "
                     "relative-return sign is the inflation proxy. Analysis only; weights unchanged."

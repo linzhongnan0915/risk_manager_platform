@@ -51,13 +51,13 @@ STRATEGY_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "C3A1_002": {"status": "ACTIVE", "reason": "Usable momentum baseline and superior replacement for C3A1_004."},
     "C3A1_003": {"status": "ACTIVE", "reason": "Positive standalone evidence with non-identical momentum horizon."},
     "C3A1_004": {"status": "ARCHIVED", "reason": "Correlation 0.905 with clearly superior C3A1_002; dominated duplicate."},
-    "C3A1_005": {"status": "ACTIVE", "reason": "Positive standalone trend-quality evidence retained conservatively."},
+    "C3A1_005": {"status": "REPAIR", "reason": "Correlation 0.961 with C3A1_015, which has lower drawdown and slightly lower cost."},
     "C3A1_006": {"status": "REPAIR", "reason": "Weak Sharpe and unacceptable drawdown relative to return."},
     "C3A1_012": {"status": "REPAIR", "reason": "Weak standalone Sharpe and material cost drag; possible redesign value."},
     "C3A1_013": {"status": "ACTIVE", "reason": "Positive liquidity-premium evidence with credible standalone value."},
-    "C3A1_015": {"status": "REPAIR", "reason": "Correlation 0.961 with C3A1_005; requires differentiation before reuse."},
+    "C3A1_015": {"status": "ACTIVE", "reason": "Retained over 0.961-correlated C3A1_005 due to lower drawdown and slightly lower cost."},
     "C3A2_008": {"status": "ACTIVE", "reason": "Strongest slow-momentum evidence; retained despite family overlap."},
-    "C3A2_009": {"status": "ACTIVE", "reason": "Weak standalone Sharpe but strongest observed diversification value."},
+    "C3A2_009": {"status": "REPAIR", "reason": "Diversifying profile, but negative marginal portfolio contribution requires repair."},
 }
 
 FUNDAMENTAL_RESEARCH_CANDIDATE_IDS: tuple[str, ...] = (
@@ -68,7 +68,27 @@ FUNDAMENTAL_RESEARCH_CANDIDATE_IDS: tuple[str, ...] = (
     "CONSERVATIVE_ASSET_GROWTH",
     "CASH_FLOW_YIELD",
     "MARGIN_IMPROVEMENT",
+    "REVENUE_ACCELERATION",
+    "CASH_FLOW_MOMENTUM",
+    "LOW_LEVERAGE_QUALITY",
+    "QUALITY_AT_REASONABLE_PRICE",
+    "SHAREHOLDER_YIELD",
 )
+
+FUNDAMENTAL_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "FUNDAMENTAL_MOMENTUM": {"status": "ACTIVE", "reason": "Strong net Sharpe, positive preliminary OOS, and low legacy correlation."},
+    "CAPEX_EFFICIENCY": {"status": "REPAIR", "reason": "Preliminary OOS is positive, but costs consume the full-period edge."},
+    "EARNINGS_QUALITY": {"status": "ACTIVE", "reason": "Strong net Sharpe, positive preliminary OOS, and low legacy correlation."},
+    "PROFITABLE_SMALL_CAP": {"status": "REPAIR", "reason": "Credible full-period result, but preliminary OOS is negative."},
+    "CONSERVATIVE_ASSET_GROWTH": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence."},
+    "CASH_FLOW_YIELD": {"status": "ARCHIVED", "reason": "Near-zero net return, negative preliminary OOS return, and cost drag exceeds edge."},
+    "MARGIN_IMPROVEMENT": {"status": "ACTIVE", "reason": "Strongest net Sharpe, positive preliminary OOS, and low legacy correlation."},
+    "REVENUE_ACCELERATION": {"status": "REPAIR", "reason": "Positive preliminary OOS, but weak full-period Sharpe and deep drawdown."},
+    "CASH_FLOW_MOMENTUM": {"status": "REPAIR", "reason": "Positive preliminary OOS and low correlation, but sub-threshold full-period Sharpe."},
+    "LOW_LEVERAGE_QUALITY": {"status": "REPAIR", "reason": "Positive return and OOS, but weak Sharpe and drawdown exceeds 30%."},
+    "QUALITY_AT_REASONABLE_PRICE": {"status": "REPAIR", "reason": "Weak full-period evidence and negative OOS; retained only for low correlation."},
+    "SHAREHOLDER_YIELD": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence."},
+}
 
 C3A2_SPECS: tuple[StrategySpec, ...] = (
     StrategySpec("C3A2_001", "c3a2_001_short_term_reversal_5d_v1", "Short-Term Reversal 5D",

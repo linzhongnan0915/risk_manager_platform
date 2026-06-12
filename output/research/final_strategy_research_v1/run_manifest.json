@@ -1,7 +1,11 @@
 {
   "status": "RESEARCH_ONLY",
-  "registry_updated": false,
-  "combined_portfolio_updated": false,
-  "dashboard_updated": false,
+  "registry_updated": true,
+  "combined_portfolio_updated": true,
+  "dashboard_updated": true,
+  "live_allocation_percent": 0.0,
+  "execution_enabled": false,
+  "regime_id": "MARKET_PROXY_REGIME_V0",
+  "regime_disclosure": "Market-proxy diagnostic only; not a true macro Growth x Inflation model.",
   "regime_method": "Prior-day 63-day SPY return sign is the growth proxy; prior-day 63-day TIP minus IEF relative-return sign is the inflation proxy. Analysis only; weights unchanged."
 }

@@ -1,26 +1,26 @@
 strategy_id,recommendation,maximum_correlation,economic_family,reason,regime_strength,regime_weakness
-C2A2_004,REPAIR,0.5413063132385431,overnight reversal,"Potential value remains, but evidence is insufficient for ACTIVE.",GROWTH_DOWN_INFLATION_DOWN,GROWTH_UP_INFLATION_DOWN
-C2A2_020,REPAIR,0.7621673623363336,liquidity resilience,"Potential value remains, but evidence is insufficient for ACTIVE.",GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-C3A1_001,ACTIVE,0.7806948274873068,residual momentum,Strongest standalone net Sharpe among current price-based strategies.,GROWTH_DOWN_INFLATION_UP,GROWTH_UP_INFLATION_UP
-C3A1_002,ACTIVE,0.9054974149961927,momentum,Usable momentum baseline and superior replacement for C3A1_004.,GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-C3A1_003,ACTIVE,0.8223810040325338,momentum,Positive standalone evidence with non-identical momentum horizon.,GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
+C2A2_004,REPAIR,0.5413063132385431,overnight reversal,"Potential value remains, but evidence is insufficient for ACTIVE.",MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN,MARKET_PROXY_GROWTH_UP_INFLATION_DOWN
+C2A2_020,REPAIR,0.7621673623363336,liquidity resilience,"Potential value remains, but evidence is insufficient for ACTIVE.",MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+C3A1_001,ACTIVE,0.7806948274873068,residual momentum,Strongest standalone net Sharpe among current price-based strategies.,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_UP_INFLATION_UP
+C3A1_002,ACTIVE,0.9054974149961927,momentum,Usable momentum baseline and superior replacement for C3A1_004.,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+C3A1_003,ACTIVE,0.8223810040325338,momentum,Positive standalone evidence with non-identical momentum horizon.,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
 C3A1_004,ARCHIVED,0.9054974149961926,volatility-adjusted momentum,ARCHIVED: correlation 0.905 with clearly superior C3A1_002; dominated duplicate.,NOT_ANALYZED_ARCHIVED,NOT_ANALYZED_ARCHIVED
-C3A1_005,REPAIR,0.960895372178715,trend quality,"REPAIR: correlation 0.961 with C3A1_015, which has lower drawdown and slightly lower cost.",GROWTH_DOWN_INFLATION_UP,GROWTH_UP_INFLATION_DOWN
-C3A1_006,REPAIR,0.7621673623363336,breakout persistence,"Potential value remains, but evidence is insufficient for ACTIVE.",GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-C3A1_012,REPAIR,0.7313296447572822,liquidity stability,"Potential value remains, but evidence is insufficient for ACTIVE.",GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-C3A1_013,ACTIVE,0.7618674841010898,liquidity premium,Positive liquidity-premium evidence with credible standalone value.,GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-C3A1_015,ACTIVE,0.960895372178715,price efficiency,ACTIVE: retained over 0.961-correlated C3A1_005 due to lower drawdown and slightly lower cost.,GROWTH_DOWN_INFLATION_UP,GROWTH_UP_INFLATION_DOWN
-C3A2_008,ACTIVE,0.8649238894092643,slow momentum,Strongest slow-momentum evidence; retained despite family overlap.,GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-C3A2_009,ACTIVE,0.6717128871460297,liquidity / size diversification,Retain only for measurable diversification; average absolute correlation below 0.30.,GROWTH_UP_INFLATION_DOWN,GROWTH_DOWN_INFLATION_DOWN
-FUNDAMENTAL_MOMENTUM,ACTIVE,0.1271366800626632,fundamental momentum,"ACTIVE: strong net Sharpe, positive preliminary OOS, and low legacy correlation.",GROWTH_UP_INFLATION_UP,GROWTH_DOWN_INFLATION_UP
-CAPEX_EFFICIENCY,REPAIR,0.18369447376734044,investment efficiency,"REPAIR: preliminary OOS is positive, but costs consume the full-period edge.",GROWTH_UP_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-EARNINGS_QUALITY,ACTIVE,0.12307341672129604,earnings quality,"ACTIVE: strong net Sharpe, positive preliminary OOS, and low legacy correlation.",GROWTH_DOWN_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-PROFITABLE_SMALL_CAP,REPAIR,0.18710197995689076,profitability / size,"REPAIR: credible full-period result, but preliminary OOS is negative.",GROWTH_DOWN_INFLATION_DOWN,GROWTH_DOWN_INFLATION_UP
+C3A1_005,REPAIR,0.960895372178715,trend quality,"REPAIR: correlation 0.961 with C3A1_015, which has lower drawdown and slightly lower cost.",MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_UP_INFLATION_DOWN
+C3A1_006,REPAIR,0.7621673623363336,breakout persistence,"Potential value remains, but evidence is insufficient for ACTIVE.",MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+C3A1_012,REPAIR,0.7313296447572822,liquidity stability,"Potential value remains, but evidence is insufficient for ACTIVE.",MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+C3A1_013,ACTIVE,0.7618674841010898,liquidity premium,Positive liquidity-premium evidence with credible standalone value.,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+C3A1_015,ACTIVE,0.960895372178715,price efficiency,ACTIVE: retained over 0.961-correlated C3A1_005 due to lower drawdown and slightly lower cost.,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_UP_INFLATION_DOWN
+C3A2_008,ACTIVE,0.8649238894092643,slow momentum,Strongest slow-momentum evidence; retained despite family overlap.,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+C3A2_009,REPAIR,0.6717128871460297,liquidity / size diversification,"REPAIR: diversification is measurable, but accepted decision reflects negative marginal portfolio contribution.",MARKET_PROXY_GROWTH_UP_INFLATION_DOWN,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+FUNDAMENTAL_MOMENTUM,ACTIVE,0.1271366800626632,fundamental momentum,"ACTIVE: strong net Sharpe, positive preliminary OOS, and low legacy correlation.",MARKET_PROXY_GROWTH_UP_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP
+CAPEX_EFFICIENCY,REPAIR,0.18369447376734044,investment efficiency,"REPAIR: preliminary OOS is positive, but costs consume the full-period edge.",MARKET_PROXY_GROWTH_UP_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+EARNINGS_QUALITY,ACTIVE,0.09471282199393083,earnings quality,"ACTIVE: strong net Sharpe, positive preliminary OOS, and low legacy correlation.",MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+PROFITABLE_SMALL_CAP,REPAIR,0.18710197995689076,profitability / size,"REPAIR: credible full-period result, but preliminary OOS is negative.",MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN,MARKET_PROXY_GROWTH_DOWN_INFLATION_UP
 CONSERVATIVE_ASSET_GROWTH,ARCHIVED,0.23461514374000822,conservative investment,ARCHIVED: negative full-period and preliminary OOS evidence.,NOT_ANALYZED_ARCHIVED,NOT_ANALYZED_ARCHIVED
 CASH_FLOW_YIELD,ARCHIVED,0.09383223417000627,cash-flow value,"ARCHIVED: near-zero net return, negative preliminary OOS return, and cost drag exceeds edge.",NOT_ANALYZED_ARCHIVED,NOT_ANALYZED_ARCHIVED
-MARGIN_IMPROVEMENT,ACTIVE,0.0962866432880311,fundamental momentum,"ACTIVE: strongest net Sharpe, positive preliminary OOS, and low legacy correlation.",GROWTH_DOWN_INFLATION_DOWN,GROWTH_UP_INFLATION_DOWN
-REVENUE_ACCELERATION,REPAIR,0.17711358247997025,fundamental momentum,"REPAIR: positive preliminary OOS, but weak full-period Sharpe and deep drawdown.",GROWTH_UP_INFLATION_DOWN,GROWTH_DOWN_INFLATION_DOWN
-CASH_FLOW_MOMENTUM,REPAIR,0.06569137593223034,fundamental momentum,"REPAIR: positive preliminary OOS and low correlation, but sub-threshold full-period Sharpe.",GROWTH_UP_INFLATION_UP,GROWTH_DOWN_INFLATION_DOWN
-LOW_LEVERAGE_QUALITY,REPAIR,0.2072929113370445,quality / leverage,"REPAIR: positive return and OOS, but weak Sharpe and drawdown exceeds 30%.",GROWTH_DOWN_INFLATION_DOWN,GROWTH_UP_INFLATION_DOWN
-QUALITY_AT_REASONABLE_PRICE,REPAIR,0.08459208422229891,quality / value,"REPAIR: weak full-period evidence and negative OOS, retained only for low correlation.",GROWTH_DOWN_INFLATION_UP,GROWTH_UP_INFLATION_DOWN
+MARGIN_IMPROVEMENT,ACTIVE,0.0962866432880311,fundamental momentum,"ACTIVE: strongest net Sharpe, positive preliminary OOS, and low legacy correlation.",MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN,MARKET_PROXY_GROWTH_UP_INFLATION_DOWN
+REVENUE_ACCELERATION,REPAIR,0.17711358247997025,fundamental momentum,"REPAIR: positive preliminary OOS, but weak full-period Sharpe and deep drawdown.",MARKET_PROXY_GROWTH_UP_INFLATION_DOWN,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+CASH_FLOW_MOMENTUM,REPAIR,0.06569137593223034,fundamental momentum,"REPAIR: positive preliminary OOS and low correlation, but sub-threshold full-period Sharpe.",MARKET_PROXY_GROWTH_UP_INFLATION_UP,MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN
+LOW_LEVERAGE_QUALITY,REPAIR,0.2072929113370445,quality / leverage,"REPAIR: positive return and OOS, but weak Sharpe and drawdown exceeds 30%.",MARKET_PROXY_GROWTH_DOWN_INFLATION_DOWN,MARKET_PROXY_GROWTH_UP_INFLATION_DOWN
+QUALITY_AT_REASONABLE_PRICE,REPAIR,0.08459208422229891,quality / value,"REPAIR: weak full-period evidence and negative OOS, retained only for low correlation.",MARKET_PROXY_GROWTH_DOWN_INFLATION_UP,MARKET_PROXY_GROWTH_UP_INFLATION_DOWN
 SHAREHOLDER_YIELD,ARCHIVED,0.22336940015337908,shareholder distributions,ARCHIVED: negative full-period and preliminary OOS evidence.,NOT_ANALYZED_ARCHIVED,NOT_ANALYZED_ARCHIVED

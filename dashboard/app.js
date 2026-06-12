@@ -824,6 +824,7 @@ function compositeDynamicSummary() {
 function buildUnderlyingOverviewFields(item) {
   const backtest = item.backtest || {};
   const logic = factoryResearchLogicFields(backtest);
+  const factory = backtest.factory_research || {};
   return [
     ["Strategy ID", item.strategy_id],
     ["Strategy Name", backtest.name],
@@ -836,6 +837,8 @@ function buildUnderlyingOverviewFields(item) {
     ["Execution Timing", logic.executionTiming],
     ["Universe", logic.universe, true],
     ["Backtest Period", factoryResearchBacktestDates(item), true],
+    ["Limitations", (factory.limitations || []).join("; ") || "See research evidence.", true],
+    ["Regime Diagnostic", factory.regime_disclosure || "Not available.", true],
   ];
 }
 
@@ -1052,6 +1055,21 @@ function renderFactoryResearchHoldings(backtest, isComposite = false) {
   }
   const longRows = (holdings.current_long_holdings || []).map((row) => ({ ...row, side: "long" }));
   const shortRows = (holdings.current_short_holdings || []).map((row) => ({ ...row, side: "short" }));
+  const tradeLog = backtest.factory_research?.simulated_trade_log;
+  const tradeLogHtml = tradeLog ? `
+    <div class="panel-title sub">Simulated Trade Log</div>
+    <p class="status-muted">${escapeHtml(tradeLog.status || "RESEARCH ONLY")} · execution enabled: <strong>${tradeLog.execution_enabled ? "YES" : "NO"}</strong> · records: <strong>${tradeLog.record_count || 0}</strong> · estimated cost: <strong>${pct(tradeLog.estimated_transaction_cost || 0, 2)}</strong></p>
+    <div class="table-viewport short"><div class="table-scroll"><table class="data-table dense">
+      <tr><th>Execution Date</th><th>Ticker</th><th>Action</th><th>Target Weight</th><th>Simulated Price</th><th>Estimated Cost</th></tr>
+      ${(tradeLog.latest_records || []).map((row) => `<tr>
+        <td>${escapeHtml(row.execution_date || "N/A")}</td>
+        <td>${escapeHtml(row.ticker || "N/A")}</td>
+        <td>${escapeHtml(row.action || "N/A")}</td>
+        <td>${row.target_weight == null ? "N/A" : pct(row.target_weight, 2)}</td>
+        <td>${row.simulated_execution_price == null ? "N/A" : num(row.simulated_execution_price, 2)}</td>
+        <td>${row.estimated_transaction_cost == null ? "N/A" : pct(row.estimated_transaction_cost, 4)}</td>
+      </tr>`).join("")}
+    </table></div></div>` : "";
   if (!longRows.length && !shortRows.length) {
     el.innerHTML = `<p class="research-notice">Holdings object present but both <strong>holdings.current_long_holdings</strong> and <strong>holdings.current_short_holdings</strong> are empty.</p>`;
     return;
@@ -1061,7 +1079,8 @@ function renderFactoryResearchHoldings(backtest, isComposite = false) {
     <div class="research-holdings-split">
       ${renderHoldingsTable("Current Long Holdings", longRows)}
       ${renderHoldingsTable("Current Short Holdings", shortRows)}
-    </div>`;
+    </div>
+    ${tradeLogHtml}`;
 }
 
 function renderFactoryResearchCompositeDetail(item) {

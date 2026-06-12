@@ -16,14 +16,20 @@ from src.reporting.strategy_factory_research_adapter import _annual_return, _ris
 from src.strategies.platform_registry import (
     COMPOSITE_ID,
     FUNDAMENTAL_RESEARCH_CANDIDATE_IDS,
+    FUNDAMENTAL_SELECTION_STATUS,
     STRATEGY_SELECTION_STATUS,
 )
 
 BUNDLE_PATH = ROOT / "dashboard/data/us_equity_research_bundle.json"
-PACK_ROOT = ROOT / "output/research/fundamental_strategy_expansion_v1"
+PACK_ROOT = ROOT / "output/research/final_fundamental_research_v1"
+FINAL_ROOT = ROOT / "output/research/final_strategy_research_v1"
 ACTIVE_IDS = tuple(
     strategy_id
     for strategy_id, decision in STRATEGY_SELECTION_STATUS.items()
+    if decision["status"] == "ACTIVE"
+) + tuple(
+    strategy_id
+    for strategy_id, decision in FUNDAMENTAL_SELECTION_STATUS.items()
     if decision["status"] == "ACTIVE"
 )
 
@@ -73,6 +79,8 @@ def _candidate_items(correlation: pd.DataFrame) -> list[dict]:
     summary = pd.read_csv(PACK_ROOT / "candidate_summary.csv").set_index("strategy_id")
     daily = pd.read_csv(PACK_ROOT / "daily_net_returns.csv", parse_dates=["date"])
     holdings = pd.read_csv(PACK_ROOT / "holdings.csv")
+    trades = pd.read_csv(PACK_ROOT / "trade_log.csv")
+    regimes = pd.read_csv(FINAL_ROOT / "market_proxy_regime_v0.csv")
     manifest = json.loads((PACK_ROOT / "run_manifest.json").read_text(encoding="utf-8"))
     retained_corr = correlation.loc[list(FUNDAMENTAL_RESEARCH_CANDIDATE_IDS), list(ACTIVE_IDS)]
     output = []
@@ -83,11 +91,32 @@ def _candidate_items(correlation: pd.DataFrame) -> list[dict]:
         gross = pd.Series(returns["gross_return"].values, index=returns["date"])
         turnover = pd.Series(returns["turnover"].values, index=returns["date"])
         packet = _risk_packet(net, pd.Series(0.0, index=net.index), turnover, pd.DataFrame(index=net.index))
-        candidate_holdings = holdings.loc[holdings["strategy_id"] == strategy_id].to_dict(orient="records")
+        candidate_holdings = holdings.loc[holdings["strategy_id"] == strategy_id]
+        latest_holdings_date = candidate_holdings["date"].max()
+        latest_holdings = candidate_holdings.loc[candidate_holdings["date"].eq(latest_holdings_date)]
+        holdings_packet = {
+            "last_rebalance_date": latest_holdings_date,
+            "current_long_holdings": latest_holdings.loc[latest_holdings["side"].eq("LONG"), ["ticker", "target_weight"]]
+            .rename(columns={"target_weight": "weight"}).assign(side="long").to_dict(orient="records"),
+            "current_short_holdings": latest_holdings.loc[latest_holdings["side"].eq("SHORT"), ["ticker", "target_weight"]]
+            .rename(columns={"target_weight": "weight"}).assign(side="short").to_dict(orient="records"),
+        }
+        strategy_trades = trades.loc[trades["strategy_id"] == strategy_id]
+        trade_log = {
+            "status": "SIMULATED | RESEARCH ONLY | NO LIVE FILL",
+            "execution_enabled": False,
+            "record_count": int(len(strategy_trades)),
+            "estimated_transaction_cost": float(strategy_trades["estimated_transaction_cost"].sum()),
+            "latest_records": strategy_trades.tail(25).to_dict(orient="records"),
+        }
+        strategy_regimes = regimes.loc[regimes["strategy_id"] == strategy_id].to_dict(orient="records")
+        decision = FUNDAMENTAL_SELECTION_STATUS[strategy_id]
+        status = decision["status"]
+        eligible = status == "ACTIVE"
         corr_row = retained_corr.loc[strategy_id].abs()
         output.append(
             {
-                "research_group": "RESEARCH_CANDIDATE",
+                "research_group": status,
                 "strategy_id": strategy_id,
                 "backtest": {
                     "strategy_id": strategy_id,
@@ -102,10 +131,11 @@ def _candidate_items(correlation: pd.DataFrame) -> list[dict]:
                     "observations": int(row["observations"]),
                     "asset_class": "US individual equities",
                     "strategy_family": "point_in_time_fundamental",
-                    "lifecycle_status": "RESEARCH_CANDIDATE",
+                    "lifecycle_status": status,
                     "allocation_eligible": False,
                     "live_allocation_approved": False,
-                    "research_composite_eligible": False,
+                    "execution_enabled": False,
+                    "research_composite_eligible": eligible,
                     "test_period_start": row["test_period_start"],
                     "test_period_end": row["test_period_end"],
                     "latest_data_date": row["test_period_end"],
@@ -140,23 +170,27 @@ def _candidate_items(correlation: pd.DataFrame) -> list[dict]:
                         },
                     },
                     "action": {
-                        "action": row["recommendation"],
-                        "reason_code": "research_candidate",
-                        "interpretation": "Research only; no promotion in this batch.",
+                        "action": status,
+                        "reason_code": status.lower(),
+                        "interpretation": decision["reason"],
                     },
-                    "holdings": candidate_holdings,
+                    "holdings": holdings_packet,
                     "factory_research": {
-                        "membership": "RESEARCH_CANDIDATE",
-                        "research_status": row["recommendation"],
-                        "research_composite_eligible": False,
-                        "composite_eligible": False,
+                        "membership": status,
+                        "research_status": status,
+                        "research_composite_eligible": eligible,
+                        "composite_eligible": eligible,
                         "live_allocation_approved": False,
-                        "decision_reason": "Research only; current-listed diagnostic with survivorship bias.",
+                        "decision_reason": decision["reason"],
                         "limitations": [
                             "CURRENT_LISTED_DIAGNOSTIC",
                             "SURVIVORSHIP_BIAS_PRESENT",
                             "SEC XBRL tag and filing coverage varies by issuer.",
                         ],
+                        "data_labels": ["CURRENT_LISTED_DIAGNOSTIC", "SURVIVORSHIP_BIAS_PRESENT"],
+                        "simulated_trade_log": trade_log,
+                        "market_proxy_regime_v0": strategy_regimes,
+                        "regime_disclosure": "MARKET_PROXY_REGIME_V0 uses lagged SPY/TIP/IEF market proxies; it is not a true macro Growth x Inflation model.",
                         "preliminary_oos_start": row["preliminary_oos_start"],
                         "preliminary_oos_net_return": float(row["preliminary_oos_net_return"]),
                         "preliminary_oos_sharpe": float(row["preliminary_oos_sharpe"]),
@@ -182,13 +216,20 @@ def _rebuild_composite(results: list[dict], shared_dates: list[str]) -> None:
     by_id = {item["strategy_id"]: item for item in results}
     active = [by_id[strategy_id] for strategy_id in ACTIVE_IDS]
     weight = 1.0 / len(active)
+    shared_index = pd.to_datetime(shared_dates)
+
+    def aligned_series(item: dict, field: str) -> pd.Series:
+        series = item["backtest"]["return_series"]
+        dates = pd.to_datetime(series.get("dates") or shared_dates[: len(series[field])])
+        return pd.Series(series[field], index=dates).reindex(shared_index, fill_value=0.0)
+
     gross = pd.DataFrame(
-        {item["strategy_id"]: item["backtest"]["return_series"]["gross_returns"] for item in active},
-        index=pd.to_datetime(shared_dates),
+        {item["strategy_id"]: aligned_series(item, "gross_returns") for item in active},
+        index=shared_index,
     ).mean(axis=1)
     net_panel = pd.DataFrame(
-        {item["strategy_id"]: item["backtest"]["return_series"]["net_returns"] for item in active},
-        index=pd.to_datetime(shared_dates),
+        {item["strategy_id"]: aligned_series(item, "net_returns") for item in active},
+        index=shared_index,
     )
     net = net_panel.mean(axis=1)
     corr = net_panel.corr()
@@ -280,7 +321,17 @@ def build_bundle() -> dict:
     results = catalog["results"]
     _apply_old_statuses(results)
     results[:] = [item for item in results if item["strategy_id"] not in FUNDAMENTAL_RESEARCH_CANDIDATE_IDS]
-    correlation = pd.read_csv(PACK_ROOT / "correlation_matrix.csv", index_col=0)
+    fundamental_daily = pd.read_csv(PACK_ROOT / "daily_net_returns.csv", parse_dates=["date"])
+    fundamental_returns = fundamental_daily.pivot(index="date", columns="strategy_id", values="net_return")
+    existing_returns = pd.DataFrame(
+        {
+            item["strategy_id"]: item["backtest"]["return_series"]["net_returns"]
+            for item in results
+            if item["strategy_id"] != COMPOSITE_ID
+        },
+        index=pd.to_datetime(payload["shared_dates"]),
+    )
+    correlation = pd.concat([fundamental_returns, existing_returns], axis=1, join="inner").corr()
     composite = next(item for item in results if item["strategy_id"] == COMPOSITE_ID)
     results.remove(composite)
     results.extend(_candidate_items(correlation))
@@ -315,8 +366,15 @@ def build_bundle() -> dict:
         {"id": "COMBINED_PORTFOLIO", "label": "Combined Portfolio"},
     ]
     catalog["results_count"] = len(results)
-    catalog["source"] = "strategy_selection_expansion_batch_v1"
-    payload["bundle_version"] = 3
+    catalog["source"] = "accepted_final_strategy_research_integration_v1"
+    catalog["market_proxy_regime"] = {
+        "id": "MARKET_PROXY_REGIME_V0",
+        "disclosure": "Lagged SPY/TIP/IEF market-proxy analysis only; not a true macro Growth x Inflation model.",
+        "alters_weights": False,
+    }
+    catalog["execution_enabled"] = False
+    catalog["live_allocation_percent"] = 0.0
+    payload["bundle_version"] = 4
     return payload
 
 
