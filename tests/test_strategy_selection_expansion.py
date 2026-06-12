@@ -9,6 +9,8 @@ import pytest
 from src.strategies.platform_registry import (
     FUNDAMENTAL_RESEARCH_CANDIDATE_IDS,
     FUNDAMENTAL_SELECTION_STATUS,
+    FINAL_DELIVERY_CANDIDATE_IDS,
+    FINAL_DELIVERY_SELECTION_STATUS,
     STRATEGY_SELECTION_STATUS,
 )
 
@@ -28,10 +30,11 @@ def test_bundle_statuses_and_active_only_composite():
     composite = rows["COMBINED_PORTFOLIO_V1"]["backtest"]["factory_research"]["combined_portfolio"]
     active = [strategy_id for strategy_id, value in STRATEGY_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
     active += [strategy_id for strategy_id, value in FUNDAMENTAL_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
+    active += [strategy_id for strategy_id, value in FINAL_DELIVERY_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
     assert composite["constituent_ids"] == active
-    assert composite["N"] == 9
+    assert composite["N"] == 13
     assert sum(composite["weights"].values()) == pytest.approx(1.0)
-    assert all(weight == pytest.approx(1 / 9) for weight in composite["weights"].values())
+    assert all(weight == pytest.approx(1 / 13) for weight in composite["weights"].values())
 
 
 def test_fundamental_candidates_are_research_only_and_trade_log_reconciles():
@@ -61,8 +64,8 @@ def test_fundamental_candidates_are_research_only_and_trade_log_reconciles():
 def test_final_counts_and_market_proxy_regime_disclosure():
     research = json.loads(BUNDLE.read_text(encoding="utf-8"))["factory_strategy_research"]
     memberships = [row["backtest"]["factory_research"].get("membership") for row in research["results"]]
-    assert {status: memberships.count(status) for status in ("ACTIVE", "REPAIR", "ARCHIVED", "REFERENCE_ONLY")} == {
-        "ACTIVE": 9, "REPAIR": 12, "ARCHIVED": 4, "REFERENCE_ONLY": 18
+    assert {status: memberships.count(status) for status in ("ACTIVE", "REPAIR", "ARCHIVED", "DATA_INSUFFICIENT", "REFERENCE_ONLY")} == {
+        "ACTIVE": 13, "REPAIR": 14, "ARCHIVED": 6, "DATA_INSUFFICIENT": 3, "REFERENCE_ONLY": 18
     }
     assert research["market_proxy_regime"]["id"] == "MARKET_PROXY_REGIME_V0"
     assert "not a true macro Growth x Inflation model" in research["market_proxy_regime"]["disclosure"]

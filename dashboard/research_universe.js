@@ -108,12 +108,13 @@ const ResearchUniverse = (() => {
     if (membership === "ACTIVE") return "ACTIVE";
     if (membership === "REPAIR") return "REPAIR";
     if (membership === "RESEARCH_CANDIDATE") return "RESEARCH_CANDIDATE";
+    if (membership === "DATA_INSUFFICIENT") return "DATA_INSUFFICIENT";
     if (membership === "REFERENCE_ONLY" || membership === "ARCHIVED") return "REFERENCE";
     return "REFERENCE";
   }
 
   function sortRank(group) {
-    return { ACTIVE: 1, REPAIR: 2, RESEARCH_CANDIDATE: 3, REFERENCE: 4, COMBINED_PORTFOLIO: 5, STRATEGY_21: 5, LEGACY_PROXY: 9 }[group] || 9;
+    return { ACTIVE: 1, REPAIR: 2, DATA_INSUFFICIENT: 3, RESEARCH_CANDIDATE: 4, REFERENCE: 5, COMBINED_PORTFOLIO: 6, STRATEGY_21: 6, LEGACY_PROXY: 9 }[group] || 9;
   }
 
   function rowFromCatalogItem(item) {
@@ -235,6 +236,7 @@ const ResearchUniverse = (() => {
     if (filter === "ACTIVE") return rows.filter((row) => row.research_group === "ACTIVE");
     if (filter === "REPAIR") return rows.filter((row) => row.research_group === "REPAIR");
     if (filter === "RESEARCH_CANDIDATE") return rows.filter((row) => row.research_group === "RESEARCH_CANDIDATE");
+    if (filter === "DATA_INSUFFICIENT") return rows.filter((row) => row.research_group === "DATA_INSUFFICIENT");
     if (filter === "COMBINED_PORTFOLIO" || filter === "STRATEGY_21") return rows.filter((row) => row.strategy_id === COMPOSITE_ID);
     if (filter === "WATCH") return rows.filter((row) => row.research_group === "WATCH");
     if (filter === "REFERENCE") return rows.filter((row) => row.research_group === "REFERENCE");
@@ -323,7 +325,7 @@ const ResearchUniverse = (() => {
   }
 
   function researchLabGroups() {
-    return ["ACTIVE", "REPAIR", "RESEARCH_CANDIDATE", "REFERENCE", "COMBINED_PORTFOLIO", "LEGACY_PROXY"];
+    return ["ACTIVE", "REPAIR", "DATA_INSUFFICIENT", "RESEARCH_CANDIDATE", "REFERENCE", "COMBINED_PORTFOLIO", "LEGACY_PROXY"];
   }
 
   function counts() {
@@ -332,6 +334,7 @@ const ResearchUniverse = (() => {
       active: rows.filter((row) => row.research_group === "ACTIVE").length,
       repair: rows.filter((row) => row.research_group === "REPAIR").length,
       research_candidate: rows.filter((row) => row.research_group === "RESEARCH_CANDIDATE").length,
+      data_insufficient: rows.filter((row) => row.research_group === "DATA_INSUFFICIENT").length,
       reference: rows.filter((row) => row.research_group === "REFERENCE").length,
       composite: rows.filter((row) => row.strategy_id === COMPOSITE_ID).length,
       tested: (catalog?.results || []).length - 1,
@@ -345,6 +348,7 @@ const ResearchUniverse = (() => {
       ACTIVE: "Active US-Equity Research",
       REPAIR: "Repair",
       RESEARCH_CANDIDATE: "Research Candidate",
+      DATA_INSUFFICIENT: "Data Insufficient",
       COMBINED_PORTFOLIO: "Combined Portfolio",
       STRATEGY_21: "Combined Portfolio",
       WATCH: "Watch Research",

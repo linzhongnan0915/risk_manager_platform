@@ -309,12 +309,14 @@ async function renderShadowStrategyRegistry(status = "ALL") {
     };
     const activeRows = rows.filter((row) => row.research_group === "ACTIVE");
     const repairRows = rows.filter((row) => row.research_group === "REPAIR");
+    const dataInsufficientRows = rows.filter((row) => row.research_group === "DATA_INSUFFICIENT");
     const candidateRows = rows.filter((row) => row.research_group === "RESEARCH_CANDIDATE");
     const referenceRows = rows.filter((row) => row.research_group === "REFERENCE");
     const compositeRows = rows.filter((row) => row.strategy_id === ResearchUniverse.COMPOSITE_ID);
     table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Research Composite</th><th>Live Allocation</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover (avg daily)</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th><th>Action</th></tr>` +
       renderSection("ACTIVE US-Equity Research", activeRows) +
       renderSection("REPAIR", repairRows) +
+      renderSection("DATA INSUFFICIENT", dataInsufficientRows) +
       renderSection("RESEARCH CANDIDATE", candidateRows) +
       renderSection("REFERENCE ONLY / ARCHIVED", referenceRows) +
       renderSection("Combined Portfolio", compositeRows);
@@ -774,6 +776,7 @@ function renderFactoryResearchArchitectureBanner() {
     summary.innerHTML = `
       <span><strong>${counts.active}</strong> ACTIVE</span>
       <span><strong>${counts.repair}</strong> REPAIR</span>
+      <span><strong>${counts.data_insufficient}</strong> DATA_INSUFFICIENT</span>
       <span><strong>${counts.research_candidate}</strong> RESEARCH_CANDIDATE</span>
       <span><strong>${counts.reference}</strong> REFERENCE_ONLY / ARCHIVED</span>
       <span><strong>${counts.composite}</strong> Combined Portfolio</span>
@@ -1219,7 +1222,7 @@ function renderFactoryResearchLabPanels(item) {
     net.length ? "" : "Return distribution missing from bundle field: return_series.net_returns.",
   );
   document.getElementById("walkForwardTable").innerHTML = "<tr><th>Train</th><th>Test</th><th>Train Sharpe</th><th>Test Sharpe</th><th>Test Return</th><th>Test Max DD</th></tr><tr><td colspan='6'>Walk-forward unavailable in current US-equity research baseline.</td></tr>";
-  renderResearchChecklistUnavailable("No-look-ahead checklist available for literature prototypes only in this panel.");
+  renderResearchChecklistUnavailable("No-look-ahead checklist unavailable for the Combined Portfolio; inspect an underlying literature prototype.");
   const selector = document.getElementById("researchLabSelector");
   if (selector && item.strategy_id) selector.value = item.strategy_id;
 }
@@ -2118,6 +2121,7 @@ function populateResearchLabSelector(artifact) {
     const groups = [
       ["ACTIVE", items.filter((row) => row.backtest?.factory_research?.membership === "ACTIVE")],
       ["REPAIR", items.filter((row) => row.backtest?.factory_research?.membership === "REPAIR")],
+      ["DATA_INSUFFICIENT", items.filter((row) => row.backtest?.factory_research?.membership === "DATA_INSUFFICIENT")],
       ["RESEARCH_CANDIDATE", items.filter((row) => row.backtest?.factory_research?.membership === "RESEARCH_CANDIDATE")],
       ["REFERENCE_ONLY / ARCHIVED", items.filter((row) => ["REFERENCE_ONLY", "ARCHIVED"].includes(row.backtest?.factory_research?.membership))],
       ["COMBINED_PORTFOLIO", items.filter((row) => row.strategy_id === ResearchUniverse.COMPOSITE_ID)],

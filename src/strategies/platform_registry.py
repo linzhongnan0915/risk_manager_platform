@@ -90,6 +90,34 @@ FUNDAMENTAL_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "SHAREHOLDER_YIELD": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence."},
 }
 
+FINAL_DELIVERY_CANDIDATE_IDS: tuple[str, ...] = (
+    "OVERNIGHT_INTRADAY_ENSEMBLE",
+    "FILING_SHOCK_CONTINUATION",
+    "FUNDAMENTAL_SHOCK_RECOVERY",
+    "CROSS_SECTIONAL_DISPERSION_REVERSAL",
+    "LIQUIDITY_SHOCK_RECOVERY",
+    "VOLATILITY_SCALED_TREND",
+    "DOWNSIDE_RESILIENT_MOMENTUM",
+    "REVENUE_ACCELERATION_QUALITY",
+    "CASH_FLOW_GROWTH_QUALITY",
+    "OPERATING_EFFICIENCY_IMPROVEMENT",
+    "DELEVERAGING_PROFITABILITY",
+)
+
+FINAL_DELIVERY_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "OVERNIGHT_INTRADAY_ENSEMBLE": {"status": "ACTIVE", "reason": "Positive standalone, OOS, doubled-cost, delayed-execution, and marginal portfolio evidence."},
+    "FILING_SHOCK_CONTINUATION": {"status": "ACTIVE", "reason": "Positive standalone, OOS, doubled-cost, delayed-execution, and marginal portfolio evidence."},
+    "FUNDAMENTAL_SHOCK_RECOVERY": {"status": "ACTIVE", "reason": "Positive standalone, OOS, doubled-cost, delayed-execution, and diversification evidence."},
+    "CROSS_SECTIONAL_DISPERSION_REVERSAL": {"status": "DATA_INSUFFICIENT", "reason": "Average eligible cross-section is below the minimum diagnostic threshold."},
+    "LIQUIDITY_SHOCK_RECOVERY": {"status": "DATA_INSUFFICIENT", "reason": "Strong preliminary result, but average eligible cross-section is below the minimum diagnostic threshold."},
+    "VOLATILITY_SCALED_TREND": {"status": "REPAIR", "reason": "Weak full-period Sharpe, doubled costs remove the edge, and marginal contribution is negative."},
+    "DOWNSIDE_RESILIENT_MOMENTUM": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence with negative marginal contribution."},
+    "REVENUE_ACCELERATION_QUALITY": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence with negative marginal contribution."},
+    "CASH_FLOW_GROWTH_QUALITY": {"status": "ACTIVE", "reason": "Positive standalone, OOS, doubled-cost, delayed-execution, and marginal portfolio evidence."},
+    "OPERATING_EFFICIENCY_IMPROVEMENT": {"status": "REPAIR", "reason": "Positive evidence remains, but full-period Sharpe is below the ACTIVE threshold and correlation is elevated."},
+    "DELEVERAGING_PROFITABILITY": {"status": "DATA_INSUFFICIENT", "reason": "Reliable point-in-time debt/assets or debt/equity history is unavailable."},
+}
+
 C3A2_SPECS: tuple[StrategySpec, ...] = (
     StrategySpec("C3A2_001", "c3a2_001_short_term_reversal_5d_v1", "Short-Term Reversal 5D",
                  "Fade 5-day moves; long recent losers and short recent winners.", short_term_reversal_5d, 20),

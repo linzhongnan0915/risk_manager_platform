@@ -15,6 +15,8 @@ if str(ROOT) not in sys.path:
 from src.reporting.strategy_factory_research_adapter import _annual_return, _risk_packet
 from src.strategies.platform_registry import (
     COMPOSITE_ID,
+    FINAL_DELIVERY_CANDIDATE_IDS,
+    FINAL_DELIVERY_SELECTION_STATUS,
     FUNDAMENTAL_RESEARCH_CANDIDATE_IDS,
     FUNDAMENTAL_SELECTION_STATUS,
     STRATEGY_SELECTION_STATUS,
@@ -23,6 +25,7 @@ from src.strategies.platform_registry import (
 BUNDLE_PATH = ROOT / "dashboard/data/us_equity_research_bundle.json"
 PACK_ROOT = ROOT / "output/research/final_fundamental_research_v1"
 FINAL_ROOT = ROOT / "output/research/final_strategy_research_v1"
+DELIVERY_ROOT = ROOT / "output/research/final_platform_delivery_v1"
 ACTIVE_IDS = tuple(
     strategy_id
     for strategy_id, decision in STRATEGY_SELECTION_STATUS.items()
@@ -30,6 +33,10 @@ ACTIVE_IDS = tuple(
 ) + tuple(
     strategy_id
     for strategy_id, decision in FUNDAMENTAL_SELECTION_STATUS.items()
+    if decision["status"] == "ACTIVE"
+) + tuple(
+    strategy_id
+    for strategy_id, decision in FINAL_DELIVERY_SELECTION_STATUS.items()
     if decision["status"] == "ACTIVE"
 )
 
@@ -212,6 +219,105 @@ def _candidate_items(correlation: pd.DataFrame) -> list[dict]:
     return output
 
 
+def _delivery_items(correlation: pd.DataFrame, shared_dates: list[str]) -> list[dict]:
+    summary = pd.read_csv(DELIVERY_ROOT / "candidate_summary.csv").set_index("strategy_id")
+    daily = pd.read_csv(DELIVERY_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
+    holdings = pd.read_csv(DELIVERY_ROOT / "holdings.csv")
+    trades = pd.read_csv(DELIVERY_ROOT / "trade_log.csv")
+    regimes = pd.read_csv(DELIVERY_ROOT / "market_proxy_regime_v0.csv")
+    output = []
+    for strategy_id in FINAL_DELIVERY_CANDIDATE_IDS:
+        row = summary.loc[strategy_id]
+        decision = FINAL_DELIVERY_SELECTION_STATUS[strategy_id]
+        status = decision["status"]
+        eligible = status == "ACTIVE"
+        strategy_daily = daily.loc[daily["strategy_id"].eq(strategy_id)].sort_values("date")
+        strategy_holdings = holdings.loc[holdings["strategy_id"].eq(strategy_id)]
+        strategy_trades = trades.loc[trades["strategy_id"].eq(strategy_id)]
+        if strategy_daily.empty:
+            gross = net = turnover = pd.Series(dtype=float)
+            metrics = {"cumulative_return": None, "annual_return": None, "annual_volatility": None, "sharpe": None, "max_drawdown": None}
+            packet = {"summary_statistics": {}, "drawdown_behavior": {}, "chart_series": {"drawdown": [], "rolling_63d_sharpe": []}}
+            return_series = {"dates": [], "gross_returns": [], "net_returns": []}
+        else:
+            net = pd.Series(strategy_daily["net_return"].values, index=strategy_daily["date"])
+            gross = pd.Series(strategy_daily["gross_return"].values, index=strategy_daily["date"])
+            turnover = pd.Series(strategy_daily["turnover"].values, index=strategy_daily["date"])
+            risk = _risk_packet(net, pd.Series(0.0, index=net.index), turnover, pd.DataFrame(index=net.index))
+            metrics = {
+                "cumulative_return": float(row["net_cumulative_return"]), "annual_return": float(row["annualized_net_return"]),
+                "annual_volatility": float(row["annualized_volatility"]), "sharpe": float(row["net_sharpe"]),
+                "max_drawdown": float(row["max_drawdown"]),
+            }
+            packet = {
+                "summary_statistics": risk["summary_statistics"], "drawdown_behavior": risk["drawdown_behavior"],
+                "chart_series": {"drawdown": risk["chart_series"]["drawdown"], "rolling_63d_sharpe": risk["chart_series"]["rolling_63d_sharpe"]},
+            }
+            return_series = {
+                "dates": [date.date().isoformat() for date in strategy_daily["date"]],
+                "gross_returns": [round(float(value), 6) for value in gross],
+                "net_returns": [round(float(value), 6) for value in net],
+            }
+        latest_date = strategy_holdings["date"].max() if not strategy_holdings.empty else None
+        latest = strategy_holdings.loc[strategy_holdings["date"].eq(latest_date)] if latest_date else strategy_holdings
+        corr_row = correlation.loc[strategy_id, list(ACTIVE_IDS)].abs() if strategy_id in correlation.index else pd.Series(dtype=float)
+        output.append(
+            {
+                "research_group": status,
+                "strategy_id": strategy_id,
+                "backtest": {
+                    "strategy_id": strategy_id, "name": strategy_id.replace("_", " ").title(),
+                    "literature_source": "Final platform delivery diagnostic batch",
+                    "research_source": "FINAL_PLATFORM_DELIVERY_RESEARCH_V1",
+                    "hypothesis": str(row["economic_rationale"]), "signal_summary": str(row["economic_rationale"]),
+                    "universe": str(row["actual_universe_used"]), "rebalance": "Every 20 trading days",
+                    "failure_modes": str(row["classification_reason"]), "asset_class": "US individual equities",
+                    "strategy_family": "final_delivery_diagnostic", "lifecycle_status": status,
+                    "allocation_eligible": False, "live_allocation_approved": False, "execution_enabled": False,
+                    "research_composite_eligible": eligible,
+                    "gross_metrics": {"cumulative_return": None if strategy_daily.empty else float(row["gross_cumulative_return"]), "annual_return": None if strategy_daily.empty else float(_annual_return(gross))},
+                    "net_metrics": metrics,
+                    "turnover": {
+                        "average_daily_turnover": None if strategy_daily.empty else float(row["average_daily_turnover"]),
+                        "annualized_turnover": None if strategy_daily.empty else float(row["annualized_turnover"]),
+                        "total_cost_drag": None if strategy_daily.empty else float(row["total_cost_drag"]),
+                    },
+                    "return_series": return_series, "risk_packet": packet,
+                    "action": {"action": status, "reason_code": status.lower(), "interpretation": decision["reason"]},
+                    "holdings": {
+                        "last_rebalance_date": latest_date,
+                        "current_long_holdings": latest.loc[latest["side"].eq("LONG"), ["ticker", "target_weight"]].rename(columns={"target_weight": "weight"}).assign(side="long").to_dict(orient="records"),
+                        "current_short_holdings": latest.loc[latest["side"].eq("SHORT"), ["ticker", "target_weight"]].rename(columns={"target_weight": "weight"}).assign(side="short").to_dict(orient="records"),
+                    },
+                    "factory_research": {
+                        "membership": status, "research_status": status, "research_composite_eligible": eligible,
+                        "composite_eligible": eligible, "live_allocation_approved": False, "decision_reason": decision["reason"],
+                        "limitations": ["CURRENT_LISTED_DIAGNOSTIC", "SURVIVORSHIP_BIAS_PRESENT", str(row["classification_reason"])],
+                        "data_labels": ["CURRENT_LISTED_DIAGNOSTIC", "SURVIVORSHIP_BIAS_PRESENT", "RESEARCH ONLY"],
+                        "simulated_trade_log": {
+                            "status": "SIMULATED | RESEARCH ONLY | NO LIVE FILL", "execution_enabled": False,
+                            "record_count": int(len(strategy_trades)),
+                            "estimated_transaction_cost": float(strategy_trades["estimated_transaction_cost"].sum()) if not strategy_trades.empty else 0.0,
+                            "latest_records": strategy_trades.tail(25).to_dict(orient="records"),
+                        },
+                        "market_proxy_regime_v0": regimes.loc[regimes["strategy_id"].eq(strategy_id)].to_dict(orient="records"),
+                        "regime_disclosure": "MARKET_PROXY_REGIME_V0 uses lagged SPY/TIP/IEF market proxies; it is not a true macro Growth x Inflation model.",
+                        "preliminary_oos_net_return": None if strategy_daily.empty else float(row["preliminary_oos_net_return"]),
+                        "preliminary_oos_sharpe": None if strategy_daily.empty else float(row["preliminary_oos_sharpe"]),
+                        "double_cost_net_return": None if strategy_daily.empty else float(row["double_cost_net_return"]),
+                        "delayed_execution_net_return": None if strategy_daily.empty else float(row["delayed_execution_net_return"]),
+                        "average_abs_correlation_with_retained": None if corr_row.empty else float(corr_row.mean()),
+                        "max_abs_correlation_with_retained": None if corr_row.empty else float(corr_row.max()),
+                        "marginal_combined_portfolio_sharpe": None if strategy_daily.empty else float(row["marginal_combined_portfolio_sharpe"]),
+                        "trade_cost_reconciliation_error": None if strategy_daily.empty else float(row["trade_cost_reconciliation_error"]),
+                    },
+                },
+                "walk_forward": {"windows": [], "status": "PRELIMINARY CHRONOLOGICAL OOS ONLY", "number_of_windows": 1 if not strategy_daily.empty else 0},
+            }
+        )
+    return output
+
+
 def _rebuild_composite(results: list[dict], shared_dates: list[str]) -> None:
     by_id = {item["strategy_id"]: item for item in results}
     active = [by_id[strategy_id] for strategy_id in ACTIVE_IDS]
@@ -321,6 +427,7 @@ def build_bundle() -> dict:
     results = catalog["results"]
     _apply_old_statuses(results)
     results[:] = [item for item in results if item["strategy_id"] not in FUNDAMENTAL_RESEARCH_CANDIDATE_IDS]
+    results[:] = [item for item in results if item["strategy_id"] not in FINAL_DELIVERY_CANDIDATE_IDS]
     fundamental_daily = pd.read_csv(PACK_ROOT / "daily_net_returns.csv", parse_dates=["date"])
     fundamental_returns = fundamental_daily.pivot(index="date", columns="strategy_id", values="net_return")
     existing_returns = pd.DataFrame(
@@ -331,17 +438,20 @@ def build_bundle() -> dict:
         },
         index=pd.to_datetime(payload["shared_dates"]),
     )
-    correlation = pd.concat([fundamental_returns, existing_returns], axis=1, join="inner").corr()
+    delivery_daily = pd.read_csv(DELIVERY_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
+    delivery_returns = delivery_daily.pivot(index="date", columns="strategy_id", values="net_return")
+    correlation = pd.concat([fundamental_returns, delivery_returns, existing_returns], axis=1, join="inner").corr()
     composite = next(item for item in results if item["strategy_id"] == COMPOSITE_ID)
     results.remove(composite)
     results.extend(_candidate_items(correlation))
+    results.extend(_delivery_items(correlation, payload["shared_dates"]))
     results.append(composite)
     _rebuild_composite(results, payload["shared_dates"])
     counts = {
         status: sum(
             item["backtest"]["factory_research"].get("membership") == status for item in results
         )
-        for status in ("ACTIVE", "REPAIR", "RESEARCH_CANDIDATE", "REFERENCE_ONLY", "ARCHIVED")
+        for status in ("ACTIVE", "REPAIR", "RESEARCH_CANDIDATE", "REFERENCE_ONLY", "ARCHIVED", "DATA_INSUFFICIENT")
     }
     arch = catalog["architecture"]
     arch.update(
@@ -356,12 +466,14 @@ def build_bundle() -> dict:
             "research_candidate_count": counts["RESEARCH_CANDIDATE"],
             "reference_only_count": counts["REFERENCE_ONLY"],
             "archived_count": counts["ARCHIVED"],
+            "data_insufficient_count": counts["DATA_INSUFFICIENT"],
         }
     )
     catalog["groups"] = [
         {"id": "ACTIVE", "label": "ACTIVE"},
         {"id": "REPAIR", "label": "REPAIR"},
         {"id": "RESEARCH_CANDIDATE", "label": "RESEARCH CANDIDATE"},
+        {"id": "DATA_INSUFFICIENT", "label": "DATA INSUFFICIENT"},
         {"id": "REFERENCE_ARCHIVED", "label": "REFERENCE ONLY / ARCHIVED"},
         {"id": "COMBINED_PORTFOLIO", "label": "Combined Portfolio"},
     ]
@@ -381,6 +493,20 @@ def build_bundle() -> dict:
 def main() -> int:
     payload = build_bundle()
     BUNDLE_PATH.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
+    manifest_path = DELIVERY_ROOT / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    composite = next(
+        row for row in payload["factory_strategy_research"]["results"]
+        if row["strategy_id"] == COMPOSITE_ID
+    )["backtest"]["factory_research"]["combined_portfolio"]
+    manifest.update(
+        {
+            "registry_updated": True, "bundle_updated": True, "dashboard_updated": True,
+            "combined_portfolio_updated": True, "combined_portfolio_N": composite["N"],
+            "combined_portfolio_equal_weight": composite["equal_weight"],
+        }
+    )
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"Wrote {BUNDLE_PATH} ({payload['factory_strategy_research']['results_count']} results)")
     return 0
 

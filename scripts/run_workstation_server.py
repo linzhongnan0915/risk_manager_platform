@@ -32,7 +32,7 @@ from src.market.intraday_refresh_service import (
     set_background_scheduler_enabled,
     set_refresh_cadence,
 )
-from src.market.live_refresh import write_live_overlay
+from src.market.live_refresh import build_live_overlay, write_live_overlay
 from src.market.refresh_auth import EXTERNAL_REFRESH_INTERVAL_MINUTES, classify_refresh_request
 from src.market.snapshot_store import read_refresh_status
 from src.portfolio.return_alignment import align_strategy_series

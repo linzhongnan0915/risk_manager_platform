@@ -1,0 +1,13 @@
+{
+  "OVERNIGHT_INTRADAY_ENSEMBLE": "Overnight and prior-intraday reversal ensemble.",
+  "FILING_SHOCK_CONTINUATION": "Continuation after point-in-time filing improvement.",
+  "FUNDAMENTAL_SHOCK_RECOVERY": "Matched-control, causal-inspired fundamental shock recovery diagnostic.",
+  "CROSS_SECTIONAL_DISPERSION_REVERSAL": "Fade relative five-day extremes only after unusually high cross-sectional dispersion.",
+  "LIQUIDITY_SHOCK_RECOVERY": "Fade abnormal declines accompanied by abnormal volume shocks.",
+  "VOLATILITY_SCALED_TREND": "Medium-term trend scaled by prior realized volatility.",
+  "DOWNSIDE_RESILIENT_MOMENTUM": "Momentum combined with lower downside beta and smaller prior drawdown.",
+  "REVENUE_ACCELERATION_QUALITY": "Point-in-time revenue acceleration with positive quality controls.",
+  "CASH_FLOW_GROWTH_QUALITY": "Point-in-time cash-flow growth, margin improvement, and earnings quality.",
+  "OPERATING_EFFICIENCY_IMPROVEMENT": "Point-in-time operating-margin, asset-turnover, and operating-return improvement.",
+  "DELEVERAGING_PROFITABILITY": "Improving profitability with declining debt ratios."
+}

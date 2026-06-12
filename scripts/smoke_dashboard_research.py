@@ -7,7 +7,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = "http://127.0.0.1:8765"
+BASE = "http://127.0.0.1:8765/dashboard"
 
 
 def fetch(path: str) -> str:
@@ -45,6 +45,7 @@ def main() -> int:
     repair = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "REPAIR")
     candidates = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "RESEARCH_CANDIDATE")
     archived = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "ARCHIVED")
+    data_insufficient = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "DATA_INSUFFICIENT")
     composite = sum(1 for row in research["results"] if row.get("strategy_id") == "COMBINED_PORTFOLIO_V1")
     if active < 1:
         errors.append(f"expected at least 1 eligible ACTIVE strategy, found {active}")
@@ -56,10 +57,10 @@ def main() -> int:
         errors.append(f"expected 1 Combined Portfolio, found {composite}")
     if arch.get("live_allocation_approved") is not False:
         errors.append("architecture live_allocation_approved must be false for research bundle")
-    if active != 9 or repair != 12 or archived != 4 or reference != 18:
+    if active != 13 or repair != 14 or archived != 6 or data_insufficient != 3 or reference != 18:
         errors.append("accepted final status counts do not match expected counts")
-    if arch.get("composite_equal_weight") != 1 / 9:
-        errors.append("Combined Portfolio equal weight must be 1/9")
+    if arch.get("composite_equal_weight") != 1 / 13:
+        errors.append("Combined Portfolio equal weight must be 1/13")
     if research.get("execution_enabled") is not False or research.get("live_allocation_percent") != 0:
         errors.append("research execution must remain disabled with 0% live allocation")
     proxy = research.get("market_proxy_regime") or {}
@@ -88,7 +89,7 @@ def main() -> int:
             print("-", error)
         return 1
     print("SMOKE PASS")
-    print(f"ACTIVE={active} REPAIR={repair} CANDIDATE={candidates} REFERENCE={reference} ARCHIVED={archived} COMPOSITE={composite} equal_weight={arch.get('composite_equal_weight'):.4f}")
+    print(f"ACTIVE={active} REPAIR={repair} DATA_INSUFFICIENT={data_insufficient} CANDIDATE={candidates} REFERENCE={reference} ARCHIVED={archived} COMPOSITE={composite} equal_weight={arch.get('composite_equal_weight'):.4f}")
     return 0
 
 
