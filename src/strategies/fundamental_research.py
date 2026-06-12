@@ -22,8 +22,8 @@ from src.strategies.strategy_factory import (
 from src.strategies.worldquant.market_data import download_ohlcv
 from src.strategies.worldquant.portfolio_returns import compute_portfolio_returns_from_weights
 
-PACK_ID = "FUNDAMENTAL_STRATEGY_EXPANSION_V1"
-OUTPUT_ROOT = Path("output/research/fundamental_strategy_expansion_v1")
+PACK_ID = "FINAL_FUNDAMENTAL_RESEARCH_V1"
+OUTPUT_ROOT = Path("output/research/final_fundamental_research_v1")
 OHLCV_CACHE = Path("data/raw/fundamental_research/fundamental_expansion_ohlcv.csv")
 START_DATE = "2018-01-02"
 END_DATE = "2026-06-10"
@@ -48,6 +48,11 @@ CANDIDATE_FORMULAS = {
     "CONSERVATIVE_ASSET_GROWTH": ["negative annual asset growth", "quality score"],
     "CASH_FLOW_YIELD": ["operating_cash_flow/market_cap", "free_cash_flow/market_cap"],
     "MARGIN_IMPROVEMENT": ["annual change operating margin", "annual change operating_cash_flow/revenue"],
+    "REVENUE_ACCELERATION": ["current annual revenue growth minus prior annual revenue growth"],
+    "CASH_FLOW_MOMENTUM": ["annual operating cash-flow growth", "annual change operating_cash_flow/assets"],
+    "LOW_LEVERAGE_QUALITY": ["negative liabilities/assets", "quality score"],
+    "QUALITY_AT_REASONABLE_PRICE": ["quality score", "earnings yield", "free_cash_flow yield"],
+    "SHAREHOLDER_YIELD": ["annual dividends plus annual share repurchases divided by point-in-time market cap"],
 }
 
 
@@ -89,7 +94,7 @@ def _values_by_period(available: pd.DataFrame, *, annual_only: bool) -> dict[str
     output: dict[str, list[float]] = {}
     for field, rows in latest.groupby("field"):
         ordered = rows.sort_values("fiscal_period_end")
-        output[field] = [float(value) for value in ordered["value"].tail(2)]
+        output[field] = [float(value) for value in ordered["value"].tail(3)]
     return output
 
 
@@ -113,15 +118,22 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
     assets_now, assets_prev = _last(annual, "assets"), _last(annual, "assets", 2)
     op_now, op_prev = _last(annual, "operating_income"), _last(annual, "operating_income", 2)
     ocf_now, ocf_prev = _last(annual, "operating_cash_flow"), _last(annual, "operating_cash_flow", 2)
+    revenue_prior = _last(annual, "revenue", 3)
+    ocf_prior = _last(annual, "operating_cash_flow", 3)
     revenue_growth = safe_divide(revenue_now - revenue_prev, abs(revenue_prev))
+    prior_revenue_growth = safe_divide(revenue_prev - revenue_prior, abs(revenue_prior))
+    ocf_growth = safe_divide(ocf_now - ocf_prev, abs(ocf_prev))
     asset_growth = safe_divide(assets_now - assets_prev, abs(assets_prev))
     fcf = ocf - capex
+    annual_payout = _last(annual, "dividends_paid") + _last(annual, "share_repurchases")
 
     return {
         "quality_gp_assets": safe_divide(_last(current, "gross_profit"), assets),
         "quality_op_assets": safe_divide(_last(current, "operating_income"), assets),
         "quality_ocf_assets": safe_divide(ocf, assets),
         "annual_revenue_growth": revenue_growth,
+        "revenue_acceleration": revenue_growth - prior_revenue_growth,
+        "annual_ocf_growth": ocf_growth,
         "annual_margin_change": safe_divide(op_now, revenue_now) - safe_divide(op_prev, revenue_prev),
         "annual_ocf_assets_change": safe_divide(ocf_now, assets_now) - safe_divide(ocf_prev, assets_prev),
         "annual_cash_flow_margin_change": safe_divide(ocf_now, revenue_now) - safe_divide(ocf_prev, revenue_prev),
@@ -136,6 +148,8 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
         "book_to_market": safe_divide(_last(current, "equity"), market_cap),
         "fcf_yield": safe_divide(fcf, market_cap),
         "negative_market_cap": -market_cap,
+        "negative_liabilities_assets": -safe_divide(_last(current, "liabilities"), assets),
+        "shareholder_yield": safe_divide(annual_payout, market_cap),
         "market_cap": market_cap,
     }
 
@@ -193,6 +207,21 @@ def build_candidate_scores(raw: pd.DataFrame, dates: pd.DatetimeIndex, tickers: 
         "MARGIN_IMPROVEMENT": _rank_mean(
             raw, ["annual_margin_change", "annual_cash_flow_margin_change"]
         ),
+        "REVENUE_ACCELERATION": raw["revenue_acceleration"].groupby(level="date").rank(pct=True),
+        "CASH_FLOW_MOMENTUM": _rank_mean(raw, ["annual_ocf_growth", "annual_ocf_assets_change"]),
+        "LOW_LEVERAGE_QUALITY": pd.concat(
+            [raw["negative_liabilities_assets"].groupby(level="date").rank(pct=True), quality],
+            axis=1,
+        ).mean(axis=1, skipna=False),
+        "QUALITY_AT_REASONABLE_PRICE": pd.concat(
+            [
+                quality,
+                raw["earnings_yield"].groupby(level="date").rank(pct=True),
+                raw["fcf_yield"].groupby(level="date").rank(pct=True),
+            ],
+            axis=1,
+        ).mean(axis=1, skipna=False),
+        "SHAREHOLDER_YIELD": raw["shareholder_yield"].groupby(level="date").rank(pct=True),
     }
     output: dict[str, pd.DataFrame] = {}
     for strategy_id, series in scores.items():

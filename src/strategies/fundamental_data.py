@@ -38,6 +38,13 @@ FIELD_TAGS: dict[str, tuple[str, ...]] = {
     ),
     "operating_cash_flow": ("NetCashProvidedByUsedInOperatingActivities",),
     "capex": ("PaymentsToAcquirePropertyPlantAndEquipment",),
+    "liabilities": ("Liabilities",),
+    "dividends_paid": (
+        "PaymentsOfDividends",
+        "PaymentsOfDividendsCommonStock",
+        "PaymentsOfOrdinaryDividends",
+    ),
+    "share_repurchases": ("PaymentsForRepurchaseOfCommonStock",),
     "shares_outstanding": ("EntityCommonStockSharesOutstanding", "CommonStockSharesOutstanding"),
 }
 

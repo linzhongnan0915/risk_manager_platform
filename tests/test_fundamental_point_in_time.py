@@ -93,6 +93,37 @@ def _company_facts() -> dict:
                         ]
                     }
                 },
+                "Liabilities": {
+                    "units": {
+                        "USD": [
+                            {
+                                "end": "2023-12-31",
+                                "val": 300,
+                                "accn": "0001-24-000001",
+                                "fy": 2023,
+                                "fp": "FY",
+                                "form": "10-K",
+                                "filed": "2024-02-01",
+                            }
+                        ]
+                    }
+                },
+                "PaymentsForRepurchaseOfCommonStock": {
+                    "units": {
+                        "USD": [
+                            {
+                                "start": "2023-01-01",
+                                "end": "2023-12-31",
+                                "val": 12,
+                                "accn": "0001-24-000001",
+                                "fy": 2023,
+                                "fp": "FY",
+                                "form": "10-K",
+                                "filed": "2024-02-01",
+                            }
+                        ]
+                    }
+                },
                 "GrossProfit": {"units": {"USD": []}},
             }
         },
@@ -145,6 +176,8 @@ def test_10k_10q_filtering_units_and_accessions_are_retained():
     shares = facts.loc[facts["field"] == "shares_outstanding"].iloc[0]
     assert shares["taxonomy"] == "dei"
     assert shares["value"] == 50
+    assert facts.loc[facts["field"] == "liabilities", "value"].iloc[0] == 300
+    assert facts.loc[facts["field"] == "share_repurchases", "value"].iloc[0] == 12
     assert {"0001-24-000001", "0001-24-000002", "0001-24-000003"} <= set(
         facts["accession_number"]
     )

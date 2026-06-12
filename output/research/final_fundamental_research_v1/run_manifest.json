@@ -1,0 +1,132 @@
+{
+  "run_id": "FINAL_FUNDAMENTAL_RESEARCH_V1_2026-06-09",
+  "pack_id": "FINAL_FUNDAMENTAL_RESEARCH_V1",
+  "candidate_formulas": {
+    "FUNDAMENTAL_MOMENTUM": [
+      "annual revenue growth",
+      "annual change operating margin",
+      "annual change operating_cash_flow/assets"
+    ],
+    "CAPEX_EFFICIENCY": [
+      "annual revenue growth",
+      "annual change revenue/assets",
+      "free_cash_flow/assets",
+      "negative annual asset growth"
+    ],
+    "EARNINGS_QUALITY": [
+      "negative accruals/assets",
+      "operating_cash_flow/revenue",
+      "operating_cash_flow/abs(net_income)"
+    ],
+    "PROFITABLE_SMALL_CAP": [
+      "negative market_cap",
+      "quality score",
+      "positive annual revenue growth"
+    ],
+    "CONSERVATIVE_ASSET_GROWTH": [
+      "negative annual asset growth",
+      "quality score"
+    ],
+    "CASH_FLOW_YIELD": [
+      "operating_cash_flow/market_cap",
+      "free_cash_flow/market_cap"
+    ],
+    "MARGIN_IMPROVEMENT": [
+      "annual change operating margin",
+      "annual change operating_cash_flow/revenue"
+    ],
+    "REVENUE_ACCELERATION": [
+      "current annual revenue growth minus prior annual revenue growth"
+    ],
+    "CASH_FLOW_MOMENTUM": [
+      "annual operating cash-flow growth",
+      "annual change operating_cash_flow/assets"
+    ],
+    "LOW_LEVERAGE_QUALITY": [
+      "negative liabilities/assets",
+      "quality score"
+    ],
+    "QUALITY_AT_REASONABLE_PRICE": [
+      "quality score",
+      "earnings yield",
+      "free_cash_flow yield"
+    ],
+    "SHAREHOLDER_YIELD": [
+      "annual dividends plus annual share repurchases divided by point-in-time market cap"
+    ]
+  },
+  "universe": [
+    "AAPL",
+    "ABBV",
+    "ABT",
+    "ADBE",
+    "AMAT",
+    "AMD",
+    "AMZN",
+    "AXP",
+    "BAC",
+    "BKNG",
+    "BLK",
+    "CAT",
+    "CMCSA",
+    "COP",
+    "COST",
+    "CRM",
+    "CSCO",
+    "CVX",
+    "DE",
+    "DIS",
+    "F",
+    "GE",
+    "GILD",
+    "GM",
+    "GOOGL",
+    "GS",
+    "HD",
+    "HON",
+    "IBM",
+    "INTC",
+    "JNJ",
+    "JPM",
+    "KO",
+    "LIN",
+    "LLY",
+    "LMT",
+    "LOW",
+    "MA",
+    "MCD",
+    "MDT",
+    "META",
+    "MMM",
+    "MRK",
+    "MSFT",
+    "MU",
+    "NFLX",
+    "NKE",
+    "NVDA",
+    "ORCL",
+    "PEP",
+    "PFE",
+    "QCOM",
+    "RTX",
+    "SBUX",
+    "TGT",
+    "TXN",
+    "UNH",
+    "V",
+    "WMT",
+    "XOM"
+  ],
+  "universe_rule": "Deterministic current-listed 60-ticker liquid diagnostic universe; price >= $5; lagged ADV20 >= $5m; minimum 20 eligible names. PROFITABLE_SMALL_CAP is relative-small-cap within this diagnostic universe and also requires positive revenue growth.",
+  "signal_timing": "SEC acceptance/publication <= prior calendar day; market cap uses prior close.",
+  "execution": "NEXT_OPEN_TO_OPEN",
+  "buy_bps": 5.0,
+  "sell_bps": 5.0,
+  "labels": [
+    "CURRENT_LISTED_DIAGNOSTIC",
+    "SURVIVORSHIP_BIAS_PRESENT",
+    "RESEARCH_CANDIDATE"
+  ],
+  "live_allocation_approved": false,
+  "fundamental_candidates_promoted": false
+}

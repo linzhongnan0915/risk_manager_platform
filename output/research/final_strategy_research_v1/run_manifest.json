@@ -1,0 +1,7 @@
+{
+  "status": "RESEARCH_ONLY",
+  "registry_updated": false,
+  "combined_portfolio_updated": false,
+  "dashboard_updated": false,
+  "regime_method": "Prior-day 63-day SPY return sign is the growth proxy; prior-day 63-day TIP minus IEF relative-return sign is the inflation proxy. Analysis only; weights unchanged."
+}
