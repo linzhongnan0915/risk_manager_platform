@@ -16,6 +16,23 @@ def _company_facts() -> dict:
         "cik": 320193,
         "entityName": "Example Corp",
         "facts": {
+            "dei": {
+                "EntityCommonStockSharesOutstanding": {
+                    "units": {
+                        "shares": [
+                            {
+                                "end": "2023-12-31",
+                                "val": 50,
+                                "accn": "0001-24-000001",
+                                "fy": 2023,
+                                "fp": "FY",
+                                "form": "10-K",
+                                "filed": "2024-02-01",
+                            }
+                        ]
+                    }
+                }
+            },
             "us-gaap": {
                 "Revenues": {
                     "units": {
@@ -124,7 +141,10 @@ def test_10k_10q_filtering_units_and_accessions_are_retained():
 
     assert set(facts["form"]) == {"10-K", "10-Q"}
     assert "0001-24-000004" not in set(facts["accession_number"])
-    assert set(facts["unit"]) == {"USD"}
+    assert set(facts["unit"]) == {"USD", "shares"}
+    shares = facts.loc[facts["field"] == "shares_outstanding"].iloc[0]
+    assert shares["taxonomy"] == "dei"
+    assert shares["value"] == 50
     assert {"0001-24-000001", "0001-24-000002", "0001-24-000003"} <= set(
         facts["accession_number"]
     )

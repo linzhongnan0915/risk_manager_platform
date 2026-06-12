@@ -199,45 +199,46 @@ def normalize_company_facts(
     """Normalize supported US-GAAP facts while preserving every filing revision."""
     allowed_forms = {str(form) for form in forms}
     acceptance_lookup = build_acceptance_lookup(submissions_payloads)
-    us_gaap = company_facts.get("facts", {}).get("us-gaap", {})
+    taxonomies = company_facts.get("facts", {})
     rows: list[dict[str, Any]] = []
 
     for field, tags in FIELD_TAGS.items():
         for tag in tags:
-            fact = us_gaap.get(tag)
-            if not fact:
-                continue
-            for unit, observations in fact.get("units", {}).items():
-                for observation in observations:
-                    form = observation.get("form")
-                    if form not in allowed_forms:
-                        continue
-                    accession = observation.get("accn")
-                    accepted = acceptance_lookup.get(str(accession)) if accession else None
-                    rows.append(
-                        {
-                            "ticker": ticker.upper(),
-                            "cik": f"{int(company_facts['cik']):010d}",
-                            "company_name": company_facts.get("entityName"),
-                            "field": field,
-                            "taxonomy": "us-gaap",
-                            "taxonomy_tag": tag,
-                            "fiscal_period_start": observation.get("start"),
-                            "fiscal_period_end": observation.get("end"),
-                            "fiscal_year": observation.get("fy"),
-                            "fiscal_period": observation.get("fp"),
-                            "form": form,
-                            "accession_number": accession,
-                            "filed_date": observation.get("filed"),
-                            "accepted_datetime": accepted,
-                            "availability_datetime": _availability_datetime(
-                                accepted, observation.get("filed")
-                            ),
-                            "unit": unit,
-                            "value": observation.get("val"),
-                            "frame": observation.get("frame"),
-                        }
-                    )
+            for taxonomy in ("us-gaap", "dei"):
+                fact = taxonomies.get(taxonomy, {}).get(tag)
+                if not fact:
+                    continue
+                for unit, observations in fact.get("units", {}).items():
+                    for observation in observations:
+                        form = observation.get("form")
+                        if form not in allowed_forms:
+                            continue
+                        accession = observation.get("accn")
+                        accepted = acceptance_lookup.get(str(accession)) if accession else None
+                        rows.append(
+                            {
+                                "ticker": ticker.upper(),
+                                "cik": f"{int(company_facts['cik']):010d}",
+                                "company_name": company_facts.get("entityName"),
+                                "field": field,
+                                "taxonomy": taxonomy,
+                                "taxonomy_tag": tag,
+                                "fiscal_period_start": observation.get("start"),
+                                "fiscal_period_end": observation.get("end"),
+                                "fiscal_year": observation.get("fy"),
+                                "fiscal_period": observation.get("fp"),
+                                "form": form,
+                                "accession_number": accession,
+                                "filed_date": observation.get("filed"),
+                                "accepted_datetime": accepted,
+                                "availability_datetime": _availability_datetime(
+                                    accepted, observation.get("filed")
+                                ),
+                                "unit": unit,
+                                "value": observation.get("val"),
+                                "frame": observation.get("frame"),
+                            }
+                        )
 
     frame = pd.DataFrame(rows, columns=FUNDAMENTAL_COLUMNS)
     if frame.empty:

@@ -1,0 +1,82 @@
+{
+  "run_id": "FUNDAMENTAL_STRATEGY_RESEARCH_PACK_V1_2026-06-09",
+  "pack_id": "FUNDAMENTAL_STRATEGY_RESEARCH_PACK_V1",
+  "candidate_formulas": {
+    "QUALITY_PROFITABILITY": [
+      "gross_profit/assets",
+      "operating_income/assets",
+      "operating_cash_flow/assets"
+    ],
+    "FUNDAMENTAL_MOMENTUM": [
+      "annual revenue growth",
+      "annual change operating margin",
+      "annual change operating_cash_flow/assets"
+    ],
+    "CAPEX_EFFICIENCY": [
+      "annual revenue growth",
+      "annual change revenue/assets",
+      "free_cash_flow/assets",
+      "negative annual asset growth"
+    ],
+    "EARNINGS_QUALITY": [
+      "negative accruals/assets",
+      "operating_cash_flow/revenue",
+      "operating_cash_flow/abs(net_income)"
+    ],
+    "VALUE_QUALITY": [
+      "net_income/market_cap",
+      "equity/market_cap",
+      "free_cash_flow/market_cap",
+      "quality score"
+    ],
+    "PROFITABLE_SMALL_CAP": [
+      "negative market_cap",
+      "quality score",
+      "positive annual revenue growth"
+    ]
+  },
+  "universe": [
+    "AAPL",
+    "AMD",
+    "AMZN",
+    "BAC",
+    "CAT",
+    "COST",
+    "CSCO",
+    "CVX",
+    "DE",
+    "F",
+    "GM",
+    "GOOGL",
+    "HD",
+    "IBM",
+    "INTC",
+    "JNJ",
+    "JPM",
+    "KO",
+    "LOW",
+    "META",
+    "MSFT",
+    "MU",
+    "NKE",
+    "ORCL",
+    "PEP",
+    "PFE",
+    "SBUX",
+    "TGT",
+    "WMT",
+    "XOM"
+  ],
+  "universe_rule": "Current-listed 30-ticker liquid diagnostic smoke universe; price >= $5; lagged ADV20 >= $5m; minimum 8 eligible names. PROFITABLE_SMALL_CAP is relative-small-cap within this diagnostic universe and also requires positive revenue growth.",
+  "signal_timing": "SEC acceptance/publication <= prior calendar day; market cap uses prior close.",
+  "execution": "NEXT_OPEN_TO_OPEN",
+  "buy_bps": 5.0,
+  "sell_bps": 5.0,
+  "labels": [
+    "CURRENT_LISTED_DIAGNOSTIC",
+    "SURVIVORSHIP_BIAS_PRESENT",
+    "RESEARCH_CANDIDATE"
+  ],
+  "live_allocation_approved": false,
+  "active_membership_changed": false
+}
