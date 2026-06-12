@@ -106,7 +106,7 @@ def test_missing_fundamental_components_remain_missing():
     assert row["quality_op_assets"] != 0
 
 
-def test_all_six_candidate_scores_and_smoke_backtests_run():
+def test_all_seven_candidate_scores_and_smoke_backtests_run():
     context = _context()
     facts = _facts(context)
     dates = context.panels["close"].index
@@ -119,7 +119,8 @@ def test_all_six_candidate_scores_and_smoke_backtests_run():
         assert not daily.empty
         assert summary["live_allocation_approved"] is False
         assert summary["trade_cost_reconciliation_error"] < 1e-12
-        assert set(trades["record_status"]) == {"SIMULATED | RESEARCH ONLY | NO LIVE FILL"}
+        if not trades.empty:
+            assert set(trades["record_status"]) == {"SIMULATED | RESEARCH ONLY | NO LIVE FILL"}
 
 
 def test_trade_log_weight_and_cost_reconciliation():

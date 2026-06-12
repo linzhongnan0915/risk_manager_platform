@@ -105,13 +105,15 @@ const ResearchUniverse = (() => {
   function classifyGroup(strategyId, backtest = {}) {
     if (strategyId === COMPOSITE_ID) return "COMBINED_PORTFOLIO";
     const membership = backtest.factory_research?.membership;
-    if (membership === "REFERENCE_ONLY") return "REFERENCE";
     if (membership === "ACTIVE") return "ACTIVE";
+    if (membership === "REPAIR") return "REPAIR";
+    if (membership === "RESEARCH_CANDIDATE") return "RESEARCH_CANDIDATE";
+    if (membership === "REFERENCE_ONLY" || membership === "ARCHIVED") return "REFERENCE";
     return "REFERENCE";
   }
 
   function sortRank(group) {
-    return { ACTIVE: 1, WATCH: 2, COMBINED_PORTFOLIO: 3, STRATEGY_21: 3, REFERENCE: 4, LEGACY_PROXY: 9 }[group] || 9;
+    return { ACTIVE: 1, REPAIR: 2, RESEARCH_CANDIDATE: 3, REFERENCE: 4, COMBINED_PORTFOLIO: 5, STRATEGY_21: 5, LEGACY_PROXY: 9 }[group] || 9;
   }
 
   function rowFromCatalogItem(item) {
@@ -231,6 +233,8 @@ const ResearchUniverse = (() => {
   function filterStrategyRows(filter = strategyTableFilter) {
     const rows = strategyRows();
     if (filter === "ACTIVE") return rows.filter((row) => row.research_group === "ACTIVE");
+    if (filter === "REPAIR") return rows.filter((row) => row.research_group === "REPAIR");
+    if (filter === "RESEARCH_CANDIDATE") return rows.filter((row) => row.research_group === "RESEARCH_CANDIDATE");
     if (filter === "COMBINED_PORTFOLIO" || filter === "STRATEGY_21") return rows.filter((row) => row.strategy_id === COMPOSITE_ID);
     if (filter === "WATCH") return rows.filter((row) => row.research_group === "WATCH");
     if (filter === "REFERENCE") return rows.filter((row) => row.research_group === "REFERENCE");
@@ -319,13 +323,15 @@ const ResearchUniverse = (() => {
   }
 
   function researchLabGroups() {
-    return ["ACTIVE", "WATCH", "COMBINED_PORTFOLIO", "REFERENCE", "LEGACY_PROXY"];
+    return ["ACTIVE", "REPAIR", "RESEARCH_CANDIDATE", "REFERENCE", "COMBINED_PORTFOLIO", "LEGACY_PROXY"];
   }
 
   function counts() {
     const rows = strategyRows();
     return {
       active: rows.filter((row) => row.research_group === "ACTIVE").length,
+      repair: rows.filter((row) => row.research_group === "REPAIR").length,
+      research_candidate: rows.filter((row) => row.research_group === "RESEARCH_CANDIDATE").length,
       reference: rows.filter((row) => row.research_group === "REFERENCE").length,
       composite: rows.filter((row) => row.strategy_id === COMPOSITE_ID).length,
       tested: (catalog?.results || []).length - 1,
@@ -337,6 +343,8 @@ const ResearchUniverse = (() => {
     COMPOSITE_DYNAMIC_LABEL,
     GROUP_LABELS: {
       ACTIVE: "Active US-Equity Research",
+      REPAIR: "Repair",
+      RESEARCH_CANDIDATE: "Research Candidate",
       COMBINED_PORTFOLIO: "Combined Portfolio",
       STRATEGY_21: "Combined Portfolio",
       WATCH: "Watch Research",

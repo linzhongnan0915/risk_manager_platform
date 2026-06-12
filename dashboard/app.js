@@ -308,11 +308,15 @@ async function renderShadowStrategyRegistry(status = "ALL") {
         </tr>`).join("");
     };
     const activeRows = rows.filter((row) => row.research_group === "ACTIVE");
+    const repairRows = rows.filter((row) => row.research_group === "REPAIR");
+    const candidateRows = rows.filter((row) => row.research_group === "RESEARCH_CANDIDATE");
     const referenceRows = rows.filter((row) => row.research_group === "REFERENCE");
     const compositeRows = rows.filter((row) => row.strategy_id === ResearchUniverse.COMPOSITE_ID);
     table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Research Composite</th><th>Live Allocation</th><th>Net Return</th><th>Sharpe</th><th>Max DD</th><th>Turnover (avg daily)</th><th>IC</th><th>Decile Spread</th><th>Reason</th><th>Latest Data</th><th>Action</th></tr>` +
       renderSection("ACTIVE US-Equity Research", activeRows) +
-      renderSection("REFERENCE ONLY", referenceRows) +
+      renderSection("REPAIR", repairRows) +
+      renderSection("RESEARCH CANDIDATE", candidateRows) +
+      renderSection("REFERENCE ONLY / ARCHIVED", referenceRows) +
       renderSection("Combined Portfolio", compositeRows);
     table.querySelectorAll("tr[data-factory-strategy]").forEach((row) => {
       const strategyId = row.dataset.factoryStrategy;
@@ -769,7 +773,9 @@ function renderFactoryResearchArchitectureBanner() {
   if (summary) {
     summary.innerHTML = `
       <span><strong>${counts.active}</strong> ACTIVE</span>
-      <span><strong>${counts.reference}</strong> REFERENCE_ONLY</span>
+      <span><strong>${counts.repair}</strong> REPAIR</span>
+      <span><strong>${counts.research_candidate}</strong> RESEARCH_CANDIDATE</span>
+      <span><strong>${counts.reference}</strong> REFERENCE_ONLY / ARCHIVED</span>
       <span><strong>${counts.composite}</strong> Combined Portfolio</span>
       <span>${arch.composite_constituent_count} × ${composite.weightPct}% · Dynamic membership: ${composite.dynamicMembership ? "Enabled" : "Disabled"}</span>`;
   }
@@ -2092,7 +2098,9 @@ function populateResearchLabSelector(artifact) {
     const items = factoryResearchCatalogItems();
     const groups = [
       ["ACTIVE", items.filter((row) => row.backtest?.factory_research?.membership === "ACTIVE")],
-      ["REFERENCE_ONLY", items.filter((row) => row.backtest?.factory_research?.membership === "REFERENCE_ONLY")],
+      ["REPAIR", items.filter((row) => row.backtest?.factory_research?.membership === "REPAIR")],
+      ["RESEARCH_CANDIDATE", items.filter((row) => row.backtest?.factory_research?.membership === "RESEARCH_CANDIDATE")],
+      ["REFERENCE_ONLY / ARCHIVED", items.filter((row) => ["REFERENCE_ONLY", "ARCHIVED"].includes(row.backtest?.factory_research?.membership))],
       ["COMBINED_PORTFOLIO", items.filter((row) => row.strategy_id === ResearchUniverse.COMPOSITE_ID)],
     ];
     select.innerHTML = groups.flatMap(([label, rows]) => {

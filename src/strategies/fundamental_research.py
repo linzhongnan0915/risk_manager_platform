@@ -22,28 +22,32 @@ from src.strategies.strategy_factory import (
 from src.strategies.worldquant.market_data import download_ohlcv
 from src.strategies.worldquant.portfolio_returns import compute_portfolio_returns_from_weights
 
-PACK_ID = "FUNDAMENTAL_STRATEGY_RESEARCH_PACK_V1"
-OUTPUT_ROOT = Path("output/research/fundamental_strategy_pack_v1")
-OHLCV_CACHE = Path("data/raw/fundamental_research/fundamental_smoke_ohlcv.csv")
+PACK_ID = "FUNDAMENTAL_STRATEGY_EXPANSION_V1"
+OUTPUT_ROOT = Path("output/research/fundamental_strategy_expansion_v1")
+OHLCV_CACHE = Path("data/raw/fundamental_research/fundamental_expansion_ohlcv.csv")
 START_DATE = "2018-01-02"
 END_DATE = "2026-06-10"
 REBALANCE_EVERY = 20
-MIN_CROSS_SECTION = 8
+MIN_CROSS_SECTION = 20
 BUY_BPS = SELL_BPS = 5.0
 
-SMOKE_UNIVERSE = (
+DIAGNOSTIC_UNIVERSE = (
     "AAPL", "AMD", "AMZN", "BAC", "CAT", "COST", "CSCO", "CVX", "DE", "F",
     "GM", "GOOGL", "HD", "IBM", "INTC", "JNJ", "JPM", "KO", "LOW", "META",
     "MSFT", "MU", "NKE", "ORCL", "PEP", "PFE", "SBUX", "TGT", "WMT", "XOM",
+    "ABBV", "ABT", "ADBE", "AMAT", "AXP", "BKNG", "BLK", "CMCSA", "COP", "CRM",
+    "DIS", "GE", "GILD", "GS", "HON", "LIN", "LLY", "LMT", "MA", "MCD",
+    "MDT", "MMM", "MRK", "NFLX", "NVDA", "QCOM", "RTX", "TXN", "UNH", "V",
 )
 
 CANDIDATE_FORMULAS = {
-    "QUALITY_PROFITABILITY": ["gross_profit/assets", "operating_income/assets", "operating_cash_flow/assets"],
     "FUNDAMENTAL_MOMENTUM": ["annual revenue growth", "annual change operating margin", "annual change operating_cash_flow/assets"],
     "CAPEX_EFFICIENCY": ["annual revenue growth", "annual change revenue/assets", "free_cash_flow/assets", "negative annual asset growth"],
     "EARNINGS_QUALITY": ["negative accruals/assets", "operating_cash_flow/revenue", "operating_cash_flow/abs(net_income)"],
-    "VALUE_QUALITY": ["net_income/market_cap", "equity/market_cap", "free_cash_flow/market_cap", "quality score"],
     "PROFITABLE_SMALL_CAP": ["negative market_cap", "quality score", "positive annual revenue growth"],
+    "CONSERVATIVE_ASSET_GROWTH": ["negative annual asset growth", "quality score"],
+    "CASH_FLOW_YIELD": ["operating_cash_flow/market_cap", "free_cash_flow/market_cap"],
+    "MARGIN_IMPROVEMENT": ["annual change operating margin", "annual change operating_cash_flow/revenue"],
 }
 
 
@@ -120,6 +124,7 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
         "annual_revenue_growth": revenue_growth,
         "annual_margin_change": safe_divide(op_now, revenue_now) - safe_divide(op_prev, revenue_prev),
         "annual_ocf_assets_change": safe_divide(ocf_now, assets_now) - safe_divide(ocf_prev, assets_prev),
+        "annual_cash_flow_margin_change": safe_divide(ocf_now, revenue_now) - safe_divide(ocf_prev, revenue_prev),
         "annual_asset_turnover_change": safe_divide(revenue_now, assets_now) - safe_divide(revenue_prev, assets_prev),
         "fcf_assets": safe_divide(fcf, assets),
         "negative_asset_growth": -asset_growth,
@@ -127,6 +132,7 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
         "ocf_revenue": safe_divide(ocf, revenue),
         "ocf_abs_net_income": safe_divide(ocf, abs(net_income)),
         "earnings_yield": safe_divide(net_income, market_cap),
+        "cash_flow_yield": safe_divide(ocf, market_cap),
         "book_to_market": safe_divide(_last(current, "equity"), market_cap),
         "fcf_yield": safe_divide(fcf, market_cap),
         "negative_market_cap": -market_cap,
@@ -166,7 +172,6 @@ def _rank_mean(raw: pd.DataFrame, columns: list[str], *, minimum: int = 2) -> pd
 def build_candidate_scores(raw: pd.DataFrame, dates: pd.DatetimeIndex, tickers: Iterable[str]) -> dict[str, pd.DataFrame]:
     quality = _rank_mean(raw, ["quality_gp_assets", "quality_op_assets", "quality_ocf_assets"])
     scores = {
-        "QUALITY_PROFITABILITY": quality,
         "FUNDAMENTAL_MOMENTUM": _rank_mean(
             raw, ["annual_revenue_growth", "annual_margin_change", "annual_ocf_assets_change"]
         ),
@@ -176,19 +181,18 @@ def build_candidate_scores(raw: pd.DataFrame, dates: pd.DatetimeIndex, tickers: 
         "EARNINGS_QUALITY": _rank_mean(
             raw, ["negative_accruals_assets", "ocf_revenue", "ocf_abs_net_income"]
         ),
-        "VALUE_QUALITY": pd.concat(
-            [
-                raw[column].groupby(level="date").rank(pct=True)
-                for column in ["earnings_yield", "book_to_market", "fcf_yield"]
-            ]
-            + [quality],
-            axis=1,
-        ).mean(axis=1, skipna=True),
         "PROFITABLE_SMALL_CAP": pd.concat(
             [raw["negative_market_cap"].groupby(level="date").rank(pct=True), quality,
              raw["annual_revenue_growth"].groupby(level="date").rank(pct=True)],
             axis=1,
         ).mean(axis=1, skipna=True).where(raw["annual_revenue_growth"].gt(0) & raw["market_cap"].gt(0)),
+        "CONSERVATIVE_ASSET_GROWTH": raw["negative_asset_growth"].groupby(level="date").rank(
+            pct=True
+        ).where(quality.notna()) * 0.7 + quality * 0.3,
+        "CASH_FLOW_YIELD": _rank_mean(raw, ["cash_flow_yield", "fcf_yield"]),
+        "MARGIN_IMPROVEMENT": _rank_mean(
+            raw, ["annual_margin_change", "annual_cash_flow_margin_change"]
+        ),
     }
     output: dict[str, pd.DataFrame] = {}
     for strategy_id, series in scores.items():
@@ -200,9 +204,15 @@ def build_candidate_scores(raw: pd.DataFrame, dates: pd.DatetimeIndex, tickers: 
 def build_trade_log(
     strategy_id: str, target: pd.DataFrame, open_prices: pd.DataFrame, *, run_id: str
 ) -> pd.DataFrame:
+    columns = [
+        "strategy_id", "signal_date", "rebalance_date", "execution_date", "ticker", "action",
+        "previous_weight", "target_weight", "delta_weight", "simulated_execution_price",
+        "turnover_contribution", "estimated_transaction_cost", "execution_convention", "run_id",
+        "record_status",
+    ]
     rows: list[dict[str, object]] = []
     if target.empty:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=columns)
     previous = target.iloc[0].copy()
     for signal_date, weights in target.iloc[1:].iterrows():
         if weights.equals(previous):
@@ -242,7 +252,7 @@ def build_trade_log(
                     }
                 )
         previous = weights.copy()
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=columns)
 
 
 def _annual_return(returns: pd.Series) -> float:
@@ -346,7 +356,7 @@ def run_fundamental_research_pack(project_root: str | Path, *, user_agent: str) 
         context = load_context(raw_cache)
     else:
         ohlcv, _, _ = download_ohlcv(
-            list(SMOKE_UNIVERSE), start_date=START_DATE, end_date=END_DATE,
+            list(DIAGNOSTIC_UNIVERSE), start_date=START_DATE, end_date=END_DATE,
             batch_size=30, include_rejected_history=True,
         )
         raw_cache.parent.mkdir(parents=True, exist_ok=True)
@@ -391,14 +401,14 @@ def run_fundamental_research_pack(project_root: str | Path, *, user_agent: str) 
             {
                 "run_id": run_id, "pack_id": PACK_ID, "candidate_formulas": CANDIDATE_FORMULAS,
                 "universe": list(context.panels["close"].columns), "universe_rule": (
-                    "Current-listed 30-ticker liquid diagnostic smoke universe; price >= $5; "
-                    "lagged ADV20 >= $5m; minimum 8 eligible names. PROFITABLE_SMALL_CAP is "
+                    "Deterministic current-listed 60-ticker liquid diagnostic universe; price >= $5; "
+                    "lagged ADV20 >= $5m; minimum 20 eligible names. PROFITABLE_SMALL_CAP is "
                     "relative-small-cap within this diagnostic universe and also requires positive revenue growth."
                 ),
                 "signal_timing": "SEC acceptance/publication <= prior calendar day; market cap uses prior close.",
                 "execution": "NEXT_OPEN_TO_OPEN", "buy_bps": BUY_BPS, "sell_bps": SELL_BPS,
                 "labels": ["CURRENT_LISTED_DIAGNOSTIC", "SURVIVORSHIP_BIAS_PRESENT", "RESEARCH_CANDIDATE"],
-                "live_allocation_approved": False, "active_membership_changed": False,
+                "live_allocation_approved": False, "fundamental_candidates_promoted": False,
             },
             indent=2,
         ),

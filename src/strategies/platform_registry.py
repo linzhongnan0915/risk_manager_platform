@@ -44,6 +44,32 @@ COMPOSITE_ID = "COMBINED_PORTFOLIO_V1"
 COMPOSITE_NAME = "Combined Portfolio"
 COMPOSITE_LABEL = "Equal-weight composite of all eligible ACTIVE underlying strategies — research only."
 
+STRATEGY_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "C2A2_004": {"status": "REPAIR", "reason": "Distinct reversal profile, but extreme turnover and cost drag require repair."},
+    "C2A2_020": {"status": "REPAIR", "reason": "Weak standalone Sharpe and material cost drag; retain for redesign review."},
+    "C3A1_001": {"status": "ACTIVE", "reason": "Strongest standalone net Sharpe among current price-based strategies."},
+    "C3A1_002": {"status": "ACTIVE", "reason": "Usable momentum baseline and superior replacement for C3A1_004."},
+    "C3A1_003": {"status": "ACTIVE", "reason": "Positive standalone evidence with non-identical momentum horizon."},
+    "C3A1_004": {"status": "ARCHIVED", "reason": "Correlation 0.905 with clearly superior C3A1_002; dominated duplicate."},
+    "C3A1_005": {"status": "ACTIVE", "reason": "Positive standalone trend-quality evidence retained conservatively."},
+    "C3A1_006": {"status": "REPAIR", "reason": "Weak Sharpe and unacceptable drawdown relative to return."},
+    "C3A1_012": {"status": "REPAIR", "reason": "Weak standalone Sharpe and material cost drag; possible redesign value."},
+    "C3A1_013": {"status": "ACTIVE", "reason": "Positive liquidity-premium evidence with credible standalone value."},
+    "C3A1_015": {"status": "REPAIR", "reason": "Correlation 0.961 with C3A1_005; requires differentiation before reuse."},
+    "C3A2_008": {"status": "ACTIVE", "reason": "Strongest slow-momentum evidence; retained despite family overlap."},
+    "C3A2_009": {"status": "ACTIVE", "reason": "Weak standalone Sharpe but strongest observed diversification value."},
+}
+
+FUNDAMENTAL_RESEARCH_CANDIDATE_IDS: tuple[str, ...] = (
+    "FUNDAMENTAL_MOMENTUM",
+    "EARNINGS_QUALITY",
+    "CAPEX_EFFICIENCY",
+    "PROFITABLE_SMALL_CAP",
+    "CONSERVATIVE_ASSET_GROWTH",
+    "CASH_FLOW_YIELD",
+    "MARGIN_IMPROVEMENT",
+)
+
 C3A2_SPECS: tuple[StrategySpec, ...] = (
     StrategySpec("C3A2_001", "c3a2_001_short_term_reversal_5d_v1", "Short-Term Reversal 5D",
                  "Fade 5-day moves; long recent losers and short recent winners.", short_term_reversal_5d, 20),

@@ -42,6 +42,9 @@ def main() -> int:
         or row.get("backtest", {}).get("factory_research", {}).get("composite_eligible")
     )
     reference = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "REFERENCE_ONLY")
+    repair = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "REPAIR")
+    candidates = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "RESEARCH_CANDIDATE")
+    archived = sum(1 for row in research["results"] if row.get("backtest", {}).get("factory_research", {}).get("membership") == "ARCHIVED")
     composite = sum(1 for row in research["results"] if row.get("strategy_id") == "COMBINED_PORTFOLIO_V1")
     if active < 1:
         errors.append(f"expected at least 1 eligible ACTIVE strategy, found {active}")
@@ -62,7 +65,7 @@ def main() -> int:
         errors.append("ETF strategy appears ACTIVE")
 
     bundle_http = json.loads(fetch("/data/us_equity_research_bundle.json"))
-    if bundle_http["factory_strategy_research"]["results_count"] != 32:
+    if bundle_http["factory_strategy_research"]["results_count"] != research["results_count"]:
         errors.append("bundle not served correctly from dashboard/data")
 
     if errors:
@@ -71,7 +74,7 @@ def main() -> int:
             print("-", error)
         return 1
     print("SMOKE PASS")
-    print(f"ACTIVE={active} REFERENCE={reference} COMPOSITE={composite} equal_weight={arch.get('composite_equal_weight'):.4f}")
+    print(f"ACTIVE={active} REPAIR={repair} CANDIDATE={candidates} REFERENCE={reference} ARCHIVED={archived} COMPOSITE={composite} equal_weight={arch.get('composite_equal_weight'):.4f}")
     return 0
 
 
