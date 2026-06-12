@@ -1,0 +1,5 @@
+included,reason,count
+False,insufficient_price_history,120
+False,liquidity_below_threshold,59
+False,price_below_threshold,14
+True,included,6167

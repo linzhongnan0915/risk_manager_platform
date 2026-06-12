@@ -1,0 +1,14 @@
+{
+  "universe_id": "SP500_POINT_IN_TIME",
+  "version": "v1",
+  "source_mode": "WRDS_CRSP_REQUIRED",
+  "status": "DATA_UNAVAILABLE",
+  "labels": [
+    "POINT_IN_TIME_REQUIRED",
+    "NO_CURRENT_LIST_SUBSTITUTION"
+  ],
+  "rule": "WRDS/CRSP historical constituents with effective start/end dates.",
+  "member_count_min": 0,
+  "member_count_max": 0,
+  "member_count_latest": 0
+}

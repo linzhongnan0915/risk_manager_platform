@@ -1,0 +1,13 @@
+{
+  "universe_id": "PILOT_500",
+  "version": "v1",
+  "source_mode": "LEGACY_BASELINE",
+  "status": "LEGACY_BASELINE",
+  "labels": [
+    "LEGACY_BASELINE"
+  ],
+  "rule": "Retained for historical comparison only.",
+  "member_count_min": 0,
+  "member_count_max": 0,
+  "member_count_latest": 0
+}

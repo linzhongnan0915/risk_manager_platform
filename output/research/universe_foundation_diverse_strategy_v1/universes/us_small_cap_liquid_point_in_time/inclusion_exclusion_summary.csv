@@ -1,0 +1,6 @@
+included,reason,count
+False,excluded_microcap_tail,515
+False,missing_or_nonpositive_market_cap,201
+False,not_broad_eligible,193
+False,outside_small_cap_percentile,3618
+True,included_small_cap,1833

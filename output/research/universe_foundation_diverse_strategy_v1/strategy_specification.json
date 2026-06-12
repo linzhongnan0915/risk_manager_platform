@@ -1,0 +1,79 @@
+{
+  "RESIDUAL_MOMENTUM_ENSEMBLE": {
+    "primary_universe": "US_BROAD_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "momentum ensemble",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "PRICE_VOLUME_REVERSAL_ENSEMBLE": {
+    "primary_universe": "US_BROAD_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "price-volume reversal ensemble",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "VOLATILITY_LIQUIDITY_DEFENSIVE_ENSEMBLE": {
+    "primary_universe": "US_BROAD_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "defensive volatility/liquidity ensemble",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "OVERNIGHT_INTRADAY_ENSEMBLE": {
+    "primary_universe": "US_BROAD_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "overnight/intraday reversal ensemble",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "VALUE_QUALITY": {
+    "primary_universe": "SP500_POINT_IN_TIME",
+    "economic_rationale": "value and quality",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "CAPEX_PRODUCTIVITY": {
+    "primary_universe": "SP500_POINT_IN_TIME",
+    "economic_rationale": "capex productivity",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "PROFITABLE_SMALL_CAP_GROWTH": {
+    "primary_universe": "US_SMALL_CAP_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "profitable small-cap growth",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "SHAREHOLDER_YIELD_CAPITAL_ALLOCATION": {
+    "primary_universe": "SP500_POINT_IN_TIME",
+    "economic_rationale": "shareholder yield/capital allocation",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "FILING_SHOCK_CONTINUATION": {
+    "primary_universe": "US_BROAD_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "event-driven filing continuation",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "CAPITAL_ALLOCATION_EVENT": {
+    "primary_universe": "US_BROAD_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "event-driven capital allocation",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  },
+  "FUNDAMENTAL_SHOCK_RECOVERY": {
+    "primary_universe": "US_BROAD_LIQUID_POINT_IN_TIME",
+    "economic_rationale": "matched-control fundamental shock recovery",
+    "execution": "NEXT_OPEN_TO_OPEN",
+    "buy_bps": 5,
+    "sell_bps": 5
+  }
+}

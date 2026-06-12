@@ -1,0 +1,14 @@
+{
+  "universe_id": "US_SMALL_CAP_LIQUID_POINT_IN_TIME",
+  "version": "v1",
+  "source_mode": "CURRENT_LISTED_DIAGNOSTIC",
+  "status": "DIAGNOSTIC_FALLBACK",
+  "labels": [
+    "CURRENT_LISTED_DIAGNOSTIC",
+    "SURVIVORSHIP_BIAS_PRESENT"
+  ],
+  "rule": "Broad diagnostic eligibility; available shares x prior close; exclude bottom 10%; select next 30%.",
+  "member_count_min": 17,
+  "member_count_max": 18,
+  "member_count_latest": 18
+}

@@ -1,0 +1,8 @@
+{
+  "universe_id": "US_BROAD_LIQUID_POINT_IN_TIME",
+  "membership_rows": 6360,
+  "rebalance_dates": 106,
+  "included_rows": 6167,
+  "duplicate_membership_rows": 0,
+  "historical_sector_industry_status": "UNAVAILABLE_NOT_BACKFILLED"
+}

@@ -1,0 +1,73 @@
+{
+  "pack_id": "UNIVERSE_FOUNDATION_DIVERSE_STRATEGY_RESEARCH_V1",
+  "status": "RESEARCH_ONLY",
+  "universe_manifests": {
+    "SP500_POINT_IN_TIME": {
+      "universe_id": "SP500_POINT_IN_TIME",
+      "version": "v1",
+      "source_mode": "WRDS_CRSP_REQUIRED",
+      "status": "DATA_UNAVAILABLE",
+      "labels": [
+        "POINT_IN_TIME_REQUIRED",
+        "NO_CURRENT_LIST_SUBSTITUTION"
+      ],
+      "rule": "WRDS/CRSP historical constituents with effective start/end dates.",
+      "member_count_min": 0,
+      "member_count_max": 0,
+      "member_count_latest": 0
+    },
+    "US_BROAD_LIQUID_POINT_IN_TIME": {
+      "universe_id": "US_BROAD_LIQUID_POINT_IN_TIME",
+      "version": "v1",
+      "source_mode": "CURRENT_LISTED_DIAGNOSTIC",
+      "status": "DIAGNOSTIC_FALLBACK",
+      "labels": [
+        "CURRENT_LISTED_DIAGNOSTIC",
+        "SURVIVORSHIP_BIAS_PRESENT"
+      ],
+      "rule": "price >= 5; lagged ADV20 >= 5m; >=60 price observations; formal CRSP history unavailable.",
+      "member_count_min": 59,
+      "member_count_max": 60,
+      "member_count_latest": 60
+    },
+    "US_SMALL_CAP_LIQUID_POINT_IN_TIME": {
+      "universe_id": "US_SMALL_CAP_LIQUID_POINT_IN_TIME",
+      "version": "v1",
+      "source_mode": "CURRENT_LISTED_DIAGNOSTIC",
+      "status": "DIAGNOSTIC_FALLBACK",
+      "labels": [
+        "CURRENT_LISTED_DIAGNOSTIC",
+        "SURVIVORSHIP_BIAS_PRESENT"
+      ],
+      "rule": "Broad diagnostic eligibility; available shares x prior close; exclude bottom 10%; select next 30%.",
+      "member_count_min": 17,
+      "member_count_max": 18,
+      "member_count_latest": 18
+    },
+    "PILOT_500": {
+      "universe_id": "PILOT_500",
+      "version": "v1",
+      "source_mode": "LEGACY_BASELINE",
+      "status": "LEGACY_BASELINE",
+      "labels": [
+        "LEGACY_BASELINE"
+      ],
+      "rule": "Retained for historical comparison only.",
+      "member_count_min": 0,
+      "member_count_max": 0,
+      "member_count_latest": 0
+    }
+  },
+  "execution": "NEXT_OPEN_TO_OPEN",
+  "buy_bps": 5,
+  "sell_bps": 5,
+  "market_proxy_regime": {
+    "id": "MARKET_PROXY_REGIME_V0",
+    "alters_weights": false
+  },
+  "historical_sector_industry_status": "UNAVAILABLE_NOT_BACKFILLED",
+  "active_membership_changed": false,
+  "combined_portfolio_changed": false,
+  "dashboard_changed": false,
+  "live_allocation_approved": false
+}
