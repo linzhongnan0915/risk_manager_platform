@@ -151,3 +151,18 @@ def test_net_return_equals_gross_minus_cost_and_compounds():
 def test_execution_mode_specs_are_explicit():
     assert resolve_execution_spec(EXECUTION_MODE_NEXT_OPEN_TO_CLOSE) == (1, "open_to_close")
     assert resolve_execution_spec(EXECUTION_MODE_CLOSE_TO_CLOSE_LAG2) == (2, "close_to_close")
+
+
+def test_optional_hedge_leg_reconciles_return_turnover_and_cost():
+    index = _index(3)
+    weights = pd.DataFrame({"AAA": [0.5, 0.5, 0.5]}, index=index)
+    returns = pd.DataFrame({"AAA": [0.02, 0.02, 0.02]}, index=index)
+    hedge_weights = pd.Series([-0.5, -0.25, -0.25], index=index)
+    hedge_returns = pd.Series([0.01, 0.01, 0.01], index=index)
+    result = compute_portfolio_returns_from_weights(
+        weights, returns, execution_lag=0, buy_bps=5, sell_bps=5, return_definition="open_to_open",
+        hedge_weights=hedge_weights, hedge_returns=hedge_returns,
+    )
+    assert result.gross_return.iloc[0] == pytest.approx(0.005)
+    assert result.hedge_turnover.iloc[1] == pytest.approx(0.25)
+    assert result.transaction_cost.iloc[1] == pytest.approx(0.25 * 5 / 10_000)

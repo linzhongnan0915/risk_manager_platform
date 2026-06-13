@@ -6,6 +6,7 @@ import pandas as pd
 
 from src.strategies.fundamental_data import (
     SecEdgarClient,
+    build_filing_event_panel,
     facts_as_of,
     normalize_company_facts,
 )
@@ -221,3 +222,15 @@ def test_sec_client_declares_user_agent_and_uses_cache(tmp_path):
     assert len(calls) == 1
     assert calls[0][0].get_header("User-agent") == "Research Team research@example.com"
     assert (tmp_path / "company_tickers.json").exists()
+
+
+def test_event_panel_uses_first_trading_date_after_publication_and_labels_fallback():
+    facts = normalize_company_facts("EXM", _company_facts(), _submissions())
+    dates = pd.bdate_range("2024-02-01", "2024-05-06")
+    events = build_filing_event_panel(facts, dates)
+    first = events.loc[events["accession_number"].eq("0001-24-000001")]
+    assert set(first["first_valid_trading_date"]) == {pd.Timestamp("2024-02-02")}
+    assert set(first["availability_label"]) == {"ACCEPTED_TIMESTAMP"}
+    fallback = build_filing_event_panel(normalize_company_facts("EXM", _company_facts(), []), dates)
+    assert "FILED_DATE_PLUS_ONE_CONSERVATIVE_FALLBACK" in set(fallback["availability_label"])
+    assert (events["first_valid_trading_date"] > pd.to_datetime(events["availability_datetime"]).dt.tz_convert(None).dt.normalize()).all()

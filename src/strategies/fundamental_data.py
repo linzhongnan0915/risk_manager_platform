@@ -13,6 +13,7 @@ from typing import Any
 from urllib.request import Request, urlopen
 
 import pandas as pd
+import numpy as np
 
 SEC_DATA_BASE = "https://data.sec.gov"
 SEC_XBRL_BASE = "https://data.sec.gov/api/xbrl"
@@ -283,6 +284,48 @@ def facts_as_of(
     allowed_forms = {str(form) for form in forms}
     available = facts["availability_datetime"].notna() & facts["availability_datetime"].le(cutoff)
     return facts.loc[available & facts["form"].isin(allowed_forms)].copy().reset_index(drop=True)
+
+
+def build_filing_event_panel(facts: pd.DataFrame, trading_dates: Iterable[pd.Timestamp]) -> pd.DataFrame:
+    """Aggregate facts by accession and align each filing to the first trading date after publication."""
+    columns = [
+        "ticker", "stable_id", "form", "accession_number", "accepted_datetime", "filed_date",
+        "availability_datetime", "availability_label", "first_valid_trading_date", "fiscal_period_end",
+        "fiscal_period", "field", "unit", "value", "prior_value", "point_in_time_change",
+    ]
+    if facts.empty:
+        return pd.DataFrame(columns=columns)
+    dates = pd.DatetimeIndex(pd.to_datetime(list(trading_dates))).tz_localize(None).sort_values().unique()
+    rows: list[dict[str, Any]] = []
+    working = facts.dropna(subset=["accession_number", "availability_datetime"]).copy()
+    for (ticker, accession), filing in working.groupby(["ticker", "accession_number"], sort=False):
+        available = pd.Timestamp(filing["availability_datetime"].min())
+        publication_day = available.tz_convert(None).normalize() if available.tzinfo else available.normalize()
+        later = dates[dates > publication_day]
+        if not len(later):
+            continue
+        first_trade = later[0]
+        accepted = filing["accepted_datetime"].dropna()
+        label = "ACCEPTED_TIMESTAMP" if len(accepted) else "FILED_DATE_PLUS_ONE_CONSERVATIVE_FALLBACK"
+        previous = working.loc[
+            working["ticker"].eq(ticker) & working["availability_datetime"].lt(available)
+        ].sort_values("availability_datetime").drop_duplicates(["field"], keep="last").set_index("field")
+        current = filing.sort_values(["field", "fiscal_period_end"]).drop_duplicates(["field"], keep="last")
+        for fact in current.itertuples():
+            prior = previous.loc[fact.field, "value"] if fact.field in previous.index else np.nan
+            rows.append({
+                "ticker": ticker, "stable_id": str(fact.cik), "form": fact.form,
+                "accession_number": accession, "accepted_datetime": accepted.min() if len(accepted) else pd.NaT,
+                "filed_date": fact.filed_date, "availability_datetime": available,
+                "availability_label": label, "first_valid_trading_date": first_trade,
+                "fiscal_period_end": fact.fiscal_period_end, "fiscal_period": fact.fiscal_period,
+                "field": fact.field, "unit": fact.unit, "value": float(fact.value),
+                "prior_value": float(prior) if pd.notna(prior) else np.nan,
+                "point_in_time_change": (float(fact.value) - float(prior)) / abs(float(prior)) if pd.notna(prior) and float(prior) != 0 else np.nan,
+            })
+    return pd.DataFrame(rows, columns=columns).sort_values(
+        ["first_valid_trading_date", "ticker", "accession_number", "field"]
+    ).reset_index(drop=True)
 
 
 def load_sec_fundamentals(

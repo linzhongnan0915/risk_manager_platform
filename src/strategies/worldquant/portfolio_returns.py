@@ -44,6 +44,10 @@ class PortfolioReturnResult:
     net_return: pd.Series
     execution_lag: int
     return_definition: str
+    hedge_weight: pd.Series | None = None
+    hedge_return: pd.Series | None = None
+    hedge_turnover: pd.Series | None = None
+    hedge_transaction_cost: pd.Series | None = None
 
 
 def validate_execution_mode(execution_mode: str) -> str:
@@ -89,6 +93,10 @@ def compute_portfolio_returns_from_weights(
     buy_bps: float,
     sell_bps: float,
     return_definition: str,
+    hedge_weights: pd.Series | None = None,
+    hedge_returns: pd.Series | None = None,
+    hedge_buy_bps: float | None = None,
+    hedge_sell_bps: float | None = None,
 ) -> PortfolioReturnResult:
     """Apply execution lag, gross PnL, symmetric turnover costs, and net PnL."""
     if execution_lag < 0:
@@ -96,9 +104,25 @@ def compute_portfolio_returns_from_weights(
 
     executed_weights = target_weights.copy() if execution_lag == 0 else target_weights.shift(execution_lag).fillna(0.0)
     gross_return = (executed_weights * asset_returns).sum(axis=1, min_count=1)
+    gross_return = gross_return.where(executed_weights.abs().sum(axis=1).ne(0), 0.0)
+    hedge_weight = hedge_return = hedge_turnover = hedge_transaction_cost = None
+    if (hedge_weights is None) != (hedge_returns is None):
+        raise ValueError("hedge_weights and hedge_returns must be provided together")
+    if hedge_weights is not None and hedge_returns is not None:
+        hedge_weight = hedge_weights.reindex(target_weights.index).fillna(0.0)
+        if execution_lag:
+            hedge_weight = hedge_weight.shift(execution_lag).fillna(0.0)
+        hedge_return = hedge_weight * hedge_returns.reindex(target_weights.index)
+        gross_return = gross_return + hedge_return
+        hedge_turnover = hedge_weight.diff().abs().fillna(hedge_weight.abs())
+        hedge_rate = ((hedge_buy_bps if hedge_buy_bps is not None else buy_bps) + (hedge_sell_bps if hedge_sell_bps is not None else sell_bps)) / 2.0 / 10_000.0
+        hedge_transaction_cost = hedge_turnover * hedge_rate
     turnover = executed_weights.diff().abs().sum(axis=1)
     turnover = turnover.fillna(executed_weights.abs().sum(axis=1))
     transaction_cost = turnover * (buy_bps + sell_bps) / 2.0 / 10_000.0
+    if hedge_turnover is not None and hedge_transaction_cost is not None:
+        turnover = turnover + hedge_turnover
+        transaction_cost = transaction_cost + hedge_transaction_cost
     net_return = gross_return - transaction_cost
 
     return PortfolioReturnResult(
@@ -109,4 +133,8 @@ def compute_portfolio_returns_from_weights(
         net_return=net_return,
         execution_lag=execution_lag,
         return_definition=return_definition,
+        hedge_weight=hedge_weight,
+        hedge_return=hedge_return,
+        hedge_turnover=hedge_turnover,
+        hedge_transaction_cost=hedge_transaction_cost,
     )

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.strategies.final_challenge_research import _orthogonalize, fundamental_scores, ohlcv_scores
 from src.strategies.fundamental_research import build_raw_component_panel
-from src.strategies.platform_registry import CHALLENGE_CANDIDATE_IDS, CHALLENGE_SELECTION_STATUS
+from src.strategies.platform_registry import CHALLENGE_CANDIDATE_IDS, CHALLENGE_SELECTION_STATUS, EVENT_PANEL_CANDIDATE_IDS
 from tests.test_fundamental_research import _context, _facts
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,7 +41,8 @@ def test_challenge_outputs_and_trade_log_reconcile():
     trades = pd.read_csv(PACK / "trade_log.csv")
     assert set(summary.index) == set(CHALLENGE_CANDIDATE_IDS)
     for strategy_id in CHALLENGE_CANDIDATE_IDS:
-        assert summary.loc[strategy_id, "classification"] == CHALLENGE_SELECTION_STATUS[strategy_id]["status"]
+        if strategy_id not in {"ORTHOGONAL_LOW_ACCRUAL_MOMENTUM", *EVENT_PANEL_CANDIDATE_IDS}:
+            assert summary.loc[strategy_id, "classification"] == CHALLENGE_SELECTION_STATUS[strategy_id]["status"]
         daily_cost = daily.loc[daily["strategy_id"].eq(strategy_id), "transaction_cost"].sum()
         trade_cost = trades.loc[trades["strategy_id"].eq(strategy_id), "estimated_transaction_cost"].sum()
         assert trade_cost == pytest.approx(daily_cost)

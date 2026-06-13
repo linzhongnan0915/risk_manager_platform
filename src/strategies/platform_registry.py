@@ -207,7 +207,7 @@ CHALLENGE_CANDIDATE_IDS: tuple[str, ...] = (
 
 CHALLENGE_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "HEDGED_RESIDUAL_MOMENTUM_V2": {"status": "REPAIR", "reason": "Negative net and robustness results; explicit SPY hedge and hedge-cost Trade Log remain unsupported by the shared stock-only backtester."},
-    "ORTHOGONAL_LOW_ACCRUAL_MOMENTUM": {"status": "ACTIVE", "reason": "Passed every strict challenge gate, including meaningful positive OOS, robustness, duplication, and portfolio-value checks."},
+    "ORTHOGONAL_LOW_ACCRUAL_MOMENTUM": {"status": "REPAIR", "reason": "OOS Sharpe is only 0.119 over roughly 636 trading days, OOS cumulative return is only 1.45%, and marginal portfolio Sharpe is negative."},
     "CLUSTER_NEUTRAL_MEAN_REVERSION": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
     "ASSET_LIGHT_COMPOUNDER": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
     "FCF_REINVESTMENT_EFFICIENCY": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
@@ -216,6 +216,23 @@ CHALLENGE_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "HIGH_CONVICTION_FILING_DRIFT_V2": {"status": "REPAIR", "reason": "Monthly shared panel does not prove exact event-timestamp execution."},
     "CASH_FLOW_INFLECTION_CONTINUATION": {"status": "REPAIR", "reason": "Strong diagnostic evidence, but monthly shared panel does not prove exact event-timestamp execution."},
     "BALANCE_SHEET_REPAIR_AFTER_STRESS": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
+}
+
+EVENT_PANEL_CANDIDATE_IDS: tuple[str, ...] = (
+    "CASH_FLOW_INFLECTION_CONTINUATION", "HIGH_CONVICTION_FILING_DRIFT_V2", "HEDGED_RESIDUAL_MOMENTUM_V3",
+    "POST_FILING_MARGIN_ACCELERATION", "POST_FILING_CASH_FLOW_SURPRISE", "DEBT_REDUCTION_EVENT_DRIFT",
+    "FCF_INFLECTION_QUALITY", "PROFITABILITY_TURNAROUND_MATCHED_CONTROL",
+)
+
+EVENT_PANEL_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "CASH_FLOW_INFLECTION_CONTINUATION": {"status": "ARCHIVED", "reason": "Exact event-panel net, OOS, Sharpe, 2x-cost, and delayed-execution results are negative."},
+    "HIGH_CONVICTION_FILING_DRIFT_V2": {"status": "ARCHIVED", "reason": "Exact event-panel net, OOS, 2x-cost, and delayed-execution results are negative."},
+    "HEDGED_RESIDUAL_MOMENTUM_V3": {"status": "REPAIR", "reason": "Realized beta is controlled, but full-period net, Sharpe, 2x-cost, and delayed-execution results are negative."},
+    "POST_FILING_MARGIN_ACCELERATION": {"status": "REPAIR", "reason": "Strong diagnostic results, but average eligible event cross-section is below 20."},
+    "POST_FILING_CASH_FLOW_SURPRISE": {"status": "ACTIVE", "reason": "Passed every strict event-panel challenge gate with positive OOS, robustness, coverage, and portfolio-value evidence."},
+    "DEBT_REDUCTION_EVENT_DRIFT": {"status": "ARCHIVED", "reason": "Negative full-period and OOS evidence with inadequate event coverage."},
+    "FCF_INFLECTION_QUALITY": {"status": "ARCHIVED", "reason": "Negative full-period result, near-zero OOS, and inadequate event coverage."},
+    "PROFITABILITY_TURNAROUND_MATCHED_CONTROL": {"status": "ARCHIVED", "reason": "Negative full-period/OOS evidence, inadequate event coverage, and concentration risk; CAUSAL_INSPIRED_NOT_CAUSAL_PROOF."},
 }
 
 C3A2_SPECS: tuple[StrategySpec, ...] = (

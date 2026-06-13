@@ -1,0 +1,10 @@
+{
+  "CASH_FLOW_INFLECTION_CONTINUATION": "Post-publication continuation after positive operating-cash-flow inflection.",
+  "HIGH_CONVICTION_FILING_DRIFT_V2": "Post-publication drift after broad revenue, earnings, and cash-flow improvement.",
+  "HEDGED_RESIDUAL_MOMENTUM_V3": "Orthogonal residual momentum with explicit SPY beta hedge and hedge costs.",
+  "POST_FILING_MARGIN_ACCELERATION": "Post-publication continuation after operating-income growth exceeds revenue growth.",
+  "POST_FILING_CASH_FLOW_SURPRISE": "Post-publication continuation after unusually strong operating-cash-flow change.",
+  "DEBT_REDUCTION_EVENT_DRIFT": "Post-publication drift after liabilities decline with cash-flow confirmation.",
+  "FCF_INFLECTION_QUALITY": "Post-publication free-cash-flow inflection with earnings-quality confirmation.",
+  "PROFITABILITY_TURNAROUND_MATCHED_CONTROL": "Causal-inspired diagnostic after profitability turnaround and prior price stress."
+}

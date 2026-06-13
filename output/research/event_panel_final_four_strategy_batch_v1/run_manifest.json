@@ -1,0 +1,28 @@
+{
+  "pack_id": "EVENT_PANEL_FINAL_FOUR_STRATEGY_BATCH_V1",
+  "status": "RESEARCH_ONLY",
+  "execution": "NEXT_OPEN_TO_OPEN",
+  "event_hold_days": 20,
+  "event_panel_rows": 120563,
+  "accepted_timestamp_rows": 120552,
+  "fallback_rows": 11,
+  "sec_audit": {
+    "sec_mapped": 229,
+    "sec_facts_loaded": 216
+  },
+  "labels": [
+    "CURRENT_LISTED_DIAGNOSTIC",
+    "SURVIVORSHIP_BIAS_PRESENT",
+    "RESEARCH ONLY"
+  ],
+  "live_allocation_approved": false,
+  "execution_enabled": false,
+  "fill_status": "NO LIVE FILL",
+  "matched_control_label": "CAUSAL_INSPIRED_NOT_CAUSAL_PROOF",
+  "registry_updated": true,
+  "bundle_updated": true,
+  "dashboard_updated": true,
+  "combined_portfolio_updated": true,
+  "combined_portfolio_N": 16,
+  "combined_portfolio_equal_weight": 0.0625
+}
