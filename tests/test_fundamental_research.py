@@ -150,6 +150,8 @@ def test_trade_log_weight_and_cost_reconciliation():
     trades = build_trade_log("TEST", target, prices, run_id="TEST_RUN")
 
     expected_turnover = target.diff().abs().sum(axis=1).fillna(target.abs().sum(axis=1))
+    expected_turnover.iloc[0] = target.iloc[0].abs().sum()
+    expected_turnover.iloc[-1] = 0.0  # No next open exists for the final signal date.
     by_date = trades.groupby("execution_date")["turnover_contribution"].sum().reindex(
         [day.date().isoformat() for day in dates], fill_value=0.0
     )

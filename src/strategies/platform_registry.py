@@ -77,15 +77,15 @@ FUNDAMENTAL_RESEARCH_CANDIDATE_IDS: tuple[str, ...] = (
 
 FUNDAMENTAL_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "FUNDAMENTAL_MOMENTUM": {"status": "ACTIVE", "reason": "Strong net Sharpe, positive preliminary OOS, and low legacy correlation."},
-    "CAPEX_EFFICIENCY": {"status": "REPAIR", "reason": "Preliminary OOS is positive, but costs consume the full-period edge."},
+    "CAPEX_EFFICIENCY": {"status": "ARCHIVED", "reason": "Expanded-universe full-period and preliminary OOS returns are both negative."},
     "EARNINGS_QUALITY": {"status": "ACTIVE", "reason": "Strong net Sharpe, positive preliminary OOS, and low legacy correlation."},
-    "PROFITABLE_SMALL_CAP": {"status": "REPAIR", "reason": "Credible full-period result, but preliminary OOS is negative."},
+    "PROFITABLE_SMALL_CAP": {"status": "ARCHIVED", "reason": "Expanded-universe full-period and preliminary OOS returns are both negative."},
     "CONSERVATIVE_ASSET_GROWTH": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence."},
     "CASH_FLOW_YIELD": {"status": "ARCHIVED", "reason": "Near-zero net return, negative preliminary OOS return, and cost drag exceeds edge."},
     "MARGIN_IMPROVEMENT": {"status": "ACTIVE", "reason": "Strongest net Sharpe, positive preliminary OOS, and low legacy correlation."},
     "REVENUE_ACCELERATION": {"status": "REPAIR", "reason": "Positive preliminary OOS, but weak full-period Sharpe and deep drawdown."},
-    "CASH_FLOW_MOMENTUM": {"status": "REPAIR", "reason": "Positive preliminary OOS and low correlation, but sub-threshold full-period Sharpe."},
-    "LOW_LEVERAGE_QUALITY": {"status": "REPAIR", "reason": "Positive return and OOS, but weak Sharpe and drawdown exceeds 30%."},
+    "CASH_FLOW_MOMENTUM": {"status": "ARCHIVED", "reason": "Expanded-universe full-period and preliminary OOS returns are both negative."},
+    "LOW_LEVERAGE_QUALITY": {"status": "ARCHIVED", "reason": "Expanded-universe net and preliminary OOS returns are negative."},
     "QUALITY_AT_REASONABLE_PRICE": {"status": "REPAIR", "reason": "Weak full-period evidence and negative OOS; retained only for low correlation."},
     "SHAREHOLDER_YIELD": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence."},
 }
@@ -109,13 +109,43 @@ FINAL_DELIVERY_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "FILING_SHOCK_CONTINUATION": {"status": "ACTIVE", "reason": "Positive standalone, OOS, doubled-cost, delayed-execution, and marginal portfolio evidence."},
     "FUNDAMENTAL_SHOCK_RECOVERY": {"status": "ACTIVE", "reason": "Positive standalone, OOS, doubled-cost, delayed-execution, and diversification evidence."},
     "CROSS_SECTIONAL_DISPERSION_REVERSAL": {"status": "DATA_INSUFFICIENT", "reason": "Average eligible cross-section is below the minimum diagnostic threshold."},
-    "LIQUIDITY_SHOCK_RECOVERY": {"status": "DATA_INSUFFICIENT", "reason": "Strong preliminary result, but average eligible cross-section is below the minimum diagnostic threshold."},
+    "LIQUIDITY_SHOCK_RECOVERY": {"status": "DATA_INSUFFICIENT", "reason": "Sparse event cross-section and negative expanded-universe net and preliminary OOS results."},
     "VOLATILITY_SCALED_TREND": {"status": "REPAIR", "reason": "Weak full-period Sharpe, doubled costs remove the edge, and marginal contribution is negative."},
     "DOWNSIDE_RESILIENT_MOMENTUM": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence with negative marginal contribution."},
     "REVENUE_ACCELERATION_QUALITY": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS evidence with negative marginal contribution."},
     "CASH_FLOW_GROWTH_QUALITY": {"status": "ACTIVE", "reason": "Positive standalone, OOS, doubled-cost, delayed-execution, and marginal portfolio evidence."},
-    "OPERATING_EFFICIENCY_IMPROVEMENT": {"status": "REPAIR", "reason": "Positive evidence remains, but full-period Sharpe is below the ACTIVE threshold and correlation is elevated."},
+    "OPERATING_EFFICIENCY_IMPROVEMENT": {"status": "REPAIR", "reason": "Positive net and OOS evidence, but marginal Combined Portfolio Sharpe contribution is negative."},
     "DELEVERAGING_PROFITABILITY": {"status": "DATA_INSUFFICIENT", "reason": "Reliable point-in-time debt/assets or debt/equity history is unavailable."},
+}
+
+EXPANDED_SELECTION_CANDIDATE_IDS: tuple[str, ...] = (
+    "LIQUIDITY_SHOCK_RECOVERY",
+    "OPERATING_EFFICIENCY_IMPROVEMENT",
+    "CAPEX_EFFICIENCY",
+    "PROFITABLE_SMALL_CAP",
+    "CASH_FLOW_MOMENTUM",
+    "REVENUE_ACCELERATION",
+    "LOW_LEVERAGE_QUALITY",
+    "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER",
+    "GROSS_PROFITABILITY_GROWTH",
+    "CASH_FLOW_MARGIN_IMPROVEMENT",
+    "QUALITY_MOMENTUM_COMPOSITE",
+    "LOW_ACCRUAL_MOMENTUM",
+)
+
+EXPANDED_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "LIQUIDITY_SHOCK_RECOVERY": {"status": "DATA_INSUFFICIENT", "reason": "Sparse eligible event cross-section and negative net/OOS results."},
+    "OPERATING_EFFICIENCY_IMPROVEMENT": {"status": "REPAIR", "reason": "Positive net and OOS evidence, but negative marginal portfolio Sharpe contribution."},
+    "CAPEX_EFFICIENCY": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results."},
+    "PROFITABLE_SMALL_CAP": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results."},
+    "CASH_FLOW_MOMENTUM": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results."},
+    "REVENUE_ACCELERATION": {"status": "REPAIR", "reason": "Positive net and OOS results, but Sharpe is below 0.25."},
+    "LOW_LEVERAGE_QUALITY": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results."},
+    "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER": {"status": "ACTIVE", "reason": "Passed positive net/OOS, Sharpe, doubled-cost, delayed-execution, correlation, coverage, and marginal portfolio gates."},
+    "GROSS_PROFITABILITY_GROWTH": {"status": "REPAIR", "reason": "Positive preliminary OOS, but negative full-period net return and Sharpe."},
+    "CASH_FLOW_MARGIN_IMPROVEMENT": {"status": "REPAIR", "reason": "Positive full-period net result, but negative preliminary OOS and low Sharpe."},
+    "QUALITY_MOMENTUM_COMPOSITE": {"status": "REPAIR", "reason": "Positive preliminary OOS, but negative full-period net return and Sharpe."},
+    "LOW_ACCRUAL_MOMENTUM": {"status": "REPAIR", "reason": "Strong standalone and robustness evidence, but negative marginal portfolio Sharpe contribution."},
 }
 
 C3A2_SPECS: tuple[StrategySpec, ...] = (

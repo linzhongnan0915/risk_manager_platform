@@ -19,26 +19,16 @@ from src.strategies.strategy_factory import (
     load_context,
     rank_and_weight,
 )
-from src.strategies.worldquant.market_data import download_ohlcv
 from src.strategies.worldquant.portfolio_returns import compute_portfolio_returns_from_weights
 
 PACK_ID = "FINAL_FUNDAMENTAL_RESEARCH_V1"
 OUTPUT_ROOT = Path("output/research/final_fundamental_research_v1")
-OHLCV_CACHE = Path("data/raw/fundamental_research/fundamental_expansion_ohlcv.csv")
+OHLCV_CACHE = Path("data/raw/fundamental_research/expanded_diagnostic_ohlcv.csv")
 START_DATE = "2018-01-02"
 END_DATE = "2026-06-10"
 REBALANCE_EVERY = 20
 MIN_CROSS_SECTION = 20
 BUY_BPS = SELL_BPS = 5.0
-
-DIAGNOSTIC_UNIVERSE = (
-    "AAPL", "AMD", "AMZN", "BAC", "CAT", "COST", "CSCO", "CVX", "DE", "F",
-    "GM", "GOOGL", "HD", "IBM", "INTC", "JNJ", "JPM", "KO", "LOW", "META",
-    "MSFT", "MU", "NKE", "ORCL", "PEP", "PFE", "SBUX", "TGT", "WMT", "XOM",
-    "ABBV", "ABT", "ADBE", "AMAT", "AXP", "BKNG", "BLK", "CMCSA", "COP", "CRM",
-    "DIS", "GE", "GILD", "GS", "HON", "LIN", "LLY", "LMT", "MA", "MCD",
-    "MDT", "MMM", "MRK", "NFLX", "NVDA", "QCOM", "RTX", "TXN", "UNH", "V",
-)
 
 CANDIDATE_FORMULAS = {
     "FUNDAMENTAL_MOMENTUM": ["annual revenue growth", "annual change operating margin", "annual change operating_cash_flow/assets"],
@@ -117,6 +107,7 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
     revenue_now, revenue_prev = _last(annual, "revenue"), _last(annual, "revenue", 2)
     assets_now, assets_prev = _last(annual, "assets"), _last(annual, "assets", 2)
     op_now, op_prev = _last(annual, "operating_income"), _last(annual, "operating_income", 2)
+    gp_now, gp_prev = _last(annual, "gross_profit"), _last(annual, "gross_profit", 2)
     ocf_now, ocf_prev = _last(annual, "operating_cash_flow"), _last(annual, "operating_cash_flow", 2)
     revenue_prior = _last(annual, "revenue", 3)
     ocf_prior = _last(annual, "operating_cash_flow", 3)
@@ -136,6 +127,8 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
         "annual_ocf_growth": ocf_growth,
         "annual_margin_change": safe_divide(op_now, revenue_now) - safe_divide(op_prev, revenue_prev),
         "annual_ocf_assets_change": safe_divide(ocf_now, assets_now) - safe_divide(ocf_prev, assets_prev),
+        "annual_gp_assets_change": safe_divide(gp_now, assets_now) - safe_divide(gp_prev, assets_prev),
+        "annual_op_assets_change": safe_divide(op_now, assets_now) - safe_divide(op_prev, assets_prev),
         "annual_cash_flow_margin_change": safe_divide(ocf_now, revenue_now) - safe_divide(ocf_prev, revenue_prev),
         "annual_asset_turnover_change": safe_divide(revenue_now, assets_now) - safe_divide(revenue_prev, assets_prev),
         "fcf_assets": safe_divide(fcf, assets),
@@ -242,8 +235,8 @@ def build_trade_log(
     rows: list[dict[str, object]] = []
     if target.empty:
         return pd.DataFrame(columns=columns)
-    previous = target.iloc[0].copy()
-    for signal_date, weights in target.iloc[1:].iterrows():
+    previous = pd.Series(0.0, index=target.columns)
+    for signal_date, weights in target.iloc[:-1].iterrows():
         if weights.equals(previous):
             continue
         for ticker, target_weight in weights.items():
@@ -298,6 +291,8 @@ def _summary(strategy_id: str, daily: pd.DataFrame, eligible: pd.DataFrame) -> d
     recommendation = "KEEP_CANDIDATE" if sharpe >= 0.4 and oos_sharpe > 0 else (
         "REVIEW" if sharpe >= 0.2 or oos_sharpe > 0 else "REJECT_CANDIDATE"
     )
+    eligible_counts = eligible.sum(axis=1)
+    positive_eligible_counts = eligible_counts.loc[eligible_counts.gt(0)]
     return {
         "strategy_id": strategy_id,
         "test_period_start": daily["date"].iloc[0].date().isoformat(),
@@ -316,7 +311,8 @@ def _summary(strategy_id: str, daily: pd.DataFrame, eligible: pd.DataFrame) -> d
         "preliminary_oos_convention": "Chronological 70/30 split; PRELIMINARY_OOS",
         "preliminary_oos_net_return": float(oos.add(1).prod() - 1),
         "preliminary_oos_sharpe": oos_sharpe,
-        "average_eligible_count": float(eligible.sum(axis=1).mean()),
+        "average_eligible_count": float(positive_eligible_counts.mean()) if len(positive_eligible_counts) else 0.0,
+        "minimum_eligible_count": int(positive_eligible_counts.min()) if len(positive_eligible_counts) else 0,
         "recommendation": recommendation,
         "research_status": "CURRENT_LISTED_DIAGNOSTIC | SURVIVORSHIP_BIAS_PRESENT | RESEARCH_CANDIDATE",
         "live_allocation_approved": False,
@@ -384,13 +380,9 @@ def run_fundamental_research_pack(project_root: str | Path, *, user_agent: str) 
     if raw_cache.exists():
         context = load_context(raw_cache)
     else:
-        ohlcv, _, _ = download_ohlcv(
-            list(DIAGNOSTIC_UNIVERSE), start_date=START_DATE, end_date=END_DATE,
-            batch_size=30, include_rejected_history=True,
+        raise FileNotFoundError(
+            "expanded diagnostic OHLCV cache is required; run scripts/run_expanded_selection_research.py"
         )
-        raw_cache.parent.mkdir(parents=True, exist_ok=True)
-        ohlcv.to_csv(raw_cache, index=False)
-        context = load_context(raw_cache)
 
     client = SecEdgarClient(user_agent=user_agent, cache_dir=root / "data/raw/sec_edgar_cache")
     cik_map = client.ticker_cik_map()
@@ -430,7 +422,7 @@ def run_fundamental_research_pack(project_root: str | Path, *, user_agent: str) 
             {
                 "run_id": run_id, "pack_id": PACK_ID, "candidate_formulas": CANDIDATE_FORMULAS,
                 "universe": list(context.panels["close"].columns), "universe_rule": (
-                    "Deterministic current-listed 60-ticker liquid diagnostic universe; price >= $5; "
+                    "Expanded current-listed liquid diagnostic universe; price >= $5; "
                     "lagged ADV20 >= $5m; minimum 20 eligible names. PROFITABLE_SMALL_CAP is "
                     "relative-small-cap within this diagnostic universe and also requires positive revenue growth."
                 ),

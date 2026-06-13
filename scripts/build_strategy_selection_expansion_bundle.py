@@ -15,6 +15,8 @@ if str(ROOT) not in sys.path:
 from src.reporting.strategy_factory_research_adapter import _annual_return, _risk_packet
 from src.strategies.platform_registry import (
     COMPOSITE_ID,
+    EXPANDED_SELECTION_CANDIDATE_IDS,
+    EXPANDED_SELECTION_STATUS,
     FINAL_DELIVERY_CANDIDATE_IDS,
     FINAL_DELIVERY_SELECTION_STATUS,
     FUNDAMENTAL_RESEARCH_CANDIDATE_IDS,
@@ -26,6 +28,7 @@ BUNDLE_PATH = ROOT / "dashboard/data/us_equity_research_bundle.json"
 PACK_ROOT = ROOT / "output/research/final_fundamental_research_v1"
 FINAL_ROOT = ROOT / "output/research/final_strategy_research_v1"
 DELIVERY_ROOT = ROOT / "output/research/final_platform_delivery_v1"
+EXPANDED_ROOT = ROOT / "output/research/final_expanded_selection_v1"
 ACTIVE_IDS = tuple(
     strategy_id
     for strategy_id, decision in STRATEGY_SELECTION_STATUS.items()
@@ -37,6 +40,10 @@ ACTIVE_IDS = tuple(
 ) + tuple(
     strategy_id
     for strategy_id, decision in FINAL_DELIVERY_SELECTION_STATUS.items()
+    if decision["status"] == "ACTIVE"
+) + tuple(
+    strategy_id
+    for strategy_id, decision in EXPANDED_SELECTION_STATUS.items()
     if decision["status"] == "ACTIVE"
 )
 
@@ -89,9 +96,10 @@ def _candidate_items(correlation: pd.DataFrame) -> list[dict]:
     trades = pd.read_csv(PACK_ROOT / "trade_log.csv")
     regimes = pd.read_csv(FINAL_ROOT / "market_proxy_regime_v0.csv")
     manifest = json.loads((PACK_ROOT / "run_manifest.json").read_text(encoding="utf-8"))
-    retained_corr = correlation.loc[list(FUNDAMENTAL_RESEARCH_CANDIDATE_IDS), list(ACTIVE_IDS)]
+    candidate_ids = [value for value in FUNDAMENTAL_RESEARCH_CANDIDATE_IDS if value not in EXPANDED_SELECTION_CANDIDATE_IDS]
+    retained_corr = correlation.loc[candidate_ids, list(ACTIVE_IDS)]
     output = []
-    for strategy_id in FUNDAMENTAL_RESEARCH_CANDIDATE_IDS:
+    for strategy_id in candidate_ids:
         row = summary.loc[strategy_id]
         returns = daily.loc[daily["strategy_id"] == strategy_id].sort_values("date")
         net = pd.Series(returns["net_return"].values, index=returns["date"])
@@ -219,16 +227,22 @@ def _candidate_items(correlation: pd.DataFrame) -> list[dict]:
     return output
 
 
-def _delivery_items(correlation: pd.DataFrame, shared_dates: list[str]) -> list[dict]:
-    summary = pd.read_csv(DELIVERY_ROOT / "candidate_summary.csv").set_index("strategy_id")
-    daily = pd.read_csv(DELIVERY_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
-    holdings = pd.read_csv(DELIVERY_ROOT / "holdings.csv")
-    trades = pd.read_csv(DELIVERY_ROOT / "trade_log.csv")
-    regimes = pd.read_csv(DELIVERY_ROOT / "market_proxy_regime_v0.csv")
+def _delivery_items(
+    correlation: pd.DataFrame, shared_dates: list[str], *,
+    candidate_ids: tuple[str, ...] = FINAL_DELIVERY_CANDIDATE_IDS,
+    decisions: dict[str, dict[str, str]] = FINAL_DELIVERY_SELECTION_STATUS,
+    pack_root: Path = DELIVERY_ROOT,
+    research_source: str = "FINAL_PLATFORM_DELIVERY_RESEARCH_V1",
+) -> list[dict]:
+    summary = pd.read_csv(pack_root / "candidate_summary.csv").set_index("strategy_id")
+    daily = pd.read_csv(pack_root / "daily_strategy_returns.csv", parse_dates=["date"])
+    holdings = pd.read_csv(pack_root / "holdings.csv")
+    trades = pd.read_csv(pack_root / "trade_log.csv")
+    regimes = pd.read_csv(pack_root / "market_proxy_regime_v0.csv")
     output = []
-    for strategy_id in FINAL_DELIVERY_CANDIDATE_IDS:
+    for strategy_id in candidate_ids:
         row = summary.loc[strategy_id]
-        decision = FINAL_DELIVERY_SELECTION_STATUS[strategy_id]
+        decision = decisions[strategy_id]
         status = decision["status"]
         eligible = status == "ACTIVE"
         strategy_daily = daily.loc[daily["strategy_id"].eq(strategy_id)].sort_values("date")
@@ -268,7 +282,7 @@ def _delivery_items(correlation: pd.DataFrame, shared_dates: list[str]) -> list[
                 "backtest": {
                     "strategy_id": strategy_id, "name": strategy_id.replace("_", " ").title(),
                     "literature_source": "Final platform delivery diagnostic batch",
-                    "research_source": "FINAL_PLATFORM_DELIVERY_RESEARCH_V1",
+                    "research_source": research_source,
                     "hypothesis": str(row["economic_rationale"]), "signal_summary": str(row["economic_rationale"]),
                     "universe": str(row["actual_universe_used"]), "rebalance": "Every 20 trading days",
                     "failure_modes": str(row["classification_reason"]), "asset_class": "US individual equities",
@@ -428,8 +442,10 @@ def build_bundle() -> dict:
     _apply_old_statuses(results)
     results[:] = [item for item in results if item["strategy_id"] not in FUNDAMENTAL_RESEARCH_CANDIDATE_IDS]
     results[:] = [item for item in results if item["strategy_id"] not in FINAL_DELIVERY_CANDIDATE_IDS]
+    results[:] = [item for item in results if item["strategy_id"] not in EXPANDED_SELECTION_CANDIDATE_IDS]
     fundamental_daily = pd.read_csv(PACK_ROOT / "daily_net_returns.csv", parse_dates=["date"])
     fundamental_returns = fundamental_daily.pivot(index="date", columns="strategy_id", values="net_return")
+    fundamental_returns = fundamental_returns.drop(columns=list(EXPANDED_SELECTION_CANDIDATE_IDS), errors="ignore")
     existing_returns = pd.DataFrame(
         {
             item["strategy_id"]: item["backtest"]["return_series"]["net_returns"]
@@ -440,11 +456,20 @@ def build_bundle() -> dict:
     )
     delivery_daily = pd.read_csv(DELIVERY_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
     delivery_returns = delivery_daily.pivot(index="date", columns="strategy_id", values="net_return")
-    correlation = pd.concat([fundamental_returns, delivery_returns, existing_returns], axis=1, join="inner").corr()
+    delivery_returns = delivery_returns.drop(columns=list(EXPANDED_SELECTION_CANDIDATE_IDS), errors="ignore")
+    expanded_daily = pd.read_csv(EXPANDED_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
+    expanded_returns = expanded_daily.pivot(index="date", columns="strategy_id", values="net_return")
+    correlation = pd.concat([fundamental_returns, delivery_returns, expanded_returns, existing_returns], axis=1, join="inner").corr()
     composite = next(item for item in results if item["strategy_id"] == COMPOSITE_ID)
     results.remove(composite)
     results.extend(_candidate_items(correlation))
-    results.extend(_delivery_items(correlation, payload["shared_dates"]))
+    original_delivery_ids = tuple(value for value in FINAL_DELIVERY_CANDIDATE_IDS if value not in EXPANDED_SELECTION_CANDIDATE_IDS)
+    results.extend(_delivery_items(correlation, payload["shared_dates"], candidate_ids=original_delivery_ids))
+    results.extend(_delivery_items(
+        correlation, payload["shared_dates"], candidate_ids=EXPANDED_SELECTION_CANDIDATE_IDS,
+        decisions=EXPANDED_SELECTION_STATUS, pack_root=EXPANDED_ROOT,
+        research_source="FINAL_EXPANDED_SELECTION_V1",
+    ))
     results.append(composite)
     _rebuild_composite(results, payload["shared_dates"])
     counts = {
@@ -493,20 +518,20 @@ def build_bundle() -> dict:
 def main() -> int:
     payload = build_bundle()
     BUNDLE_PATH.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
-    manifest_path = DELIVERY_ROOT / "run_manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     composite = next(
         row for row in payload["factory_strategy_research"]["results"]
         if row["strategy_id"] == COMPOSITE_ID
     )["backtest"]["factory_research"]["combined_portfolio"]
-    manifest.update(
-        {
-            "registry_updated": True, "bundle_updated": True, "dashboard_updated": True,
-            "combined_portfolio_updated": True, "combined_portfolio_N": composite["N"],
-            "combined_portfolio_equal_weight": composite["equal_weight"],
-        }
-    )
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    for manifest_path in (DELIVERY_ROOT / "run_manifest.json", EXPANDED_ROOT / "run_manifest.json"):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest.update(
+            {
+                "registry_updated": True, "bundle_updated": True, "dashboard_updated": True,
+                "combined_portfolio_updated": True, "combined_portfolio_N": composite["N"],
+                "combined_portfolio_equal_weight": composite["equal_weight"],
+            }
+        )
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"Wrote {BUNDLE_PATH} ({payload['factory_strategy_research']['results_count']} results)")
     return 0
 

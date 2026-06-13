@@ -1,0 +1,2 @@
+stage,ticker,reason,detail
+sec_download,PFBC,HTTPError,HTTP Error 404: Not Found

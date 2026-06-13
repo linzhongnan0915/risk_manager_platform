@@ -24,7 +24,6 @@ from src.strategies.c3a2_signals import (
 )
 from src.strategies.fundamental_data import SecEdgarClient, normalize_company_facts
 from src.strategies.fundamental_research import (
-    DIAGNOSTIC_UNIVERSE,
     OHLCV_CACHE,
     _rank_mean,
     build_candidate_scores,

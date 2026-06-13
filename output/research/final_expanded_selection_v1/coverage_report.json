@@ -1,0 +1,100 @@
+{
+  "raw_securities": 12803,
+  "common_equities": 4984,
+  "ohlcv_downloads_attempted": 400,
+  "ohlcv_downloads_succeeded": 400,
+  "latest_price_liquidity_eligible": 229,
+  "universe_source": "CURRENT_LISTED_DIAGNOSTIC",
+  "survivorship_bias_present": true,
+  "source_universe_audit": {
+    "nasdaq_listed_rows": 5505,
+    "other_exchange_rows": 7298,
+    "total_unique_symbols": 12803,
+    "total_rows": 12803,
+    "etf_exclusions": 5329,
+    "test_issue_exclusions": 33,
+    "non_common_security_exclusions": 1956,
+    "non_common_exclusions_by_reason": {
+      "warrant": 467,
+      "preferred_share": 441,
+      "units": 300,
+      "closed_end_fund": 240,
+      "spac_shell": 207,
+      "notes_debt": 172,
+      "rights": 127,
+      "fund_trust": 2
+    },
+    "adr_count": 486,
+    "needs_review_count": 390,
+    "eligible_candidate_count": 5095,
+    "reit_common_equity_count": 29,
+    "fund_closed_end_exclusion_count": 242,
+    "duplicate_symbol_rows": 0
+  },
+  "sec_mapped": 229,
+  "sec_facts_loaded": 216,
+  "eligible_by_financial_field": {
+    "assets": 216,
+    "capex": 182,
+    "dividends_paid": 146,
+    "equity": 215,
+    "gross_profit": 115,
+    "liabilities": 180,
+    "net_income": 216,
+    "operating_cash_flow": 214,
+    "operating_income": 183,
+    "revenue": 196,
+    "share_repurchases": 177,
+    "shares_outstanding": 204
+  },
+  "final_eligible_by_strategy": {
+    "LIQUIDITY_SHOCK_RECOVERY": {
+      "average": 8.078627968337731,
+      "minimum": 20
+    },
+    "OPERATING_EFFICIENCY_IMPROVEMENT": {
+      "average": 145.0815138282387,
+      "minimum": 114
+    },
+    "CAPEX_EFFICIENCY": {
+      "average": 153.35031538088307,
+      "minimum": 130
+    },
+    "PROFITABLE_SMALL_CAP": {
+      "average": 35.80980106744299,
+      "minimum": 20
+    },
+    "CASH_FLOW_MOMENTUM": {
+      "average": 152.57302280446385,
+      "minimum": 127
+    },
+    "REVENUE_ACCELERATION": {
+      "average": 144.5793304221252,
+      "minimum": 114
+    },
+    "LOW_LEVERAGE_QUALITY": {
+      "average": 102.32508491023775,
+      "minimum": 80
+    },
+    "OVERNIGHT_GAP_REVERSAL_REDUCED_TURNOVER": {
+      "average": 108.20572537603105,
+      "minimum": 20
+    },
+    "GROSS_PROFITABILITY_GROWTH": {
+      "average": 78.78165938864629,
+      "minimum": 65
+    },
+    "CASH_FLOW_MARGIN_IMPROVEMENT": {
+      "average": 149.16690926734594,
+      "minimum": 121
+    },
+    "QUALITY_MOMENTUM_COMPOSITE": {
+      "average": 119.21785540999515,
+      "minimum": 86
+    },
+    "LOW_ACCRUAL_MOMENTUM": {
+      "average": 155.74204946996466,
+      "minimum": 130
+    }
+  }
+}
