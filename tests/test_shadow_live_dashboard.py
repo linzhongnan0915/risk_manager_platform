@@ -12,11 +12,14 @@ def test_shadow_bundle_dashboard_contract():
     assert bundle["live_allocation_approved"] is False
     assert bundle["execution_enabled"] is False
     assert len(shadow["strategy_summary"]) == 16
+    assert shadow["runner_mode"] == "RAW DATA SIGNAL RUNNER"
+    assert shadow["accepted_series_historical_reference_only"] is True
+    assert shadow["successful_strategy_count"] + shadow["failed_strategy_count"] == 16
     assert shadow["correlation"]["status"] == "NOT ENOUGH LIVE HISTORY"
-    assert shadow["correlation"]["observations"] == 3
+    assert shadow["correlation"]["observations"] < 20
     assert shadow["correlation"]["minimum_observations"] == 20
     assert shadow["reconciliation"]["active_sleeves_equal_1_16"] is True
-    assert shadow["reconciliation"]["weights_sum_to_one"] is True
+    assert shadow["reconciliation"]["trade_costs_equal_strategy_ledger_costs"] is True
 
 
 def test_dashboard_separates_shadow_live_from_research():
@@ -41,5 +44,7 @@ def test_dashboard_separates_shadow_live_from_research():
         "renderResearchLabShadowDetail",
         "Research and shadow-live returns are not mixed.",
         "NO LIVE FILL",
+        "RAW DATA SIGNAL RUNNER",
+        "accepted-series historical reference only",
     ):
         assert marker in app

@@ -409,11 +409,15 @@ function renderShadowOperationalPanels(artifact) {
     const reconciliation = shadow.reconciliation || {};
     const latest = (shadow.portfolio_ledger || []).at(-1);
     const cumulativeCost = (shadow.portfolio_ledger || []).reduce((total, row) => total + (row.transaction_cost || 0), 0);
+    const rawStatus = shadow.runner_mode === "RAW DATA SIGNAL RUNNER"
+      ? `<p><strong>RAW DATA SIGNAL RUNNER</strong><br>Calculated ${shadow.successful_strategy_count || 0}/16 | failed/unavailable ${shadow.failed_strategy_count || 0} | latest target ${escapeHtml(shadow.latest_valid_target_position_date || "n/a")} | latest execution ${escapeHtml(shadow.latest_simulated_execution_date || "pending")} | Trade Log rows ${shadow.trade_log_row_count || 0}</p>`
+      : "<p><strong>RETROSPECTIVE_PAPER_BACKFILL</strong> | accepted-series historical reference only.</p>";
     const portfolioSummary = latest
       ? `<p><strong>Portfolio:</strong> NAV ${money(latest.ending_nav)} | daily P&amp;L ${money(latest.net_pnl)} | cumulative P&amp;L ${money(latest.cumulative_pnl)} | current DD ${pct(latest.current_drawdown, 2)} | cumulative cost ${money(cumulativeCost)}<br><strong>Allocation:</strong> ACTIVE ${latest.active_count} | equal sleeve ${pct(latest.equal_strategy_weight, 2)} | gross/net exposure ${num(latest.gross_exposure, 2)} / ${num(latest.net_exposure, 2)}</p>`
       : "";
     status.innerHTML = `<p><strong>SHADOW LIVE / PAPER PORTFOLIO</strong><br>Latest completed interval: ${escapeHtml(artifact.live_market_as_of || "n/a")} · last successful run: ${escapeHtml(shadow.last_successful_run || "n/a")} · live capital 0% · execution disabled</p>
       <p><strong>Reconciliation:</strong> ${Object.entries(reconciliation).filter(([, value]) => value === false).length ? "ALERT" : "PASS"} · pending: ${(shadow.pending_intervals || []).join(", ") || "none"}</p>
+      ${rawStatus}
       ${portfolioSummary}
       ${(shadow.alerts || []).map((alert) => `<p><strong>${escapeHtml(alert.code)}</strong>: ${escapeHtml(alert.detail)}</p>`).join("")}`;
   }

@@ -1,46 +1,107 @@
 {
-  "run_timestamp": "2026-06-13T18:18:22.592965+00:00",
-  "code_commit": "c9b776516dad7619a01f3bd837d1d87904cf980b",
-  "strategy_version": "accepted_final_strategy_research_integration_v1",
-  "universe_version": "COMMITTED_RESEARCH_BUNDLE",
-  "data_as_of": "2026-06-08",
-  "active_count": 16,
-  "equal_weight": 0.0625,
-  "portfolio_rows_added": 0,
-  "strategy_rows_added": 0,
-  "holdings_rows": 402,
-  "trade_rows": 0,
+  "runner_mode": "RAW DATA SIGNAL RUNNER",
+  "accepted_series_pnl_fallback": false,
+  "run_timestamp": "2026-06-13T19:52:04.520411+00:00",
+  "run_id": "f802154620f88fa1",
+  "code_commit": "f9da06d807b12e7c07f4424c10b11e56d237ccc4",
+  "raw_data": {
+    "ohlcv": {
+      "provider": "yfinance",
+      "universe_count": 229,
+      "download_start": "2026-06-05",
+      "download_end_exclusive": "2026-06-14",
+      "downloaded_rows": 0,
+      "cache_rows": 140606,
+      "cache_tickers": 229,
+      "latest_raw_ohlcv_date": "2026-06-12",
+      "duplicate_date_count": 0,
+      "all_nan_failures": 0,
+      "incremental_download_warnings": [],
+      "failed_tickers": [],
+      "stale_or_missing_latest_tickers": []
+    },
+    "sec": {
+      "sec_mapped": 216,
+      "sec_facts_loaded": 216,
+      "update_mode": "NORMALIZED_CACHE_CURRENT"
+    }
+  },
+  "signal_functions_invoked": 16,
+  "successful_strategy_count": 10,
+  "failed_strategy_count": 6,
+  "failed_strategies": {
+    "C3A1_002": "DATA_UNAVAILABLE missing raw OHLCV columns: ADSK, BE, BROS, CAPR, CLYM, DASH, DV, EQH, HL, HTZ, JBIO, KKR, LW, MKSI, MZTI, PATH, RHLD, SVV, UUUU, WAT",
+    "C3A1_003": "DATA_UNAVAILABLE missing raw OHLCV columns: ADEA, ADT, AOSL, BBY, BE, CAPR, CLYM, DB, GLBE, KKR, MKSI, RDY, RGEN, RHLD, SATL, STEP, VTS, WLK",
+    "C3A1_013": "DATA_UNAVAILABLE missing raw OHLCV columns: APP, CCB, CCOI, GAB, KALV, NAVN, NSP, OBK, ORLY, PRG, SENEA, SNPS, USLM, VTOL",
+    "C3A2_008": "DATA_UNAVAILABLE missing raw OHLCV columns: ADSK, ADT, BBY, BE, CAPR, CLYM, CVSA, EQH, HEI.A, HL, ITGR, JBIO, LW, MKSI, OTF, PCOR, SIDU, SNPS, SWKS",
+    "C3A1_001": "DATA_UNAVAILABLE missing raw OHLCV columns: AMH, APAM, ASM, ASTS, BBY, BE, CAPR, CLYM, DASH, DECK, ESAB, GLBE, HL, JBIO, MAA, SNPS, STEP, USAR, UUUU, VTS",
+    "C3A1_015": "DATA_UNAVAILABLE missing raw OHLCV columns: ALRM, ARW, BBSI, BRK.A, CAPR, CLYM, CVLG, ESAB, GFS, GLBE, HAYW, HYT, IMSR, LNTH, MKSI, OTF, PATH, RHLD, SATL, WSR"
+  },
+  "latest_valid_target_position_date": "2026-06-12",
+  "latest_simulated_execution_date": "2026-06-11",
   "pending_intervals": [
-    "2026-06-09"
+    "2026-06-11",
+    "2026-06-12"
   ],
-  "warnings": [
+  "target_rows_added": 4652,
+  "pre_trade_rows_added": 2760,
+  "post_trade_rows_added": 1284,
+  "trade_rows_added": 723,
+  "strategy_rows_added": 20,
+  "portfolio_rows_added": 2,
+  "alerts": [
     {
-      "severity": "WARNING",
-      "code": "HISTORICAL_HOLDINGS_NOT_AVAILABLE",
-      "detail": "Committed bundle preserves latest accepted holdings and recent trades, not complete daily historical holdings."
+      "severity": "ERROR",
+      "code": "STRATEGY_DATA_UNAVAILABLE",
+      "strategy_id": "C3A1_002",
+      "detail": "DATA_UNAVAILABLE missing raw OHLCV columns: ADSK, BE, BROS, CAPR, CLYM, DASH, DV, EQH, HL, HTZ, JBIO, KKR, LW, MKSI, MZTI, PATH, RHLD, SVV, UUUU, WAT"
     },
     {
-      "severity": "INFO",
-      "code": "PENDING_RETURN_INTERVAL",
-      "detail": "Latest pending dates: 2026-06-09"
+      "severity": "ERROR",
+      "code": "STRATEGY_DATA_UNAVAILABLE",
+      "strategy_id": "C3A1_003",
+      "detail": "DATA_UNAVAILABLE missing raw OHLCV columns: ADEA, ADT, AOSL, BBY, BE, CAPR, CLYM, DB, GLBE, KKR, MKSI, RDY, RGEN, RHLD, SATL, STEP, VTS, WLK"
+    },
+    {
+      "severity": "ERROR",
+      "code": "STRATEGY_DATA_UNAVAILABLE",
+      "strategy_id": "C3A1_013",
+      "detail": "DATA_UNAVAILABLE missing raw OHLCV columns: APP, CCB, CCOI, GAB, KALV, NAVN, NSP, OBK, ORLY, PRG, SENEA, SNPS, USLM, VTOL"
+    },
+    {
+      "severity": "ERROR",
+      "code": "STRATEGY_DATA_UNAVAILABLE",
+      "strategy_id": "C3A2_008",
+      "detail": "DATA_UNAVAILABLE missing raw OHLCV columns: ADSK, ADT, BBY, BE, CAPR, CLYM, CVSA, EQH, HEI.A, HL, ITGR, JBIO, LW, MKSI, OTF, PCOR, SIDU, SNPS, SWKS"
+    },
+    {
+      "severity": "ERROR",
+      "code": "STRATEGY_DATA_UNAVAILABLE",
+      "strategy_id": "C3A1_001",
+      "detail": "DATA_UNAVAILABLE missing raw OHLCV columns: AMH, APAM, ASM, ASTS, BBY, BE, CAPR, CLYM, DASH, DECK, ESAB, GLBE, HL, JBIO, MAA, SNPS, STEP, USAR, UUUU, VTS"
+    },
+    {
+      "severity": "ERROR",
+      "code": "STRATEGY_DATA_UNAVAILABLE",
+      "strategy_id": "C3A1_015",
+      "detail": "DATA_UNAVAILABLE missing raw OHLCV columns: ALRM, ARW, BBSI, BRK.A, CAPR, CLYM, CVLG, ESAB, GFS, GLBE, HAYW, HYT, IMSR, LNTH, MKSI, OTF, PATH, RHLD, SATL, WSR"
     }
   ],
   "reconciliation": {
+    "target_delta_matches_trade_log": true,
+    "trade_log_reconstructs_post_trade_holdings": true,
+    "trade_costs_equal_strategy_ledger_costs": true,
     "strategy_pnl_sums_to_portfolio_pnl": true,
-    "strategy_costs_sum_to_portfolio_costs": true,
-    "trade_log_costs_match_ledger_costs": true,
     "active_sleeves_equal_1_16": true,
-    "weights_sum_to_one": true,
     "no_non_active_strategy": true,
     "combined_portfolio_excluded": true,
     "unique_trade_ids": true,
-    "unique_portfolio_dates": true,
-    "holdings_reconstruction": "PARTIAL_LATEST_ACCEPTED_HOLDINGS_ONLY"
+    "unique_target_snapshots": true,
+    "historical_holdings_reconstruction": "PARTIAL_LATEST_ACCEPTED_HOLDINGS_ONLY"
   },
-  "record_labels": [
-    "RETROSPECTIVE_PAPER_BACKFILL",
-    "FORWARD_SHADOW_LIVE"
-  ],
+  "active_count": 16,
+  "equal_weight": 0.0625,
   "live_allocation_approved": false,
-  "execution_enabled": false
+  "execution_enabled": false,
+  "record_label": "FORWARD_SHADOW_LIVE"
 }

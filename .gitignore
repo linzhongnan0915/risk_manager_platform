@@ -23,6 +23,7 @@ output/intraday_refresh.lock
 output/intraday_snapshots/
 output/.yfinance_cache/
 output/shadow/
+output/shadow_live/raw_cache/
 output/research/worldquant_alpha2/
 
 .env
