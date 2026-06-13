@@ -1,0 +1,12 @@
+{
+  "HEDGED_RESIDUAL_MOMENTUM_V2": "Residual momentum orthogonalized to active momentum signals, then explicitly hedged with lagged SPY beta.",
+  "ORTHOGONAL_LOW_ACCRUAL_MOMENTUM": "Lower accruals, positive cash flow, and momentum orthogonalized to active momentum signals.",
+  "CLUSTER_NEUTRAL_MEAN_REVERSION": "Fade lagged five-day residual moves within trailing-return beta/volatility relationship clusters.",
+  "ASSET_LIGHT_COMPOUNDER": "Prefer growth, improving asset turnover, low capex intensity, positive FCF, and stable margins.",
+  "FCF_REINVESTMENT_EFFICIENCY": "Test whether lagged capex is followed by improving growth, efficiency, and positive FCF.",
+  "EARNINGS_QUALITY_VALUE_SPREAD": "Combine point-in-time earnings/FCF/book value spreads with quality and leverage control.",
+  "CASH_CONVERSION_IMPROVEMENT": "Prefer improving cash conversion, disciplined receivables/inventory, and cash-flow margins.",
+  "HIGH_CONVICTION_FILING_DRIFT_V2": "Strict positive fundamental filing change with cash-flow and earnings-quality confirmation.",
+  "CASH_FLOW_INFLECTION_CONTINUATION": "Post-filing continuation after operating-cash-flow inflection or acceleration.",
+  "BALANCE_SHEET_REPAIR_AFTER_STRESS": "Controlled recovery after prior drawdown with improving liabilities, cash flow, and profitability."
+}

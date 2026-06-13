@@ -192,10 +192,30 @@ DIVERSIFIED_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "FREE_CASH_FLOW_PROFITABILITY": {"status": "REPAIR", "reason": "Positive full-period and stressed-cost results, but preliminary OOS is negative and Sharpe is low."},
     "GROSS_MARGIN_STABILITY": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results."},
     "DEBT_PAYDOWN_PROFITABILITY": {"status": "REPAIR", "reason": "Positive full-period and robustness results, but preliminary OOS is negative and Sharpe is low."},
-    "WORKING_CAPITAL_DISCIPLINE": {"status": "ACTIVE", "reason": "Positive net/OOS/robustness results with adequate coverage and measurable Combined Portfolio drawdown and left-tail improvement."},
-    "QUALITY_FILTERED_FILING_DRIFT": {"status": "ACTIVE", "reason": "Passed positive net/OOS, Sharpe, robustness, coverage, duplication, and marginal portfolio-value gates."},
+    "WORKING_CAPITAL_DISCIPLINE": {"status": "REPAIR", "reason": "Net Sharpe is only 0.103 without proven material portfolio benefit."},
+    "QUALITY_FILTERED_FILING_DRIFT": {"status": "REPAIR", "reason": "Preliminary OOS return is only 0.09%, which is not economically meaningful."},
     "NEGATIVE_FILING_SHOCK_REVERSAL": {"status": "REPAIR", "reason": "Positive preliminary OOS, but full-period net and robustness results are negative."},
     "BALANCED_FUNDAMENTAL_MULTIFACTOR": {"status": "REPAIR", "reason": "Positive full-period and robustness results, but preliminary OOS and marginal Sharpe are negative."},
+}
+
+CHALLENGE_CANDIDATE_IDS: tuple[str, ...] = (
+    "HEDGED_RESIDUAL_MOMENTUM_V2", "ORTHOGONAL_LOW_ACCRUAL_MOMENTUM", "CLUSTER_NEUTRAL_MEAN_REVERSION",
+    "ASSET_LIGHT_COMPOUNDER", "FCF_REINVESTMENT_EFFICIENCY", "EARNINGS_QUALITY_VALUE_SPREAD",
+    "CASH_CONVERSION_IMPROVEMENT", "HIGH_CONVICTION_FILING_DRIFT_V2", "CASH_FLOW_INFLECTION_CONTINUATION",
+    "BALANCE_SHEET_REPAIR_AFTER_STRESS",
+)
+
+CHALLENGE_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "HEDGED_RESIDUAL_MOMENTUM_V2": {"status": "REPAIR", "reason": "Negative net and robustness results; explicit SPY hedge and hedge-cost Trade Log remain unsupported by the shared stock-only backtester."},
+    "ORTHOGONAL_LOW_ACCRUAL_MOMENTUM": {"status": "ACTIVE", "reason": "Passed every strict challenge gate, including meaningful positive OOS, robustness, duplication, and portfolio-value checks."},
+    "CLUSTER_NEUTRAL_MEAN_REVERSION": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
+    "ASSET_LIGHT_COMPOUNDER": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
+    "FCF_REINVESTMENT_EFFICIENCY": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
+    "EARNINGS_QUALITY_VALUE_SPREAD": {"status": "REPAIR", "reason": "Preliminary OOS return is negative and net Sharpe is below 0.25."},
+    "CASH_CONVERSION_IMPROVEMENT": {"status": "REPAIR", "reason": "Negative net return, low Sharpe, and negative 2x-cost result."},
+    "HIGH_CONVICTION_FILING_DRIFT_V2": {"status": "REPAIR", "reason": "Monthly shared panel does not prove exact event-timestamp execution."},
+    "CASH_FLOW_INFLECTION_CONTINUATION": {"status": "REPAIR", "reason": "Strong diagnostic evidence, but monthly shared panel does not prove exact event-timestamp execution."},
+    "BALANCE_SHEET_REPAIR_AFTER_STRESS": {"status": "ARCHIVED", "reason": "Negative full-period and preliminary OOS returns."},
 }
 
 C3A2_SPECS: tuple[StrategySpec, ...] = (

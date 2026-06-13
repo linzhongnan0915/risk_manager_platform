@@ -14,6 +14,8 @@ if str(ROOT) not in sys.path:
 
 from src.reporting.strategy_factory_research_adapter import _annual_return, _risk_packet
 from src.strategies.platform_registry import (
+    CHALLENGE_CANDIDATE_IDS,
+    CHALLENGE_SELECTION_STATUS,
     COMPOSITE_ID,
     DIVERSIFIED_CANDIDATE_IDS,
     DIVERSIFIED_SELECTION_STATUS,
@@ -35,6 +37,7 @@ DELIVERY_ROOT = ROOT / "output/research/final_platform_delivery_v1"
 EXPANDED_ROOT = ROOT / "output/research/final_expanded_selection_v1"
 OHLCV_ALPHA_ROOT = ROOT / "output/research/final_ohlcv_alpha_expansion_v1"
 DIVERSIFIED_ROOT = ROOT / "output/research/final_diversified_strategy_batch_v1"
+CHALLENGE_ROOT = ROOT / "output/research/final_strict_challenge_batch_v1"
 ACTIVE_IDS = tuple(
     strategy_id
     for strategy_id, decision in STRATEGY_SELECTION_STATUS.items()
@@ -58,6 +61,10 @@ ACTIVE_IDS = tuple(
 ) + tuple(
     strategy_id
     for strategy_id, decision in DIVERSIFIED_SELECTION_STATUS.items()
+    if decision["status"] == "ACTIVE"
+) + tuple(
+    strategy_id
+    for strategy_id, decision in CHALLENGE_SELECTION_STATUS.items()
     if decision["status"] == "ACTIVE"
 )
 
@@ -462,6 +469,7 @@ def build_bundle() -> dict:
     results[:] = [item for item in results if item["strategy_id"] not in EXPANDED_SELECTION_CANDIDATE_IDS]
     results[:] = [item for item in results if item["strategy_id"] not in OHLCV_ALPHA_CANDIDATE_IDS]
     results[:] = [item for item in results if item["strategy_id"] not in DIVERSIFIED_CANDIDATE_IDS]
+    results[:] = [item for item in results if item["strategy_id"] not in CHALLENGE_CANDIDATE_IDS]
     fundamental_daily = pd.read_csv(PACK_ROOT / "daily_net_returns.csv", parse_dates=["date"])
     fundamental_returns = fundamental_daily.pivot(index="date", columns="strategy_id", values="net_return")
     fundamental_returns = fundamental_returns.drop(columns=list(EXPANDED_SELECTION_CANDIDATE_IDS), errors="ignore")
@@ -482,7 +490,9 @@ def build_bundle() -> dict:
     ohlcv_alpha_returns = ohlcv_alpha_daily.pivot(index="date", columns="strategy_id", values="net_return")
     diversified_daily = pd.read_csv(DIVERSIFIED_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
     diversified_returns = diversified_daily.pivot(index="date", columns="strategy_id", values="net_return")
-    correlation = pd.concat([fundamental_returns, delivery_returns, expanded_returns, ohlcv_alpha_returns, diversified_returns, existing_returns], axis=1, join="inner").corr()
+    challenge_daily = pd.read_csv(CHALLENGE_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
+    challenge_returns = challenge_daily.pivot(index="date", columns="strategy_id", values="net_return")
+    correlation = pd.concat([fundamental_returns, delivery_returns, expanded_returns, ohlcv_alpha_returns, diversified_returns, challenge_returns, existing_returns], axis=1, join="inner").corr()
     composite = next(item for item in results if item["strategy_id"] == COMPOSITE_ID)
     results.remove(composite)
     results.extend(_candidate_items(correlation))
@@ -502,6 +512,11 @@ def build_bundle() -> dict:
         correlation, payload["shared_dates"], candidate_ids=DIVERSIFIED_CANDIDATE_IDS,
         decisions=DIVERSIFIED_SELECTION_STATUS, pack_root=DIVERSIFIED_ROOT,
         research_source="FINAL_DIVERSIFIED_STRATEGY_BATCH_V1",
+    ))
+    results.extend(_delivery_items(
+        correlation, payload["shared_dates"], candidate_ids=CHALLENGE_CANDIDATE_IDS,
+        decisions=CHALLENGE_SELECTION_STATUS, pack_root=CHALLENGE_ROOT,
+        research_source="FINAL_STRICT_CHALLENGE_BATCH_V1",
     ))
     results.append(composite)
     _rebuild_composite(results, payload["shared_dates"])
@@ -559,6 +574,7 @@ def main() -> int:
         DELIVERY_ROOT / "run_manifest.json", EXPANDED_ROOT / "run_manifest.json",
         OHLCV_ALPHA_ROOT / "run_manifest.json",
         DIVERSIFIED_ROOT / "run_manifest.json",
+        CHALLENGE_ROOT / "run_manifest.json",
     ):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest.update(

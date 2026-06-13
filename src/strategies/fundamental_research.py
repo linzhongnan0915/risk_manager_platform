@@ -109,6 +109,7 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
     op_now, op_prev = _last(annual, "operating_income"), _last(annual, "operating_income", 2)
     gp_now, gp_prev = _last(annual, "gross_profit"), _last(annual, "gross_profit", 2)
     ocf_now, ocf_prev = _last(annual, "operating_cash_flow"), _last(annual, "operating_cash_flow", 2)
+    capex_now, capex_prev = normalized_capex(_last(annual, "capex")), normalized_capex(_last(annual, "capex", 2))
     liabilities_now, liabilities_prev = _last(annual, "liabilities"), _last(annual, "liabilities", 2)
     receivables_now, receivables_prev = _last(annual, "receivables"), _last(annual, "receivables", 2)
     inventory_now, inventory_prev = _last(annual, "inventory"), _last(annual, "inventory", 2)
@@ -136,8 +137,12 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
         "annual_ocf_assets_change": safe_divide(ocf_now, assets_now) - safe_divide(ocf_prev, assets_prev),
         "annual_gp_assets_change": safe_divide(gp_now, assets_now) - safe_divide(gp_prev, assets_prev),
         "annual_op_assets_change": safe_divide(op_now, assets_now) - safe_divide(op_prev, assets_prev),
+        "annual_operating_income_growth": safe_divide(op_now - op_prev, abs(op_prev)),
         "annual_cash_flow_margin_change": safe_divide(ocf_now, revenue_now) - safe_divide(ocf_prev, revenue_prev),
         "annual_asset_turnover_change": safe_divide(revenue_now, assets_now) - safe_divide(revenue_prev, assets_prev),
+        "asset_turnover": safe_divide(revenue, assets),
+        "capex_assets": safe_divide(capex, assets),
+        "prior_capex_assets": safe_divide(capex_prev, assets_prev),
         "fcf_assets": safe_divide(fcf, assets),
         "negative_asset_growth": -asset_growth,
         "negative_accruals_assets": -safe_divide(net_income - ocf, assets),

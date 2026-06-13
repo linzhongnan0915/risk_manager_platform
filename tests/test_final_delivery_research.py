@@ -57,9 +57,9 @@ def test_final_delivery_outputs_and_bundle_reconcile():
     payload = json.loads(BUNDLE.read_text(encoding="utf-8"))["factory_strategy_research"]
     rows = {row["strategy_id"]: row for row in payload["results"]}
     composite = rows["COMBINED_PORTFOLIO_V1"]["backtest"]["factory_research"]["combined_portfolio"]
-    assert composite["N"] == 17
+    assert composite["N"] == 16
     assert sum(composite["weights"].values()) == pytest.approx(1.0)
-    assert all(weight == pytest.approx(1 / 17) for weight in composite["weights"].values())
+    assert all(weight == pytest.approx(1 / 16) for weight in composite["weights"].values())
     for strategy_id in summary["strategy_id"]:
         backtest = rows[strategy_id]["backtest"]
         assert backtest["live_allocation_approved"] is False

@@ -57,10 +57,10 @@ def main() -> int:
         errors.append(f"expected 1 Combined Portfolio, found {composite}")
     if arch.get("live_allocation_approved") is not False:
         errors.append("architecture live_allocation_approved must be false for research bundle")
-    if active != 17 or repair != 27 or archived != 15 or data_insufficient != 4 or reference != 18:
+    if active != 16 or repair != 34 or archived != 19 or data_insufficient != 4 or reference != 18:
         errors.append("accepted final status counts do not match expected counts")
-    if arch.get("composite_equal_weight") != 1 / 17:
-        errors.append("Combined Portfolio equal weight must be 1/17")
+    if arch.get("composite_equal_weight") != 1 / 16:
+        errors.append("Combined Portfolio equal weight must be 1/16")
     if research.get("execution_enabled") is not False or research.get("live_allocation_percent") != 0:
         errors.append("research execution must remain disabled with 0% live allocation")
     proxy = research.get("market_proxy_regime") or {}

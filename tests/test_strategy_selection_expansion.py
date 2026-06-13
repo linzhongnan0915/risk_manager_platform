@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from src.strategies.platform_registry import (
+    CHALLENGE_SELECTION_STATUS,
     FUNDAMENTAL_RESEARCH_CANDIDATE_IDS,
     FUNDAMENTAL_SELECTION_STATUS,
     FINAL_DELIVERY_CANDIDATE_IDS,
@@ -37,10 +38,11 @@ def test_bundle_statuses_and_active_only_composite():
     active += [strategy_id for strategy_id, value in EXPANDED_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
     active += [strategy_id for strategy_id, value in OHLCV_ALPHA_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
     active += [strategy_id for strategy_id, value in DIVERSIFIED_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
+    active += [strategy_id for strategy_id, value in CHALLENGE_SELECTION_STATUS.items() if value["status"] == "ACTIVE"]
     assert composite["constituent_ids"] == active
-    assert composite["N"] == 17
+    assert composite["N"] == 16
     assert sum(composite["weights"].values()) == pytest.approx(1.0)
-    assert all(weight == pytest.approx(1 / 17) for weight in composite["weights"].values())
+    assert all(weight == pytest.approx(1 / 16) for weight in composite["weights"].values())
 
 
 def test_fundamental_candidates_are_research_only_and_trade_log_reconciles():
@@ -71,7 +73,7 @@ def test_final_counts_and_market_proxy_regime_disclosure():
     research = json.loads(BUNDLE.read_text(encoding="utf-8"))["factory_strategy_research"]
     memberships = [row["backtest"]["factory_research"].get("membership") for row in research["results"]]
     assert {status: memberships.count(status) for status in ("ACTIVE", "REPAIR", "ARCHIVED", "DATA_INSUFFICIENT", "REFERENCE_ONLY")} == {
-        "ACTIVE": 17, "REPAIR": 27, "ARCHIVED": 15, "DATA_INSUFFICIENT": 4, "REFERENCE_ONLY": 18
+        "ACTIVE": 16, "REPAIR": 34, "ARCHIVED": 19, "DATA_INSUFFICIENT": 4, "REFERENCE_ONLY": 18
     }
     assert research["market_proxy_regime"]["id"] == "MARKET_PROXY_REGIME_V0"
     assert "not a true macro Growth x Inflation model" in research["market_proxy_regime"]["disclosure"]
