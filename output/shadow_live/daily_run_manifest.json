@@ -1,0 +1,46 @@
+{
+  "run_timestamp": "2026-06-13T18:18:22.592965+00:00",
+  "code_commit": "c9b776516dad7619a01f3bd837d1d87904cf980b",
+  "strategy_version": "accepted_final_strategy_research_integration_v1",
+  "universe_version": "COMMITTED_RESEARCH_BUNDLE",
+  "data_as_of": "2026-06-08",
+  "active_count": 16,
+  "equal_weight": 0.0625,
+  "portfolio_rows_added": 0,
+  "strategy_rows_added": 0,
+  "holdings_rows": 402,
+  "trade_rows": 0,
+  "pending_intervals": [
+    "2026-06-09"
+  ],
+  "warnings": [
+    {
+      "severity": "WARNING",
+      "code": "HISTORICAL_HOLDINGS_NOT_AVAILABLE",
+      "detail": "Committed bundle preserves latest accepted holdings and recent trades, not complete daily historical holdings."
+    },
+    {
+      "severity": "INFO",
+      "code": "PENDING_RETURN_INTERVAL",
+      "detail": "Latest pending dates: 2026-06-09"
+    }
+  ],
+  "reconciliation": {
+    "strategy_pnl_sums_to_portfolio_pnl": true,
+    "strategy_costs_sum_to_portfolio_costs": true,
+    "trade_log_costs_match_ledger_costs": true,
+    "active_sleeves_equal_1_16": true,
+    "weights_sum_to_one": true,
+    "no_non_active_strategy": true,
+    "combined_portfolio_excluded": true,
+    "unique_trade_ids": true,
+    "unique_portfolio_dates": true,
+    "holdings_reconstruction": "PARTIAL_LATEST_ACCEPTED_HOLDINGS_ONLY"
+  },
+  "record_labels": [
+    "RETROSPECTIVE_PAPER_BACKFILL",
+    "FORWARD_SHADOW_LIVE"
+  ],
+  "live_allocation_approved": false,
+  "execution_enabled": false
+}

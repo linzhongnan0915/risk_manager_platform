@@ -269,6 +269,18 @@ async function loadLiveOverlay() {
   return null;
 }
 
+async function loadShadowLiveBundle() {
+  for (const path of ["/dashboard/data/shadow_live_bundle.json", "data/shadow_live_bundle.json"]) {
+    try {
+      const response = await fetch(path, { cache: "no-store" });
+      if (response.ok) return await response.json();
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 async function renderShadowStrategyRegistry(status = "ALL") {
   const table = document.getElementById("shadowStrategyTable");
   const heading = table?.closest(".strategy-monitor-panel")?.querySelector(".panel-title");
@@ -278,6 +290,14 @@ async function renderShadowStrategyRegistry(status = "ALL") {
     heading.textContent = "Retained Research / Shadow Registry";
   }
   if (!table) return;
+  const shadowRows = activeArtifact?.shadow_live?.strategy_summary || [];
+  if (shadowRows.length) {
+    const rows = shadowRows.filter((row) => status === "ALL" || status === "RESEARCH_COMPOSITE_MEMBER");
+    table.innerHTML = `<tr><th>ID</th><th>Name</th><th>Status</th><th>Sleeve Weight</th><th>Daily PnL</th><th>Cumulative PnL</th><th>Cumulative Return</th><th>Drawdown</th><th>Turnover</th><th>Daily Cost</th><th>Gross / Net Exposure</th><th>Long / Short</th><th>Last Rebalance</th><th>Data</th><th>Action</th></tr>` +
+      rows.map((row) => `<tr data-factory-strategy="${escapeHtml(row.strategy_id)}"><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.strategy_name)}</td><td>${statusBadge("PROVISIONAL")}</td><td>${pct(row.sleeve_weight, 2)}</td><td class="${cls(row.daily_pnl)}">${money(row.daily_pnl)}</td><td class="${cls(row.cumulative_pnl)}">${money(row.cumulative_pnl)}</td><td>${pct(row.cumulative_return, 2)}</td><td class="negative">${pct(row.current_drawdown, 2)}</td><td>${num(row.turnover, 3)}</td><td>${money(row.transaction_cost)}</td><td>${num(row.gross_exposure, 2)} / ${num(row.net_exposure, 2)}</td><td>${row.long_count} / ${row.short_count}</td><td>${escapeHtml(row.last_rebalance_date || "n/a")}</td><td>${statusBadge(row.data_status)}</td><td><button type="button" class="table-link view-details-link" data-factory-strategy="${escapeHtml(row.strategy_id)}">View Details</button></td></tr>`).join("");
+    table.querySelectorAll("[data-factory-strategy]").forEach((row) => row.addEventListener("click", () => openFactoryResearchStrategy(row.dataset.factoryStrategy)));
+    return;
+  }
   if (hasFactoryResearch()) {
     const rows = ResearchUniverse.strategyRows().filter((row) => {
       if (status === "ALL") return true;
@@ -365,6 +385,83 @@ function mergeLiveOverlay(artifact, overlay) {
     artifact.factors.portfolio_factor_exposure_current = overlay.factor_exposure_current;
   }
   return artifact;
+}
+
+function mergeShadowLiveBundle(artifact, shadow) {
+  if (!shadow) return artifact;
+  artifact.portfolio_series_live = shadow.portfolio_series_live;
+  artifact.operating_period_risk = shadow.operating_period_risk;
+  artifact.initial_capital = shadow.initial_capital;
+  artifact.as_of_date = shadow.market_as_of;
+  artifact.live_market_as_of = shadow.market_as_of;
+  artifact.live_refreshed_at = shadow.refreshed_at;
+  artifact.shadow_live = shadow.shadow_live;
+  artifact.data_classification = artifact.data_classification || {};
+  artifact.data_classification.disclosure = "SHADOW LIVE / PAPER PORTFOLIO · RESEARCH ONLY · LIVE CAPITAL 0% · EXECUTION DISABLED · NO LIVE FILL";
+  return artifact;
+}
+
+function renderShadowOperationalPanels(artifact) {
+  const shadow = artifact?.shadow_live;
+  if (!shadow) return;
+  const status = document.getElementById("shadowPipelineStatus");
+  if (status) {
+    const reconciliation = shadow.reconciliation || {};
+    const latest = (shadow.portfolio_ledger || []).at(-1);
+    const cumulativeCost = (shadow.portfolio_ledger || []).reduce((total, row) => total + (row.transaction_cost || 0), 0);
+    const portfolioSummary = latest
+      ? `<p><strong>Portfolio:</strong> NAV ${money(latest.ending_nav)} | daily P&amp;L ${money(latest.net_pnl)} | cumulative P&amp;L ${money(latest.cumulative_pnl)} | current DD ${pct(latest.current_drawdown, 2)} | cumulative cost ${money(cumulativeCost)}<br><strong>Allocation:</strong> ACTIVE ${latest.active_count} | equal sleeve ${pct(latest.equal_strategy_weight, 2)} | gross/net exposure ${num(latest.gross_exposure, 2)} / ${num(latest.net_exposure, 2)}</p>`
+      : "";
+    status.innerHTML = `<p><strong>SHADOW LIVE / PAPER PORTFOLIO</strong><br>Latest completed interval: ${escapeHtml(artifact.live_market_as_of || "n/a")} · last successful run: ${escapeHtml(shadow.last_successful_run || "n/a")} · live capital 0% · execution disabled</p>
+      <p><strong>Reconciliation:</strong> ${Object.entries(reconciliation).filter(([, value]) => value === false).length ? "ALERT" : "PASS"} · pending: ${(shadow.pending_intervals || []).join(", ") || "none"}</p>
+      ${portfolioSummary}
+      ${(shadow.alerts || []).map((alert) => `<p><strong>${escapeHtml(alert.code)}</strong>: ${escapeHtml(alert.detail)}</p>`).join("")}`;
+  }
+  const correlation = shadow.correlation || {};
+  const correlationStatus = document.getElementById("shadowCorrelationStatus");
+  if (correlationStatus) correlationStatus.innerHTML = `<p><strong>${escapeHtml(correlation.status || "NOT ENOUGH LIVE HISTORY")}</strong><br>Observations: ${correlation.observations || 0} · minimum required: ${correlation.minimum_observations || 20}. Research and shadow-live returns are not mixed.</p>`;
+  const warningTable = document.getElementById("shadowCorrelationWarnings");
+  if (warningTable) warningTable.innerHTML = `<tr><th>Left</th><th>Right</th><th>Correlation</th></tr>${(correlation.warnings || []).map((row) => `<tr><td>${escapeHtml(row.left)}</td><td>${escapeHtml(row.right)}</td><td>${num(row.correlation, 3)}</td></tr>`).join("") || "<tr><td colspan='3'>NOT ENOUGH LIVE HISTORY</td></tr>"}`;
+  renderShadowTradeLog();
+}
+
+function renderShadowTradeLog() {
+  const table = document.getElementById("shadowTradeLogTable");
+  if (!table) return;
+  const dateFrom = document.getElementById("shadowTradeDateFromFilter")?.value || "";
+  const dateTo = document.getElementById("shadowTradeDateToFilter")?.value || "";
+  const strategy = (document.getElementById("shadowTradeStrategyFilter")?.value || "").toLowerCase();
+  const ticker = (document.getElementById("shadowTradeTickerFilter")?.value || "").toLowerCase();
+  const action = document.getElementById("shadowTradeActionFilter")?.value || "";
+  const rows = (activeArtifact?.shadow_live?.trades || []).filter((row) => (!dateFrom || row.execution_date >= dateFrom) && (!dateTo || row.execution_date <= dateTo) && (!strategy || row.strategy_id.toLowerCase().includes(strategy)) && (!ticker || row.ticker.toLowerCase().includes(ticker)) && (!action || row.action === action));
+  table.innerHTML = `<tr><th>Date</th><th>Strategy</th><th>Ticker</th><th>Action</th><th>Previous</th><th>Target</th><th>Delta</th><th>Quantity / Notional</th><th>Execution Price</th><th>Cost</th><th>Reason</th><th>Fill</th></tr>${rows.map((row) => `<tr><td>${escapeHtml(row.execution_date)}</td><td>${escapeHtml(row.strategy_id)}</td><td>${escapeHtml(row.ticker)}</td><td>${escapeHtml(row.action)}</td><td>${pct(row.previous_weight, 2)}</td><td>${pct(row.target_weight, 2)}</td><td>${pct(row.delta_weight, 2)}</td><td>${num(row.simulated_quantity, 2)} / ${money(row.simulated_notional)}</td><td>${money(row.simulated_execution_price)}</td><td>${money(row.transaction_cost_amount)}</td><td>${escapeHtml(row.trade_reason)}</td><td>NO LIVE FILL</td></tr>`).join("") || "<tr><td colspan='12'>No simulated weight changes in the completed shadow-live interval.</td></tr>"}`;
+}
+
+function renderResearchLabShadowDetail(strategyId) {
+  const detail = document.getElementById("researchLabShadowDetail");
+  if (!detail) return;
+  const shadow = activeArtifact?.shadow_live;
+  if (!shadow) {
+    detail.innerHTML = "<p>Shadow-live operations bundle unavailable.</p>";
+    return;
+  }
+  if (strategyId === ResearchUniverse.COMPOSITE_ID) {
+    const latest = (shadow.portfolio_ledger || []).at(-1);
+    detail.innerHTML = latest
+      ? `<div class="research-summary-strip"><span>Latest NAV <strong>${money(latest.ending_nav)}</strong></span><span>Cumulative P&amp;L <strong>${money(latest.cumulative_pnl)}</strong></span><span>Current DD <strong>${pct(latest.current_drawdown, 2)}</strong></span><span>Completed intervals <strong>${shadow.portfolio_ledger.length}</strong></span></div><p>SHADOW LIVE / PAPER PORTFOLIO · ACTIVE sleeves only · live capital 0% · execution disabled · NO LIVE FILL.</p>`
+      : "<p>No completed shadow-live portfolio intervals.</p>";
+    return;
+  }
+  const summary = (shadow.strategy_summary || []).find((row) => row.strategy_id === strategyId);
+  if (!summary) {
+    detail.innerHTML = "<p>No shadow-live sleeve exists for this non-ACTIVE research strategy.</p>";
+    return;
+  }
+  const holdings = (shadow.holdings || []).filter((row) => row.strategy_id === strategyId);
+  const trades = (shadow.trades || []).filter((row) => row.strategy_id === strategyId);
+  detail.innerHTML = `<div class="research-summary-strip"><span>Sleeve NAV <strong>${money(summary.ending_sleeve_nav)}</strong></span><span>Cumulative P&amp;L <strong>${money(summary.cumulative_pnl)}</strong></span><span>Current DD <strong>${pct(summary.current_drawdown, 2)}</strong></span><span>Weight <strong>${pct(summary.sleeve_weight, 2)}</strong></span></div>
+    <p>Shadow returns only through ${escapeHtml(summary.date)} · ${escapeHtml(summary.record_label)} · live capital 0% · execution disabled · NO LIVE FILL.</p>
+    <p>Latest accepted holdings: ${holdings.length}. Simulated weight-change trades: ${trades.length}. Historical holdings reconstruction is not available from the committed bundle.</p>`;
 }
 
 function mergeIntradayMarks(artifact, marks) {
@@ -1170,6 +1267,7 @@ function renderFactoryResearchLabPanels(item) {
   renderFactoryResearchMainPanel(item, resolved);
   renderFactoryResearchPerformanceMetrics(backtest);
   renderFactoryResearchRiskMetrics(backtest, packetSeries, isComposite);
+  renderResearchLabShadowDetail(item.strategy_id);
   if (isComposite) {
     renderFactoryResearchCompositeDetail(item);
   } else {
@@ -4281,14 +4379,16 @@ async function init() {
   renderTabs();
   loadLocalDecisionEvents();
   document.body.classList.add("app-loading");
-  const [, artifact, overlay, researchBundle] = await Promise.all([
+  const [, artifact, overlay, researchBundle, shadowBundle] = await Promise.all([
     probeWorkstationApi(),
     loadArtifact(),
     loadLiveOverlay(),
     loadUsEquityResearchBundle(),
+    loadShadowLiveBundle(),
   ]);
   factoryResearchBundle = researchBundle;
   mergeLiveOverlay(artifact, overlay);
+  mergeShadowLiveBundle(artifact, shadowBundle);
   hydrateFactoryResearch(artifact);
   activeArtifact = artifact;
   initProposalSession(artifact);
@@ -4305,6 +4405,8 @@ async function init() {
   const shadowFilter = document.getElementById("shadowStrategyStatusFilter");
   if (shadowFilter) shadowFilter.addEventListener("change", () => renderShadowStrategyRegistry(shadowFilter.value));
   renderShadowStrategyRegistry();
+  renderShadowOperationalPanels(artifact);
+  ["shadowTradeDateFromFilter", "shadowTradeDateToFilter", "shadowTradeStrategyFilter", "shadowTradeTickerFilter", "shadowTradeActionFilter"].forEach((id) => document.getElementById(id)?.addEventListener("input", renderShadowTradeLog));
   if (hasFactoryResearch()) {
     renderFactoryResearchArchitectureBanner();
     refreshResearchLabViews(artifact);

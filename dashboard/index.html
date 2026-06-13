@@ -91,6 +91,10 @@
               </article>
             </section>
             <section class="historical-research-context compact-context" id="historicalResearchContext"></section>
+            <article class="panel v2-panel">
+              <div class="panel-title">Shadow-Live Pipeline &amp; Reconciliation</div>
+              <div class="compact-list" id="shadowPipelineStatus"></div>
+            </article>
           </section>
 
           <section class="tab-panel" data-tab-panel="Strategy Monitor">
@@ -142,6 +146,18 @@
                   <table class="data-table dense sticky-head freeze-first-col" id="monitorTable"></table>
                 </div>
               </div>
+            </article>
+            <article class="panel v2-panel strategy-monitor-panel">
+              <div class="monitor-heading"><div class="panel-title">Shadow-Live Simulated Trade Log · NO LIVE FILL</div>
+                <div class="monitor-controls">
+                  <input id="shadowTradeDateFromFilter" type="date" aria-label="Trade date from" />
+                  <input id="shadowTradeDateToFilter" type="date" aria-label="Trade date to" />
+                  <input id="shadowTradeStrategyFilter" type="search" placeholder="Strategy" />
+                  <input id="shadowTradeTickerFilter" type="search" placeholder="Ticker" />
+                  <select id="shadowTradeActionFilter" aria-label="Trade action"><option value="">All actions</option><option>BUY</option><option>SELL</option><option>SHORT</option><option>COVER</option></select>
+                </div>
+              </div>
+              <div class="table-viewport"><div class="table-scroll"><table class="data-table dense sticky-head" id="shadowTradeLogTable"></table></div></div>
             </article>
           </section>
 
@@ -215,7 +231,8 @@
 
           <section class="tab-panel" data-tab-panel="Correlation & Diversification">
             <section class="correlation-layout">
-              <article class="panel v2-panel"><div class="panel-title">Diversification Summary</div><select id="correlationUniverse" aria-label="Correlation universe"><option value="allocated">Allocated only</option><option value="all">All research universe</option></select><div id="correlationSummary" class="drawer-section-grid"></div></article>
+              <article class="panel v2-panel"><div class="panel-title">Research Correlation · Accepted Historical Net Returns</div><select id="correlationUniverse" aria-label="Correlation universe"><option value="allocated">Allocated only</option><option value="all">All research universe</option></select><div id="correlationSummary" class="drawer-section-grid"></div></article>
+              <article class="panel v2-panel"><div class="panel-title">Shadow-Live Correlation · Shadow Returns Only</div><div id="shadowCorrelationStatus" class="compact-list"></div><div class="table-viewport short"><div class="table-scroll"><table class="data-table dense" id="shadowCorrelationWarnings"></table></div></div></article>
               <article class="panel v2-panel"><div class="panel-title">Highest Correlation Pairs</div><div class="table-viewport"><div class="table-scroll"><table class="data-table dense" id="correlationPairs"></table></div></div></article>
               <article class="panel v2-panel full-width matrix-row"><div class="panel-title" id="correlationMatrixTitle">Correlation Matrix</div><div class="matrix-scroll"><div class="matrix large" id="correlationMatrix"></div></div></article>
             </section>
@@ -269,6 +286,10 @@
               <article class="panel v2-panel research-lab-span-12" id="researchLabHoldingsPanel">
                 <div class="panel-title">Current Holdings</div>
                 <div id="researchLabHoldings"></div>
+              </article>
+              <article class="panel v2-panel research-lab-span-12" id="researchLabShadowPanel">
+                <div class="panel-title">Shadow-Live Operations · Separate From Research Backtest</div>
+                <div id="researchLabShadowDetail"></div>
               </article>
               <article class="panel v2-panel research-lab-span-12" id="researchLabCompositePanel" hidden>
                 <div class="panel-title">Combined Portfolio Composition</div>

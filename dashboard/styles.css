@@ -2682,6 +2682,22 @@ body { font-size: 12px; }
   background: var(--panel);
   color: var(--text);
 }
+
+select,
+input,
+textarea {
+  color: var(--ink);
+  background: var(--panel-3);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  outline: 1px solid var(--accent);
+  border-color: var(--accent);
+}
 @media (max-width: 1180px) {
   .v2-grid, .command-v2-grid, .allocation-v2-grid { grid-template-columns: 1fr; }
   .panel-span-4, .panel-span-6, .panel-span-8, .panel-span-12 { grid-column: span 1; }
