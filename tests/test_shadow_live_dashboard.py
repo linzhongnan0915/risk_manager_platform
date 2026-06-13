@@ -14,7 +14,11 @@ def test_shadow_bundle_dashboard_contract():
     assert len(shadow["strategy_summary"]) == 16
     assert shadow["runner_mode"] == "RAW DATA SIGNAL RUNNER"
     assert shadow["accepted_series_historical_reference_only"] is True
-    assert shadow["successful_strategy_count"] + shadow["failed_strategy_count"] == 16
+    assert shadow["configured_strategy_count"] == shadow["successful_strategy_count"] == 16
+    assert shadow["partial_strategy_count"] == shadow["unavailable_strategy_count"] == 0
+    assert shadow["entry_eligibility_universe_size"] == 229
+    assert shadow["operational_pricing_universe_size"] == 301
+    assert shadow["segments"]["transition_nav"] > 1_000_000
     assert shadow["correlation"]["status"] == "NOT ENOUGH LIVE HISTORY"
     assert shadow["correlation"]["observations"] < 20
     assert shadow["correlation"]["minimum_observations"] == 20

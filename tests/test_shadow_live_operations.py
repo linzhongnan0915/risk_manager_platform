@@ -7,7 +7,7 @@ from src.strategies.frozen_active_signals import ACTIVE_IDS
 from src.strategies.shadow_live_operations import (
     ACTIVE_COUNT,
     EQUAL_WEIGHT,
-    FORWARD_LABEL,
+    RAW_FORWARD_LABEL,
     _trade_legs,
     update_raw_ohlcv,
 )
@@ -18,7 +18,7 @@ def test_frozen_active_contract_and_no_accepted_return_fallback():
     assert len(ACTIVE_IDS) == ACTIVE_COUNT == 16
     assert EQUAL_WEIGHT == 1 / 16
     assert '"accepted_series_pnl_fallback": False' in source
-    assert FORWARD_LABEL == "FORWARD_SHADOW_LIVE"
+    assert RAW_FORWARD_LABEL == "FORWARD_RAW_SHADOW_LIVE"
 
 
 def test_trade_generation_actions():
@@ -31,22 +31,25 @@ def test_trade_generation_actions():
 
 
 def test_incremental_raw_ohlcv_update(monkeypatch, tmp_path):
-    monkeypatch.setattr("src.strategies.shadow_live_operations._frozen_universe", lambda root: ["AAA"])
+    monkeypatch.setattr("src.strategies.shadow_live_operations._entry_eligibility_universe", lambda root: ["AAA"])
+    monkeypatch.setattr("src.strategies.shadow_live_operations._operational_pricing_universe", lambda root, entry: ["AAA", "OLD"])
     calls = []
 
     def fake_download(tickers, **kwargs):
         calls.append(kwargs)
-        frame = pd.DataFrame([
-            {"date": "2026-06-11", "ticker": "AAA", "provider_symbol": "AAA", "open": 10, "high": 11,
+        return pd.DataFrame([
+            {"date": "2026-06-11", "ticker": ticker, "provider_symbol": ticker, "open": 10, "high": 11,
              "low": 9, "close": 10, "adj_close": 10, "volume": 1_000_000, "source": "yfinance"}
-        ])
-        return frame, pd.DataFrame(), pd.DataFrame()
+            for ticker in tickers
+        ]), pd.DataFrame()
 
-    monkeypatch.setattr("src.strategies.shadow_live_operations.download_ohlcv", fake_download)
+    monkeypatch.setattr("src.strategies.shadow_live_operations._download_with_single_ticker_fallback", fake_download)
     first, _, audit = update_raw_ohlcv(tmp_path, end_date="2026-06-12")
     second, _, _ = update_raw_ohlcv(tmp_path, end_date="2026-06-12")
-    assert len(first) == len(second) == 1
+    assert len(first) == len(second) == 2
     assert audit["duplicate_date_count"] == 0
+    assert audit["entry_eligibility_universe_size"] == 1
+    assert audit["operational_pricing_universe_size"] == 2
     assert calls[0]["start_date"] == "2024-01-01"
     assert len(calls) == 1
 
@@ -60,9 +63,29 @@ def test_generated_raw_outputs_reconcile():
     assert manifest["runner_mode"] == "RAW DATA SIGNAL RUNNER"
     assert manifest["accepted_series_pnl_fallback"] is False
     assert manifest["signal_functions_invoked"] == 16
+    assert manifest["successful_strategy_count"] == 16
+    assert manifest["failed_strategy_count"] == 0
     assert not targets.empty and not post.empty and not trades.empty
     assert {"simulated_notional", "simulated_quantity", "simulated_execution_price", "realized_pnl", "unrealized_pnl"} <= set(post)
-    assert set(targets["record_label"]) == {FORWARD_LABEL}
+    assert set(targets["record_label"]) == {RAW_FORWARD_LABEL}
     assert not targets.duplicated(["signal_date", "strategy_id", "ticker"]).any()
     assert not trades["trade_id"].duplicated().any()
     assert all(value is True for key, value in manifest["reconciliation"].items() if isinstance(value, bool))
+
+
+def test_segment_continuity_and_exit_only_contract():
+    output = Path("output/shadow_live")
+    portfolio = pd.read_csv(output / "portfolio_daily_ledger.csv")
+    manifest = json.loads((output / "daily_run_manifest.json").read_text(encoding="utf-8"))
+    coverage = pd.read_csv(output / "operational_pricing_coverage.csv")
+    diagnosis = pd.read_csv(output / "seed_holding_diagnosis.csv")
+    transition = portfolio.loc[portfolio["record_label"].eq("RETROSPECTIVE_PAPER_BACKFILL")].iloc[-1]
+    raw = portfolio.loc[portfolio["record_label"].eq(RAW_FORWARD_LABEL)]
+    assert transition["ending_nav"] == raw.iloc[0]["beginning_nav"]
+    assert not portfolio["date"].duplicated().any()
+    assert coverage["entry_eligible"].sum() == 229
+    assert len(coverage) == 301
+    assert coverage["pricing_status"].eq("PRICED").all()
+    assert diagnosis["strategy_id"].nunique() == 6
+    assert diagnosis["ticker"].nunique() == 72
+    assert manifest["reconciliation"]["exit_only_securities_never_increased"] is True

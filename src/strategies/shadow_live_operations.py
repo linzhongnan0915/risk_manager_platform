@@ -16,7 +16,7 @@ import pandas as pd
 from src.strategies.expanded_selection_research import load_expanded_facts
 from src.strategies.frozen_active_signals import ACTIVE_IDS, frozen_active_scores
 from src.strategies.strategy_factory import common_eligibility, load_context, rank_and_weight
-from src.strategies.worldquant.market_data import download_ohlcv
+from src.strategies.worldquant.market_data import download_ohlcv, map_ticker_to_provider
 
 START_DATE = "2026-06-04"
 INITIAL_CAPITAL = 1_000_000.0
@@ -30,6 +30,8 @@ PRE_TRADE_HOLDINGS = Path("pre_trade_holdings.csv")
 POST_TRADE_HOLDINGS = Path("post_trade_holdings.csv")
 BACKFILL_LABEL = "RETROSPECTIVE_PAPER_BACKFILL"
 FORWARD_LABEL = "FORWARD_SHADOW_LIVE"
+RAW_FORWARD_LABEL = "FORWARD_RAW_SHADOW_LIVE"
+KNOWN_RENAMED_SYMBOLS: dict[str, str] = {}
 
 
 def _read_csv(path: Path) -> pd.DataFrame:
@@ -232,7 +234,7 @@ def run_accepted_series_backfill(project_root: str | Path, *, freeze_date: str |
     return manifest | {"latest_nav": float(portfolio_frame.ending_nav.iloc[-1]), "latest_cumulative_pnl": float(portfolio_frame.cumulative_pnl.iloc[-1])}
 
 
-def _frozen_universe(root: Path) -> list[str]:
+def _entry_eligibility_universe(root: Path) -> list[str]:
     paths = [
         root / "output/research/final_expanded_selection_v1/holdings.csv",
         root / "output/research/final_ohlcv_alpha_expansion_v1/holdings.csv",
@@ -246,11 +248,51 @@ def _frozen_universe(root: Path) -> list[str]:
     return sorted(tickers)
 
 
+def _operational_pricing_universe(root: Path, entry_universe: list[str]) -> list[str]:
+    output = root / OUTPUT_ROOT
+    tickers = set(entry_universe)
+    for path in (output / "holdings_ledger.csv", output / POST_TRADE_HOLDINGS):
+        frame = _read_csv(path)
+        if not frame.empty:
+            tickers.update(frame["ticker"].dropna().astype(str))
+    trades = _read_csv(output / "trade_log.csv")
+    if not trades.empty:
+        unsettled = trades.loc[~trades["record_status"].astype(str).str.contains("SETTLED", na=False)]
+        tickers.update(unsettled["ticker"].dropna().astype(str))
+    return sorted(tickers)
+
+
+def _download_with_single_ticker_fallback(
+    tickers: list[str], *, start_date: str, end_date: str,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    downloaded, failures, _ = download_ohlcv(
+        tickers, start_date=start_date, end_date=end_date, batch_size=50,
+        max_attempts=3, include_rejected_history=True,
+    )
+    failed_symbols = failures["ticker"].drop_duplicates().tolist() if not failures.empty else []
+    fallback_parts, fallback_failures = [], []
+    for ticker in failed_symbols:
+        retry, retry_failure, _ = download_ohlcv(
+            [KNOWN_RENAMED_SYMBOLS.get(ticker, ticker)], start_date=start_date, end_date=end_date,
+            batch_size=1, max_attempts=2, include_rejected_history=True,
+        )
+        if not retry.empty:
+            retry["ticker"] = ticker
+            fallback_parts.append(retry)
+        elif not retry_failure.empty:
+            fallback_failures.append(retry_failure.assign(original_ticker=ticker))
+    if fallback_parts:
+        downloaded = pd.concat([downloaded, *fallback_parts], ignore_index=True)
+    final_failures = pd.concat(fallback_failures, ignore_index=True) if fallback_failures else pd.DataFrame()
+    return downloaded, final_failures
+
+
 def update_raw_ohlcv(root: Path, *, end_date: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
-    """Incrementally update the frozen diagnostic universe with raw yfinance OHLCV."""
+    """Update entry-eligible signals and the larger operational-pricing universe."""
     path = root / RAW_CACHE
     cached = pd.read_csv(path) if path.exists() else pd.DataFrame()
-    universe = _frozen_universe(root)
+    entry_universe = _entry_eligibility_universe(root)
+    universe = _operational_pricing_universe(root, entry_universe)
     end = pd.Timestamp(end_date or datetime.now(timezone.utc).date().isoformat()) + pd.Timedelta(days=1)
     if cached.empty:
         start = "2024-01-01"
@@ -258,12 +300,15 @@ def update_raw_ohlcv(root: Path, *, end_date: str | None = None) -> tuple[pd.Dat
         start = (pd.to_datetime(cached["date"]).max() - pd.Timedelta(days=7)).date().isoformat()
     cache_latest = pd.to_datetime(cached["date"]).max() if not cached.empty else pd.NaT
     cache_current = pd.notna(cache_latest) and cache_latest >= end - pd.Timedelta(days=2)
-    if cache_current:
-        downloaded, failures, quality = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    cached_tickers = set(cached["ticker"]) if not cached.empty else set()
+    missing_operational = sorted(set(universe) - cached_tickers)
+    if cache_current and not missing_operational:
+        downloaded, failures = pd.DataFrame(), pd.DataFrame()
     else:
-        downloaded, failures, quality = download_ohlcv(
-            universe, start_date=start, end_date=end.date().isoformat(), batch_size=50,
-            max_attempts=3, include_rejected_history=True,
+        requested = missing_operational if cache_current else universe
+        downloaded, failures = _download_with_single_ticker_fallback(
+            requested, start_date="2024-01-01" if missing_operational else start,
+            end_date=end.date().isoformat(),
         )
     combined = pd.concat([cached, downloaded], ignore_index=True).drop_duplicates(["ticker", "date"], keep="last")
     combined = combined.sort_values(["ticker", "date"])
@@ -273,14 +318,40 @@ def update_raw_ohlcv(root: Path, *, end_date: str | None = None) -> tuple[pd.Dat
     latest = pd.to_datetime(combined["date"]).max() if not combined.empty else pd.NaT
     stale = sorted(set(universe) - set(combined.loc[pd.to_datetime(combined["date"]).eq(latest), "ticker"])) if pd.notna(latest) else universe
     cache_missing = sorted(set(universe) - set(combined["ticker"])) if not combined.empty else universe
+    coverage_rows = []
+    for ticker in universe:
+        mapping = map_ticker_to_provider(ticker)
+        rows = combined.loc[combined["ticker"].eq(ticker)]
+        latest_ticker = pd.to_datetime(rows["date"]).max() if not rows.empty else pd.NaT
+        coverage_rows.append({
+            "ticker": ticker, "provider_symbol": mapping.provider_symbol,
+            "normalization_status": mapping.mapping_status, "renamed_symbol": KNOWN_RENAMED_SYMBOLS.get(ticker),
+            "entry_eligible": ticker in entry_universe, "operational_pricing_required": True,
+            "pricing_status": "UNPRICED_HOLDING" if rows.empty else "PRICED",
+            "security_status": "YFINANCE_UNAVAILABLE_OR_DELISTED" if rows.empty else (
+                "ACTIVE_CURRENT_PRICE_AVAILABLE" if latest_ticker == latest else "STALE_OR_HISTORICAL_ONLY"
+            ),
+            "latest_price_date": latest_ticker.date().isoformat() if pd.notna(latest_ticker) else None,
+            "exclusion_reason": None if ticker in entry_universe else "SEED_OR_CURRENT_HOLDING_OUTSIDE_ENTRY_ELIGIBILITY",
+            "affects": "PRICING_AND_EXIT" if ticker not in entry_universe else "SIGNAL_AND_PRICING",
+        })
+    coverage = pd.DataFrame(coverage_rows)
+    coverage.to_csv(root / OUTPUT_ROOT / "operational_pricing_coverage.csv", index=False)
+    seed = _read_csv(root / OUTPUT_ROOT / "holdings_ledger.csv")
+    if not seed.empty:
+        diagnosis = seed[["strategy_id", "ticker"]].drop_duplicates().merge(coverage, on="ticker", how="left")
+        diagnosis = diagnosis.loc[~diagnosis["entry_eligible"].fillna(False)].sort_values(["strategy_id", "ticker"])
+        diagnosis.to_csv(root / OUTPUT_ROOT / "seed_holding_diagnosis.csv", index=False)
     audit = {
-        "provider": "yfinance", "universe_count": len(universe), "download_start": start,
+        "provider": "yfinance", "entry_eligibility_universe_size": len(entry_universe),
+        "operational_pricing_universe_size": len(universe), "universe_count": len(universe), "download_start": start,
         "download_end_exclusive": end.date().isoformat(), "downloaded_rows": len(downloaded),
         "cache_rows": len(combined), "cache_tickers": int(combined["ticker"].nunique()) if not combined.empty else 0,
         "latest_raw_ohlcv_date": latest.date().isoformat() if pd.notna(latest) else None,
         "duplicate_date_count": duplicate_count, "all_nan_failures": int(failures["status"].eq("all_nan").sum()) if not failures.empty else 0,
         "incremental_download_warnings": failures["ticker"].drop_duplicates().tolist() if not failures.empty else [],
         "failed_tickers": cache_missing,
+        "unpriced_holding_count": len(cache_missing),
         "stale_or_missing_latest_tickers": stale,
     }
     return combined, failures, audit
@@ -346,10 +417,14 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
     output.mkdir(parents=True, exist_ok=True)
     manifest_path = output / "daily_run_manifest.json"
     prior_manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
-    _, ohlcv_failures, ohlcv_audit = update_raw_ohlcv(root, end_date=raw_end_date)
-    context = load_context(root / RAW_CACHE)
-    facts, sec_failures, sec_audit = _load_raw_facts(root, context)
-    targets, strategy_failures = _weights_by_strategy(context, facts)
+    raw_ohlcv, ohlcv_failures, ohlcv_audit = update_raw_ohlcv(root, end_date=raw_end_date)
+    entry_symbols = set(_entry_eligibility_universe(root))
+    entry_cache = output / "raw_cache/entry_ohlcv.csv"
+    raw_ohlcv.loc[raw_ohlcv["ticker"].isin(entry_symbols)].to_csv(entry_cache, index=False)
+    signal_context = load_context(entry_cache)
+    pricing_context = load_context(root / RAW_CACHE)
+    facts, sec_failures, sec_audit = _load_raw_facts(root, signal_context)
+    targets, strategy_failures = _weights_by_strategy(signal_context, facts)
     run_id = hashlib.sha256(f"RAW|{ohlcv_audit['latest_raw_ohlcv_date']}|{sorted(targets)}".encode()).hexdigest()[:16]
     existing_portfolio = _read_csv(output / "portfolio_daily_ledger.csv")
     existing_strategy = _read_csv(output / "strategy_daily_ledger.csv")
@@ -358,14 +433,14 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
     pre_existing = _read_csv(output / PRE_TRADE_HOLDINGS)
     post_existing = _read_csv(output / POST_TRADE_HOLDINGS)
     trades_existing = _read_csv(output / "trade_log.csv")
-    forward_completed = existing_strategy.loc[existing_strategy.get("record_label", pd.Series(dtype=str)).eq(FORWARD_LABEL)]
+    forward_completed = existing_strategy.loc[existing_strategy.get("record_label", pd.Series(dtype=str)).eq(RAW_FORWARD_LABEL)]
     last_completed_signal = (
         pd.to_datetime(forward_completed["signal_date"]).max()
         if not forward_completed.empty and "signal_date" in forward_completed else
         pd.to_datetime(existing_portfolio["date"]).max()
         if not existing_portfolio.empty else pd.Timestamp(START_DATE) - pd.Timedelta(days=1)
     )
-    dates = context.panels["open"].index
+    dates = pricing_context.panels["open"].index
     signal_dates = [date for date in dates if date > last_completed_signal]
     latest_signal = dates[-1]
     target_rows, pre_rows, post_rows, trade_rows, strategy_rows, portfolio_rows = [], [], [], [], [], []
@@ -398,16 +473,16 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
             previous = prior_by_strategy[strategy_id]
             all_tickers = sorted(set(previous.index) | set(target.index))
             for ticker in target.index:
-                target_rows.append({"signal_date": signal_date.date().isoformat(), "expected_execution_date": execution_date.date().isoformat() if execution_date is not None else None, "strategy_id": strategy_id, "ticker": ticker, "target_weight": float(target[ticker]), "run_id": run_id, "data_status": "PENDING_EXECUTION" if execution_date is None or return_end_date is None else "COMPLETE", "record_label": FORWARD_LABEL})
+                target_rows.append({"signal_date": signal_date.date().isoformat(), "expected_execution_date": execution_date.date().isoformat() if execution_date is not None else None, "strategy_id": strategy_id, "ticker": ticker, "target_weight": float(target[ticker]), "run_id": run_id, "data_status": "PENDING_EXECUTION" if execution_date is None or return_end_date is None else "COMPLETE", "record_label": RAW_FORWARD_LABEL})
             for ticker in previous.index:
-                mark = context.panels["close"].loc[signal_date, ticker] if ticker in context.panels["close"].columns else np.nan
+                mark = pricing_context.panels["close"].loc[signal_date, ticker] if ticker in pricing_context.panels["close"].columns else np.nan
                 notional = float(previous[ticker]) * sleeve_nav[strategy_id]
                 pre_rows.append({"date": signal_date.date().isoformat(), "strategy_id": strategy_id, "ticker": ticker, "target_weight": float(previous[ticker]), "simulated_notional": notional, "simulated_quantity": notional / mark if pd.notna(mark) and mark > 0 else np.nan, "latest_price": mark, "realized_pnl": 0.0, "unrealized_pnl": np.nan, "run_id": run_id})
             if execution_date is None or return_end_date is None:
                 continue
-            missing_seed = sorted(set(previous.index) - set(context.panels["open"].columns))
+            missing_seed = sorted(set(previous.index) - set(pricing_context.panels["open"].columns))
             if missing_seed:
-                strategy_failures[strategy_id] = f"DATA_UNAVAILABLE missing raw OHLCV columns: {', '.join(missing_seed)}"
+                strategy_failures[strategy_id] = f"UNPRICED_HOLDING missing operational prices: {', '.join(missing_seed)}"
                 continue
             cost = 0.0
             executed_target = target.copy()
@@ -415,11 +490,11 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
                 old, new = float(previous.get(ticker, 0.0)), float(target.get(ticker, 0.0))
                 if np.isclose(old, new):
                     continue
-                if ticker not in context.panels["open"].columns:
-                    strategy_failures[strategy_id] = f"DATA_UNAVAILABLE missing raw OHLCV column {ticker}"
+                if ticker not in pricing_context.panels["open"].columns:
+                    strategy_failures[strategy_id] = f"UNPRICED_HOLDING missing operational price: {ticker}"
                     executed_target.loc[ticker] = old
                     continue
-                price = context.panels["open"].loc[execution_date, ticker]
+                price = pricing_context.panels["open"].loc[execution_date, ticker]
                 if pd.isna(price) or price <= 0:
                     strategy_failures[strategy_id] = f"DATA_UNAVAILABLE execution open {ticker} {execution_date.date().isoformat()}"
                     executed_target.loc[ticker] = old
@@ -433,11 +508,11 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
             executed_target = executed_target.loc[executed_target.ne(0)]
             prior_by_strategy[strategy_id] = executed_target
             for ticker in executed_target.index:
-                price = context.panels["open"].loc[execution_date, ticker]
+                price = pricing_context.panels["open"].loc[execution_date, ticker]
                 notional = float(executed_target[ticker]) * sleeve_nav[strategy_id]
                 post_rows.append({"date": execution_date.date().isoformat(), "strategy_id": strategy_id, "ticker": ticker, "target_weight": float(executed_target[ticker]), "simulated_notional": notional, "simulated_quantity": notional / price, "simulated_execution_price": price, "realized_pnl": 0.0, "unrealized_pnl": np.nan, "run_id": run_id})
-            open_start = context.panels["open"].loc[execution_date].reindex(executed_target.index)
-            open_end = context.panels["open"].loc[return_end_date].reindex(executed_target.index)
+            open_start = pricing_context.panels["open"].loc[execution_date].reindex(executed_target.index)
+            open_end = pricing_context.panels["open"].loc[return_end_date].reindex(executed_target.index)
             if open_start.isna().any() or open_end.isna().any():
                 strategy_failures[strategy_id] = f"DATA_UNAVAILABLE open-to-open return {execution_date.date().isoformat()}"
                 continue
@@ -448,12 +523,12 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
             sleeve_nav[strategy_id] += net_pnl
             daily_gross_pnl += gross_pnl
             daily_cost += cost
-            daily_strategy_rows.append({"strategy_id": strategy_id, "strategy_name": strategy_id.replace("_", " ").title(), "date": execution_date.date().isoformat(), "signal_date": signal_date.date().isoformat(), "return_end_date": return_end_date.date().isoformat(), "open_to_open_interval": f"{execution_date.date().isoformat()}_OPEN_TO_{return_end_date.date().isoformat()}_OPEN", "sleeve_weight": EQUAL_WEIGHT, "beginning_sleeve_nav": beginning, "ending_sleeve_nav": sleeve_nav[strategy_id], "gross_return": gross_return, "net_return": net_pnl / beginning, "daily_pnl": net_pnl, "cumulative_pnl": sleeve_nav[strategy_id] - INITIAL_CAPITAL * EQUAL_WEIGHT, "cumulative_return": sleeve_nav[strategy_id] / (INITIAL_CAPITAL * EQUAL_WEIGHT) - 1, "current_drawdown": np.nan, "turnover": cost / beginning / .0005 if beginning else 0, "transaction_cost": cost, "gross_exposure": float(executed_target.abs().sum()), "net_exposure": float(executed_target.sum()), "long_count": int(executed_target.gt(0).sum()), "short_count": int(executed_target.lt(0).sum()), "latest_signal_date": signal_date.date().isoformat(), "last_rebalance_date": signal_date.date().isoformat() if cost else None, "data_status": "COMPLETE", "validation_status": "PROVISIONAL", "live_allocation_approved": False, "execution_enabled": False, "record_label": FORWARD_LABEL, "run_id": run_id})
+            daily_strategy_rows.append({"strategy_id": strategy_id, "strategy_name": strategy_id.replace("_", " ").title(), "date": execution_date.date().isoformat(), "signal_date": signal_date.date().isoformat(), "return_end_date": return_end_date.date().isoformat(), "open_to_open_interval": f"{execution_date.date().isoformat()}_OPEN_TO_{return_end_date.date().isoformat()}_OPEN", "sleeve_weight": EQUAL_WEIGHT, "beginning_sleeve_nav": beginning, "ending_sleeve_nav": sleeve_nav[strategy_id], "gross_return": gross_return, "net_return": net_pnl / beginning, "daily_pnl": net_pnl, "cumulative_pnl": sleeve_nav[strategy_id] - INITIAL_CAPITAL * EQUAL_WEIGHT, "cumulative_return": sleeve_nav[strategy_id] / (INITIAL_CAPITAL * EQUAL_WEIGHT) - 1, "current_drawdown": np.nan, "turnover": cost / beginning / .0005 if beginning else 0, "transaction_cost": cost, "gross_exposure": float(executed_target.abs().sum()), "net_exposure": float(executed_target.sum()), "long_count": int(executed_target.gt(0).sum()), "short_count": int(executed_target.lt(0).sum()), "latest_signal_date": signal_date.date().isoformat(), "last_rebalance_date": signal_date.date().isoformat() if cost else None, "data_status": "COMPLETE", "validation_status": "PROVISIONAL", "live_allocation_approved": False, "execution_enabled": False, "record_label": RAW_FORWARD_LABEL, "run_id": run_id})
         if daily_strategy_rows:
             beginning_nav = latest_nav
             net_pnl = daily_gross_pnl - daily_cost
             latest_nav += net_pnl
-            portfolio_rows.append({"date": execution_date.date().isoformat(), "signal_date": signal_date.date().isoformat(), "return_end_date": return_end_date.date().isoformat(), "open_to_open_interval": f"{execution_date.date().isoformat()}_OPEN_TO_{return_end_date.date().isoformat()}_OPEN", "beginning_nav": beginning_nav, "gross_pnl": daily_gross_pnl, "transaction_cost": daily_cost, "net_pnl": net_pnl, "daily_return": net_pnl / beginning_nav, "ending_nav": latest_nav, "cumulative_pnl": latest_nav - INITIAL_CAPITAL, "cumulative_return": latest_nav / INITIAL_CAPITAL - 1, "running_peak": np.nan, "current_drawdown": np.nan, "gross_exposure": 1.0, "net_exposure": 0.0, "long_exposure": .5, "short_exposure": -.5, "cash": 0.0, "active_count": ACTIVE_COUNT, "equal_strategy_weight": EQUAL_WEIGHT, "data_as_of": ohlcv_audit["latest_raw_ohlcv_date"], "run_id": run_id, "data_quality_status": "COMPLETE", "record_label": FORWARD_LABEL})
+            portfolio_rows.append({"date": execution_date.date().isoformat(), "signal_date": signal_date.date().isoformat(), "return_end_date": return_end_date.date().isoformat(), "open_to_open_interval": f"{execution_date.date().isoformat()}_OPEN_TO_{return_end_date.date().isoformat()}_OPEN", "beginning_nav": beginning_nav, "gross_pnl": daily_gross_pnl, "transaction_cost": daily_cost, "net_pnl": net_pnl, "daily_return": net_pnl / beginning_nav, "ending_nav": latest_nav, "cumulative_pnl": latest_nav - INITIAL_CAPITAL, "cumulative_return": latest_nav / INITIAL_CAPITAL - 1, "running_peak": np.nan, "current_drawdown": np.nan, "gross_exposure": 1.0, "net_exposure": 0.0, "long_exposure": .5, "short_exposure": -.5, "cash": 0.0, "active_count": ACTIVE_COUNT, "equal_strategy_weight": EQUAL_WEIGHT, "data_as_of": ohlcv_audit["latest_raw_ohlcv_date"], "run_id": run_id, "data_quality_status": "COMPLETE", "record_label": RAW_FORWARD_LABEL})
             strategy_rows.extend(daily_strategy_rows)
             completed_dates.append(execution_date.date().isoformat())
 
@@ -465,14 +540,18 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
     strategy_added = _write_append_only(output / "strategy_daily_ledger.csv", pd.DataFrame(strategy_rows), ["strategy_id", "date"]) if strategy_rows else 0
     portfolio_added = _write_append_only(output / "portfolio_daily_ledger.csv", pd.DataFrame(portfolio_rows), ["date"]) if portfolio_rows else 0
     target_all, post_all, trades_all = _read_csv(output / TARGET_SNAPSHOTS), _read_csv(output / POST_TRADE_HOLDINGS), _read_csv(output / "trade_log.csv")
-    alerts = [{"severity": "ERROR", "code": "STRATEGY_DATA_UNAVAILABLE", "strategy_id": key, "detail": value} for key, value in strategy_failures.items()]
+    alerts = [{
+        "severity": "CRITICAL" if "UNPRICED_HOLDING" in value else "ERROR",
+        "code": "UNPRICED_HOLDING" if "UNPRICED_HOLDING" in value else "STRATEGY_DATA_UNAVAILABLE",
+        "strategy_id": key, "detail": value,
+    } for key, value in strategy_failures.items()]
     if not ohlcv_failures.empty and "ticker" in ohlcv_failures:
         alerts += [{"severity": "WARNING", "code": "OHLCV_INCREMENTAL_WARNING", "detail": str(row)} for row in ohlcv_failures.loc[ohlcv_failures["ticker"].isin(ohlcv_audit["failed_tickers"])].to_dict("records")[:20]]
     alerts += [{"severity": "WARNING", "code": "SEC_UPDATE_FAILURE", "detail": str(row)} for row in sec_failures.to_dict("records")[:20]]
     strategy_all = _read_csv(output / "strategy_daily_ledger.csv")
     portfolio_all = _read_csv(output / "portfolio_daily_ledger.csv")
-    forward_strategy = strategy_all.loc[strategy_all["record_label"].eq(FORWARD_LABEL)] if not strategy_all.empty else strategy_all
-    forward_portfolio = portfolio_all.loc[portfolio_all["record_label"].eq(FORWARD_LABEL)] if not portfolio_all.empty else portfolio_all
+    forward_strategy = strategy_all.loc[strategy_all["record_label"].eq(RAW_FORWARD_LABEL)] if not strategy_all.empty else strategy_all
+    forward_portfolio = portfolio_all.loc[portfolio_all["record_label"].eq(RAW_FORWARD_LABEL)] if not portfolio_all.empty else portfolio_all
     strategy_pnl = forward_strategy.groupby("date")["daily_pnl"].sum() if not forward_strategy.empty else pd.Series(dtype=float)
     portfolio_pnl = forward_portfolio.set_index("date")["net_pnl"] if not forward_portfolio.empty else pd.Series(dtype=float)
     trade_changes = (
@@ -501,8 +580,21 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
         "combined_portfolio_excluded": "COMBINED_PORTFOLIO_V1" not in set(target_all.get("strategy_id", [])),
         "unique_trade_ids": not trades_all.get("trade_id", pd.Series(dtype=str)).duplicated().any(),
         "unique_target_snapshots": not target_all.duplicated(["signal_date", "strategy_id", "ticker"]).any() if not target_all.empty else True,
+        "exit_only_securities_never_increased": bool(
+            trades_all.loc[~trades_all["ticker"].isin(entry_symbols), "delta_weight"].astype(float).abs().le(
+                trades_all.loc[~trades_all["ticker"].isin(entry_symbols), "previous_weight"].astype(float).abs()
+            ).all()
+        ) if not trades_all.empty else True,
+        "unpriced_holdings_never_generate_returns": not any("UNPRICED_HOLDING" in value for value in strategy_failures.values()),
         "historical_holdings_reconstruction": "PARTIAL_LATEST_ACCEPTED_HOLDINGS_ONLY",
     }
+    retrospective = portfolio_all.loc[portfolio_all["record_label"].eq(BACKFILL_LABEL)]
+    transition_nav = float(retrospective.iloc[-1]["ending_nav"])
+    first_raw_beginning = float(forward_portfolio.iloc[0]["beginning_nav"]) if not forward_portfolio.empty else transition_nav
+    reconciliation["segment_boundary_nav_continuity"] = bool(np.isclose(transition_nav, first_raw_beginning))
+    reconciliation["no_overlapping_return_intervals"] = not portfolio_all["date"].duplicated().any()
+    latest_sleeves = strategy_all.sort_values("date").groupby("strategy_id").tail(1)
+    reconciliation["sleeve_navs_sum_to_portfolio_nav"] = bool(np.isclose(latest_sleeves["ending_sleeve_nav"].sum(), portfolio_all.iloc[-1]["ending_nav"]))
     no_new_records = not any((target_added, pre_added, post_added, trade_added, strategy_added, portfolio_added))
     effective_failures = prior_manifest.get("failed_strategies", {}) if no_new_records and not strategy_failures else strategy_failures
     latest_execution = (
@@ -516,14 +608,22 @@ def run_shadow_live(project_root: str | Path, *, freeze_date: str | None = None,
         "run_timestamp": datetime.now(timezone.utc).isoformat(), "run_id": run_id,
         "code_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
         "raw_data": {"ohlcv": ohlcv_audit, "sec": sec_audit},
-        "signal_functions_invoked": len(targets), "successful_strategy_count": ACTIVE_COUNT - len(effective_failures), "failed_strategy_count": len(effective_failures),
+        "signal_functions_invoked": len(targets), "configured_strategy_count": ACTIVE_COUNT,
+        "success_strategy_count": ACTIVE_COUNT - len(effective_failures),
+        "successful_strategy_count": ACTIVE_COUNT - len(effective_failures), "partial_strategy_count": 0,
+        "unavailable_strategy_count": len(effective_failures), "failed_strategy_count": len(effective_failures),
         "failed_strategies": effective_failures, "latest_valid_target_position_date": latest_signal.date().isoformat(),
         "latest_simulated_execution_date": latest_execution,
         "pending_intervals": pending_dates, "target_rows_added": target_added, "pre_trade_rows_added": pre_added,
         "post_trade_rows_added": post_added, "trade_rows_added": trade_added, "strategy_rows_added": strategy_added,
         "portfolio_rows_added": portfolio_added, "alerts": alerts, "reconciliation": reconciliation,
         "active_count": ACTIVE_COUNT, "equal_weight": EQUAL_WEIGHT, "live_allocation_approved": False,
-        "execution_enabled": False, "record_label": FORWARD_LABEL,
+        "execution_enabled": False, "record_label": RAW_FORWARD_LABEL,
+        "segments": {
+            "retrospective": {"label": BACKFILL_LABEL, "start": retrospective["date"].min(), "end": retrospective["date"].max()},
+            "forward_raw": {"label": RAW_FORWARD_LABEL, "first_signal_date": "2026-06-09", "start": forward_portfolio["date"].min() if not forward_portfolio.empty else None, "end": forward_portfolio["date"].max() if not forward_portfolio.empty else None},
+            "transition_date": retrospective["date"].max(), "transition_nav": transition_nav,
+        },
     }
     manifest_path.write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     _write_raw_shadow_bundle(root, manifest)
@@ -549,9 +649,16 @@ def _write_raw_shadow_bundle(root: Path, manifest: dict[str, Any]) -> None:
             "holdings": _json_records(holdings), "trades": _json_records(trades), "alerts": manifest["alerts"],
             "reconciliation": manifest["reconciliation"], "pending_intervals": manifest["pending_intervals"],
             "successful_strategy_count": manifest["successful_strategy_count"], "failed_strategy_count": manifest["failed_strategy_count"],
+            "configured_strategy_count": manifest["configured_strategy_count"],
+            "partial_strategy_count": manifest["partial_strategy_count"],
+            "unavailable_strategy_count": manifest["unavailable_strategy_count"],
+            "segments": manifest["segments"],
+            "entry_eligibility_universe_size": manifest["raw_data"]["ohlcv"]["entry_eligibility_universe_size"],
+            "operational_pricing_universe_size": manifest["raw_data"]["ohlcv"]["operational_pricing_universe_size"],
+            "latest_raw_data_timestamp": manifest["raw_data"]["ohlcv"]["latest_raw_ohlcv_date"],
             "latest_valid_target_position_date": manifest["latest_valid_target_position_date"],
             "latest_simulated_execution_date": manifest["latest_simulated_execution_date"],
             "trade_log_row_count": len(trades), "last_successful_run": manifest["run_timestamp"],
-            "correlation": _correlation_packet(strategy.loc[strategy["record_label"].eq(FORWARD_LABEL)]) if not strategy.empty else {"status": "NOT ENOUGH LIVE HISTORY", "observations": 0, "minimum_observations": 20, "warnings": []}},
+            "correlation": _correlation_packet(strategy.loc[strategy["record_label"].eq(RAW_FORWARD_LABEL)]) if not strategy.empty else {"status": "NOT ENOUGH LIVE HISTORY", "observations": 0, "minimum_observations": 20, "warnings": []}},
     }
     (root / SHADOW_BUNDLE).write_text(json.dumps(shadow_bundle, indent=2, allow_nan=False), encoding="utf-8")
