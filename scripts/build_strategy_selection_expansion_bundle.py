@@ -15,6 +15,8 @@ if str(ROOT) not in sys.path:
 from src.reporting.strategy_factory_research_adapter import _annual_return, _risk_packet
 from src.strategies.platform_registry import (
     COMPOSITE_ID,
+    DIVERSIFIED_CANDIDATE_IDS,
+    DIVERSIFIED_SELECTION_STATUS,
     EXPANDED_SELECTION_CANDIDATE_IDS,
     EXPANDED_SELECTION_STATUS,
     FINAL_DELIVERY_CANDIDATE_IDS,
@@ -32,6 +34,7 @@ FINAL_ROOT = ROOT / "output/research/final_strategy_research_v1"
 DELIVERY_ROOT = ROOT / "output/research/final_platform_delivery_v1"
 EXPANDED_ROOT = ROOT / "output/research/final_expanded_selection_v1"
 OHLCV_ALPHA_ROOT = ROOT / "output/research/final_ohlcv_alpha_expansion_v1"
+DIVERSIFIED_ROOT = ROOT / "output/research/final_diversified_strategy_batch_v1"
 ACTIVE_IDS = tuple(
     strategy_id
     for strategy_id, decision in STRATEGY_SELECTION_STATUS.items()
@@ -51,6 +54,10 @@ ACTIVE_IDS = tuple(
 ) + tuple(
     strategy_id
     for strategy_id, decision in OHLCV_ALPHA_SELECTION_STATUS.items()
+    if decision["status"] == "ACTIVE"
+) + tuple(
+    strategy_id
+    for strategy_id, decision in DIVERSIFIED_SELECTION_STATUS.items()
     if decision["status"] == "ACTIVE"
 )
 
@@ -330,6 +337,9 @@ def _delivery_items(
                         "average_abs_correlation_with_retained": None if corr_row.empty else float(corr_row.mean()),
                         "max_abs_correlation_with_retained": None if corr_row.empty else float(corr_row.max()),
                         "marginal_combined_portfolio_sharpe": None if strategy_daily.empty else float(row["marginal_combined_portfolio_sharpe"]),
+                        "marginal_max_drawdown_improvement": None if strategy_daily.empty or "marginal_max_drawdown_improvement" not in row else float(row["marginal_max_drawdown_improvement"]),
+                        "marginal_left_tail_improvement": None if strategy_daily.empty or "marginal_left_tail_improvement" not in row else float(row["marginal_left_tail_improvement"]),
+                        "latest_estimated_market_beta_exposure": None if strategy_daily.empty or "latest_estimated_market_beta_exposure" not in row else float(row["latest_estimated_market_beta_exposure"]),
                         "trade_cost_reconciliation_error": None if strategy_daily.empty else float(row["trade_cost_reconciliation_error"]),
                     },
                 },
@@ -451,6 +461,7 @@ def build_bundle() -> dict:
     results[:] = [item for item in results if item["strategy_id"] not in FINAL_DELIVERY_CANDIDATE_IDS]
     results[:] = [item for item in results if item["strategy_id"] not in EXPANDED_SELECTION_CANDIDATE_IDS]
     results[:] = [item for item in results if item["strategy_id"] not in OHLCV_ALPHA_CANDIDATE_IDS]
+    results[:] = [item for item in results if item["strategy_id"] not in DIVERSIFIED_CANDIDATE_IDS]
     fundamental_daily = pd.read_csv(PACK_ROOT / "daily_net_returns.csv", parse_dates=["date"])
     fundamental_returns = fundamental_daily.pivot(index="date", columns="strategy_id", values="net_return")
     fundamental_returns = fundamental_returns.drop(columns=list(EXPANDED_SELECTION_CANDIDATE_IDS), errors="ignore")
@@ -469,7 +480,9 @@ def build_bundle() -> dict:
     expanded_returns = expanded_daily.pivot(index="date", columns="strategy_id", values="net_return")
     ohlcv_alpha_daily = pd.read_csv(OHLCV_ALPHA_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
     ohlcv_alpha_returns = ohlcv_alpha_daily.pivot(index="date", columns="strategy_id", values="net_return")
-    correlation = pd.concat([fundamental_returns, delivery_returns, expanded_returns, ohlcv_alpha_returns, existing_returns], axis=1, join="inner").corr()
+    diversified_daily = pd.read_csv(DIVERSIFIED_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
+    diversified_returns = diversified_daily.pivot(index="date", columns="strategy_id", values="net_return")
+    correlation = pd.concat([fundamental_returns, delivery_returns, expanded_returns, ohlcv_alpha_returns, diversified_returns, existing_returns], axis=1, join="inner").corr()
     composite = next(item for item in results if item["strategy_id"] == COMPOSITE_ID)
     results.remove(composite)
     results.extend(_candidate_items(correlation))
@@ -484,6 +497,11 @@ def build_bundle() -> dict:
         correlation, payload["shared_dates"], candidate_ids=OHLCV_ALPHA_CANDIDATE_IDS,
         decisions=OHLCV_ALPHA_SELECTION_STATUS, pack_root=OHLCV_ALPHA_ROOT,
         research_source="FINAL_OHLCV_ALPHA_EXPANSION_V1",
+    ))
+    results.extend(_delivery_items(
+        correlation, payload["shared_dates"], candidate_ids=DIVERSIFIED_CANDIDATE_IDS,
+        decisions=DIVERSIFIED_SELECTION_STATUS, pack_root=DIVERSIFIED_ROOT,
+        research_source="FINAL_DIVERSIFIED_STRATEGY_BATCH_V1",
     ))
     results.append(composite)
     _rebuild_composite(results, payload["shared_dates"])
@@ -540,6 +558,7 @@ def main() -> int:
     for manifest_path in (
         DELIVERY_ROOT / "run_manifest.json", EXPANDED_ROOT / "run_manifest.json",
         OHLCV_ALPHA_ROOT / "run_manifest.json",
+        DIVERSIFIED_ROOT / "run_manifest.json",
     ):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest.update(

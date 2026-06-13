@@ -1,0 +1,25 @@
+{
+  "pack_id": "FINAL_DIVERSIFIED_STRATEGY_BATCH_V1",
+  "status": "RESEARCH_ONLY",
+  "execution": "NEXT_OPEN_TO_OPEN",
+  "buy_bps": 5,
+  "sell_bps": 5,
+  "labels": [
+    "CURRENT_LISTED_DIAGNOSTIC",
+    "SURVIVORSHIP_BIAS_PRESENT",
+    "RESEARCH ONLY"
+  ],
+  "sec_audit": {
+    "sec_mapped": 229,
+    "sec_facts_loaded": 216
+  },
+  "live_allocation_approved": false,
+  "execution_enabled": false,
+  "fill_status": "NO LIVE FILL",
+  "registry_updated": true,
+  "bundle_updated": true,
+  "dashboard_updated": true,
+  "combined_portfolio_updated": true,
+  "combined_portfolio_N": 17,
+  "combined_portfolio_equal_weight": 0.058823529411764705
+}

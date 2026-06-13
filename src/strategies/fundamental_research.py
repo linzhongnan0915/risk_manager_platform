@@ -109,6 +109,9 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
     op_now, op_prev = _last(annual, "operating_income"), _last(annual, "operating_income", 2)
     gp_now, gp_prev = _last(annual, "gross_profit"), _last(annual, "gross_profit", 2)
     ocf_now, ocf_prev = _last(annual, "operating_cash_flow"), _last(annual, "operating_cash_flow", 2)
+    liabilities_now, liabilities_prev = _last(annual, "liabilities"), _last(annual, "liabilities", 2)
+    receivables_now, receivables_prev = _last(annual, "receivables"), _last(annual, "receivables", 2)
+    inventory_now, inventory_prev = _last(annual, "inventory"), _last(annual, "inventory", 2)
     revenue_prior = _last(annual, "revenue", 3)
     ocf_prior = _last(annual, "operating_cash_flow", 3)
     revenue_growth = safe_divide(revenue_now - revenue_prev, abs(revenue_prev))
@@ -117,6 +120,10 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
     asset_growth = safe_divide(assets_now - assets_prev, abs(assets_prev))
     fcf = ocf - capex
     annual_payout = _last(annual, "dividends_paid") + _last(annual, "share_repurchases")
+    gross_margins = [
+        safe_divide(gross_profit, period_revenue)
+        for gross_profit, period_revenue in zip(annual.get("gross_profit", []), annual.get("revenue", []))
+    ]
 
     return {
         "quality_gp_assets": safe_divide(_last(current, "gross_profit"), assets),
@@ -142,6 +149,13 @@ def _raw_components_for_ticker(available: pd.DataFrame, prior_close: float) -> d
         "fcf_yield": safe_divide(fcf, market_cap),
         "negative_market_cap": -market_cap,
         "negative_liabilities_assets": -safe_divide(_last(current, "liabilities"), assets),
+        "negative_liabilities_assets_change": -(
+            safe_divide(liabilities_now, assets_now) - safe_divide(liabilities_prev, assets_prev)
+        ),
+        "gross_margin": safe_divide(_last(current, "gross_profit"), revenue),
+        "gross_margin_stability": -float(np.nanstd(gross_margins)) if len(gross_margins) >= 3 else np.nan,
+        "receivables_growth_gap": -(safe_divide(receivables_now - receivables_prev, abs(receivables_prev)) - revenue_growth),
+        "inventory_growth_gap": -(safe_divide(inventory_now - inventory_prev, abs(inventory_prev)) - revenue_growth),
         "shareholder_yield": safe_divide(annual_payout, market_cap),
         "market_cap": market_cap,
     }

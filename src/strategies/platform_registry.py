@@ -174,6 +174,30 @@ OHLCV_ALPHA_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "DISPERSION_CONDITIONAL_MOMENTUM": {"status": "REPAIR", "reason": "Strong standalone and robustness evidence, but marginal Combined Portfolio Sharpe contribution is negative."},
 }
 
+DIVERSIFIED_CANDIDATE_IDS: tuple[str, ...] = (
+    "BETA_NEUTRAL_RESIDUAL_MOMENTUM", "BETA_NEUTRAL_SHORT_TERM_REVERSAL",
+    "LOW_VOLATILITY_TREND_CARRY", "VOLUME_CONFIRMED_GAP_CONTINUATION",
+    "CASH_RETURN_ON_ASSETS", "FREE_CASH_FLOW_PROFITABILITY", "GROSS_MARGIN_STABILITY",
+    "DEBT_PAYDOWN_PROFITABILITY", "WORKING_CAPITAL_DISCIPLINE",
+    "QUALITY_FILTERED_FILING_DRIFT", "NEGATIVE_FILING_SHOCK_REVERSAL",
+    "BALANCED_FUNDAMENTAL_MULTIFACTOR",
+)
+
+DIVERSIFIED_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "BETA_NEUTRAL_RESIDUAL_MOMENTUM": {"status": "REPAIR", "reason": "Standalone and OOS evidence pass, but portfolio Sharpe, drawdown, and left-tail contributions are negative."},
+    "BETA_NEUTRAL_SHORT_TERM_REVERSAL": {"status": "REPAIR", "reason": "Positive diversification and drawdown evidence, but OOS return is slightly negative and Sharpe is below 0.25."},
+    "LOW_VOLATILITY_TREND_CARRY": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results."},
+    "VOLUME_CONFIRMED_GAP_CONTINUATION": {"status": "DATA_INSUFFICIENT", "reason": "Average eligible event cross-section is below the minimum threshold."},
+    "CASH_RETURN_ON_ASSETS": {"status": "REPAIR", "reason": "Positive full-period net result, but OOS and stressed-cost results are negative."},
+    "FREE_CASH_FLOW_PROFITABILITY": {"status": "REPAIR", "reason": "Positive full-period and stressed-cost results, but preliminary OOS is negative and Sharpe is low."},
+    "GROSS_MARGIN_STABILITY": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results."},
+    "DEBT_PAYDOWN_PROFITABILITY": {"status": "REPAIR", "reason": "Positive full-period and robustness results, but preliminary OOS is negative and Sharpe is low."},
+    "WORKING_CAPITAL_DISCIPLINE": {"status": "ACTIVE", "reason": "Positive net/OOS/robustness results with adequate coverage and measurable Combined Portfolio drawdown and left-tail improvement."},
+    "QUALITY_FILTERED_FILING_DRIFT": {"status": "ACTIVE", "reason": "Passed positive net/OOS, Sharpe, robustness, coverage, duplication, and marginal portfolio-value gates."},
+    "NEGATIVE_FILING_SHOCK_REVERSAL": {"status": "REPAIR", "reason": "Positive preliminary OOS, but full-period net and robustness results are negative."},
+    "BALANCED_FUNDAMENTAL_MULTIFACTOR": {"status": "REPAIR", "reason": "Positive full-period and robustness results, but preliminary OOS and marginal Sharpe are negative."},
+}
+
 C3A2_SPECS: tuple[StrategySpec, ...] = (
     StrategySpec("C3A2_001", "c3a2_001_short_term_reversal_5d_v1", "Short-Term Reversal 5D",
                  "Fade 5-day moves; long recent losers and short recent winners.", short_term_reversal_5d, 20),

@@ -39,6 +39,8 @@ FIELD_TAGS: dict[str, tuple[str, ...]] = {
     "operating_cash_flow": ("NetCashProvidedByUsedInOperatingActivities",),
     "capex": ("PaymentsToAcquirePropertyPlantAndEquipment",),
     "liabilities": ("Liabilities",),
+    "receivables": ("AccountsReceivableNetCurrent", "AccountsNotesAndLoansReceivableNetCurrent"),
+    "inventory": ("InventoryNet",),
     "dividends_paid": (
         "PaymentsOfDividends",
         "PaymentsOfDividendsCommonStock",

@@ -1,0 +1,14 @@
+{
+  "BETA_NEUTRAL_RESIDUAL_MOMENTUM": "Rank medium-term momentum after removing the lagged broad-market component.",
+  "BETA_NEUTRAL_SHORT_TERM_REVERSAL": "Fade short-term residual returns after removing broad-market movement.",
+  "LOW_VOLATILITY_TREND_CARRY": "Prefer positive medium-term trend with lower realized and downside volatility.",
+  "VOLUME_CONFIRMED_GAP_CONTINUATION": "Follow sufficiently large prior gaps confirmed by abnormal volume and prior trend.",
+  "CASH_RETURN_ON_ASSETS": "Prefer positive operating cash flow and free cash flow relative to assets.",
+  "FREE_CASH_FLOW_PROFITABILITY": "Prefer free-cash-flow margin and FCF/assets with operating-profitability confirmation.",
+  "GROSS_MARGIN_STABILITY": "Prefer positive, stable gross margins without deteriorating operating cash flow.",
+  "DEBT_PAYDOWN_PROFITABILITY": "Prefer declining liabilities/assets with positive operating income and cash flow.",
+  "WORKING_CAPITAL_DISCIPLINE": "Prefer receivables and inventory growth that does not exceed revenue growth.",
+  "QUALITY_FILTERED_FILING_DRIFT": "Continue positive filing improvements only when cash-flow and earnings quality confirm.",
+  "NEGATIVE_FILING_SHOCK_REVERSAL": "Test controlled recovery after negative filing shocks when cash-flow and balance-sheet resilience remain.",
+  "BALANCED_FUNDAMENTAL_MULTIFACTOR": "Combine normalized fundamental momentum, earnings quality, margin improvement, cash return, and lower leverage before construction."
+}
