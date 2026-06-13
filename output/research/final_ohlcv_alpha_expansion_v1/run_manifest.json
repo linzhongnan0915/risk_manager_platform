@@ -1,0 +1,23 @@
+{
+  "pack_id": "FINAL_OHLCV_ALPHA_EXPANSION_V1",
+  "status": "RESEARCH_ONLY",
+  "execution": "NEXT_OPEN_TO_OPEN",
+  "buy_bps": 5,
+  "sell_bps": 5,
+  "universe": "expanded 229-name latest-liquid diagnostic universe",
+  "labels": [
+    "CURRENT_LISTED_DIAGNOSTIC",
+    "SURVIVORSHIP_BIAS_PRESENT",
+    "RESEARCH ONLY"
+  ],
+  "ensemble_result": "No ensemble created because fewer than two complementary individual signals passed all gates.",
+  "live_allocation_approved": false,
+  "execution_enabled": false,
+  "fill_status": "NO LIVE FILL",
+  "registry_updated": true,
+  "bundle_updated": true,
+  "dashboard_updated": true,
+  "combined_portfolio_updated": true,
+  "combined_portfolio_N": 15,
+  "combined_portfolio_equal_weight": 0.06666666666666667
+}

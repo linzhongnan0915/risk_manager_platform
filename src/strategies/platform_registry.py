@@ -148,6 +148,32 @@ EXPANDED_SELECTION_STATUS: dict[str, dict[str, str]] = {
     "LOW_ACCRUAL_MOMENTUM": {"status": "REPAIR", "reason": "Strong standalone and robustness evidence, but negative marginal portfolio Sharpe contribution."},
 }
 
+OHLCV_ALPHA_CANDIDATE_IDS: tuple[str, ...] = (
+    "RESIDUAL_SHORT_TERM_REVERSAL",
+    "VOLUME_PRICE_DIVERGENCE_REVERSAL",
+    "RANGE_COMPRESSION_BREAKOUT",
+    "LOW_BETA_DEFENSIVE",
+    "IDIOSYNCRATIC_VOLATILITY_REVERSAL",
+    "LIQUIDITY_ADJUSTED_MOMENTUM",
+    "GAP_VOLUME_CONTINUATION",
+    "DRAWDOWN_RECOVERY",
+    "INTRADAY_STRENGTH_PERSISTENCE",
+    "DISPERSION_CONDITIONAL_MOMENTUM",
+)
+
+OHLCV_ALPHA_SELECTION_STATUS: dict[str, dict[str, str]] = {
+    "RESIDUAL_SHORT_TERM_REVERSAL": {"status": "REPAIR", "reason": "Positive net and diversification evidence, but preliminary OOS return is slightly negative and Sharpe is below 0.25."},
+    "VOLUME_PRICE_DIVERGENCE_REVERSAL": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results; doubled costs and delayed execution also remain negative."},
+    "RANGE_COMPRESSION_BREAKOUT": {"status": "REPAIR", "reason": "Positive OOS and delayed-execution results, but low Sharpe and doubled costs remove the edge."},
+    "LOW_BETA_DEFENSIVE": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results with negative marginal portfolio contribution."},
+    "IDIOSYNCRATIC_VOLATILITY_REVERSAL": {"status": "ARCHIVED", "reason": "Negative net and preliminary OOS results; robustness tests remain negative."},
+    "LIQUIDITY_ADJUSTED_MOMENTUM": {"status": "ACTIVE", "reason": "Passed positive net/OOS, Sharpe, doubled-cost, delayed-execution, coverage, correlation, and marginal portfolio gates."},
+    "GAP_VOLUME_CONTINUATION": {"status": "REPAIR", "reason": "Positive preliminary OOS, but full-period net, Sharpe, doubled-cost, and delayed-execution results are negative."},
+    "DRAWDOWN_RECOVERY": {"status": "REPAIR", "reason": "Positive preliminary OOS, but full-period net, Sharpe, doubled-cost, and delayed-execution results are negative."},
+    "INTRADAY_STRENGTH_PERSISTENCE": {"status": "REPAIR", "reason": "Positive preliminary OOS, but full-period net, Sharpe, doubled-cost, and delayed-execution results are negative."},
+    "DISPERSION_CONDITIONAL_MOMENTUM": {"status": "REPAIR", "reason": "Strong standalone and robustness evidence, but marginal Combined Portfolio Sharpe contribution is negative."},
+}
+
 C3A2_SPECS: tuple[StrategySpec, ...] = (
     StrategySpec("C3A2_001", "c3a2_001_short_term_reversal_5d_v1", "Short-Term Reversal 5D",
                  "Fade 5-day moves; long recent losers and short recent winners.", short_term_reversal_5d, 20),

@@ -1,0 +1,12 @@
+{
+  "RESIDUAL_SHORT_TERM_REVERSAL": "Fade five-day returns after removing the lagged broad-market component.",
+  "VOLUME_PRICE_DIVERGENCE_REVERSAL": "Fade short-term price moves when recent volume diverges above its trailing baseline.",
+  "RANGE_COMPRESSION_BREAKOUT": "Prefer directional breakouts following unusually compressed prior trading ranges.",
+  "LOW_BETA_DEFENSIVE": "Prefer lower lagged broad-market beta.",
+  "IDIOSYNCRATIC_VOLATILITY_REVERSAL": "Fade short-term residual moves scaled by lagged idiosyncratic volatility.",
+  "LIQUIDITY_ADJUSTED_MOMENTUM": "Prefer six-to-one-month momentum with stronger lagged dollar-volume support.",
+  "GAP_VOLUME_CONTINUATION": "Follow prior overnight gaps confirmed by abnormal volume.",
+  "DRAWDOWN_RECOVERY": "Prefer positive short-term recovery while still below the prior rolling high.",
+  "INTRADAY_STRENGTH_PERSISTENCE": "Prefer persistent prior open-to-close strength.",
+  "DISPERSION_CONDITIONAL_MOMENTUM": "Apply medium-term momentum only when cross-sectional return dispersion is elevated."
+}

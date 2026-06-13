@@ -21,6 +21,8 @@ from src.strategies.platform_registry import (
     FINAL_DELIVERY_SELECTION_STATUS,
     FUNDAMENTAL_RESEARCH_CANDIDATE_IDS,
     FUNDAMENTAL_SELECTION_STATUS,
+    OHLCV_ALPHA_CANDIDATE_IDS,
+    OHLCV_ALPHA_SELECTION_STATUS,
     STRATEGY_SELECTION_STATUS,
 )
 
@@ -29,6 +31,7 @@ PACK_ROOT = ROOT / "output/research/final_fundamental_research_v1"
 FINAL_ROOT = ROOT / "output/research/final_strategy_research_v1"
 DELIVERY_ROOT = ROOT / "output/research/final_platform_delivery_v1"
 EXPANDED_ROOT = ROOT / "output/research/final_expanded_selection_v1"
+OHLCV_ALPHA_ROOT = ROOT / "output/research/final_ohlcv_alpha_expansion_v1"
 ACTIVE_IDS = tuple(
     strategy_id
     for strategy_id, decision in STRATEGY_SELECTION_STATUS.items()
@@ -44,6 +47,10 @@ ACTIVE_IDS = tuple(
 ) + tuple(
     strategy_id
     for strategy_id, decision in EXPANDED_SELECTION_STATUS.items()
+    if decision["status"] == "ACTIVE"
+) + tuple(
+    strategy_id
+    for strategy_id, decision in OHLCV_ALPHA_SELECTION_STATUS.items()
     if decision["status"] == "ACTIVE"
 )
 
@@ -443,6 +450,7 @@ def build_bundle() -> dict:
     results[:] = [item for item in results if item["strategy_id"] not in FUNDAMENTAL_RESEARCH_CANDIDATE_IDS]
     results[:] = [item for item in results if item["strategy_id"] not in FINAL_DELIVERY_CANDIDATE_IDS]
     results[:] = [item for item in results if item["strategy_id"] not in EXPANDED_SELECTION_CANDIDATE_IDS]
+    results[:] = [item for item in results if item["strategy_id"] not in OHLCV_ALPHA_CANDIDATE_IDS]
     fundamental_daily = pd.read_csv(PACK_ROOT / "daily_net_returns.csv", parse_dates=["date"])
     fundamental_returns = fundamental_daily.pivot(index="date", columns="strategy_id", values="net_return")
     fundamental_returns = fundamental_returns.drop(columns=list(EXPANDED_SELECTION_CANDIDATE_IDS), errors="ignore")
@@ -459,7 +467,9 @@ def build_bundle() -> dict:
     delivery_returns = delivery_returns.drop(columns=list(EXPANDED_SELECTION_CANDIDATE_IDS), errors="ignore")
     expanded_daily = pd.read_csv(EXPANDED_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
     expanded_returns = expanded_daily.pivot(index="date", columns="strategy_id", values="net_return")
-    correlation = pd.concat([fundamental_returns, delivery_returns, expanded_returns, existing_returns], axis=1, join="inner").corr()
+    ohlcv_alpha_daily = pd.read_csv(OHLCV_ALPHA_ROOT / "daily_strategy_returns.csv", parse_dates=["date"])
+    ohlcv_alpha_returns = ohlcv_alpha_daily.pivot(index="date", columns="strategy_id", values="net_return")
+    correlation = pd.concat([fundamental_returns, delivery_returns, expanded_returns, ohlcv_alpha_returns, existing_returns], axis=1, join="inner").corr()
     composite = next(item for item in results if item["strategy_id"] == COMPOSITE_ID)
     results.remove(composite)
     results.extend(_candidate_items(correlation))
@@ -469,6 +479,11 @@ def build_bundle() -> dict:
         correlation, payload["shared_dates"], candidate_ids=EXPANDED_SELECTION_CANDIDATE_IDS,
         decisions=EXPANDED_SELECTION_STATUS, pack_root=EXPANDED_ROOT,
         research_source="FINAL_EXPANDED_SELECTION_V1",
+    ))
+    results.extend(_delivery_items(
+        correlation, payload["shared_dates"], candidate_ids=OHLCV_ALPHA_CANDIDATE_IDS,
+        decisions=OHLCV_ALPHA_SELECTION_STATUS, pack_root=OHLCV_ALPHA_ROOT,
+        research_source="FINAL_OHLCV_ALPHA_EXPANSION_V1",
     ))
     results.append(composite)
     _rebuild_composite(results, payload["shared_dates"])
@@ -522,7 +537,10 @@ def main() -> int:
         row for row in payload["factory_strategy_research"]["results"]
         if row["strategy_id"] == COMPOSITE_ID
     )["backtest"]["factory_research"]["combined_portfolio"]
-    for manifest_path in (DELIVERY_ROOT / "run_manifest.json", EXPANDED_ROOT / "run_manifest.json"):
+    for manifest_path in (
+        DELIVERY_ROOT / "run_manifest.json", EXPANDED_ROOT / "run_manifest.json",
+        OHLCV_ALPHA_ROOT / "run_manifest.json",
+    ):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest.update(
             {
